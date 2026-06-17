@@ -26,4 +26,8 @@ export const API_ENDPOINTS = {
     refresh: "/auth/refresh",
     register: "/auth/register",
   },
+  organizations: {
+    create: "/organizations",
+    list: "/organizations",
+  },
 } as const
