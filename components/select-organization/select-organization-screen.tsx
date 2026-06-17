@@ -11,6 +11,7 @@ import {
   useOrganizationsQuery,
 } from "@/hooks/use-organization"
 import { cn } from "@/lib/utils"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -241,6 +242,8 @@ export function SelectOrganizationScreen() {
               </p>
             </div>
           </div>
+
+          <ThemeToggle />
         </div>
 
         {organizationsQuery.isLoading ? (
