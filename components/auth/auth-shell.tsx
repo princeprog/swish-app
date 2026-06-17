@@ -4,19 +4,13 @@ import Link from "next/link"
 import type { ReactNode } from "react"
 import { Trophy } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
-
 type AuthShellProps = {
-  alternateHref: string
-  alternateLabel: string
   children: ReactNode
   description: string
   title: string
 }
 
 export function AuthShell({
-  alternateHref,
-  alternateLabel,
   children,
   description,
   title,
@@ -50,17 +44,6 @@ export function AuthShell({
 
         <section className="flex min-h-screen bg-background">
           <div className="flex w-full flex-col px-6 py-6 sm:px-8 lg:px-10">
-            <div className="flex justify-end">
-              <Button
-                variant="default"
-                size="sm"
-                className="h-11 rounded-full px-6"
-                asChild
-              >
-                <Link href={alternateHref}>{alternateLabel}</Link>
-              </Button>
-            </div>
-
             <div className="flex flex-1 items-center justify-center py-10">
               <div className="w-full max-w-md space-y-8">
                 <div className="space-y-3">

@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { AuthSessionProvider } from "@/components/providers/auth-session-provider";
+import { QueryProvider } from "@/components/providers/query-provider";
+import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 
 const fontSans = Inter({subsets:['latin'],variable:'--font-sans'});
@@ -18,10 +21,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning className={fontSans.variable}>
-      <body
-        className="antialiased"
-      >
-        <ThemeProvider>{children}</ThemeProvider>
+      <body className="antialiased">
+        <ThemeProvider>
+          <QueryProvider>
+            <AuthSessionProvider>
+              {children}
+              <Toaster />
+            </AuthSessionProvider>
+          </QueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
