@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 
 import { NavMain } from "@/components/nav-main"
 import { NavProjects } from "@/components/nav-projects"
@@ -13,180 +14,149 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { GalleryVerticalEndIcon, AudioLinesIcon, TerminalIcon, TerminalSquareIcon, BotIcon, BookOpenIcon, Settings2Icon, FrameIcon, PieChartIcon, MapIcon } from "lucide-react"
+import { Building2Icon, CalendarDaysIcon, Settings2Icon, ShieldCheckIcon, TrophyIcon, Users2Icon } from "lucide-react"
 
-// This is sample data.
-const data = {
+const baseData = {
   user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+    name: "Swish Admin",
+    email: "admin@swish.local",
+    avatar: "",
   },
-  teams: [
+}
+
+type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
+  organization?: {
+    name: string
+    slug: string
+    status: string
+  }
+}
+
+export function AppSidebar({
+  organization,
+  ...props
+}: AppSidebarProps) {
+  const workspaceBasePath = organization
+    ? `/organizations/${organization.slug}`
+    : "/organizations"
+
+  const workspaceItems = organization
+    ? [
+        {
+          name: organization.name,
+          logo: <Building2Icon />,
+          plan: organization.status,
+          href: workspaceBasePath,
+        },
+      ]
+    : [
+        {
+          name: "Organizations",
+          logo: <Building2Icon />,
+          plan: "Workspace list",
+          href: "/organizations",
+        },
+      ]
+
+  const navMain = [
     {
-      name: "Acme Inc",
-      logo: (
-        <GalleryVerticalEndIcon
-        />
-      ),
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: (
-        <AudioLinesIcon
-        />
-      ),
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: (
-        <TerminalIcon
-        />
-      ),
-      plan: "Free",
-    },
-  ],
-  navMain: [
-    {
-      title: "Playground",
-      url: "#",
-      icon: (
-        <TerminalSquareIcon
-        />
-      ),
+      title: "Overview",
+      url: workspaceBasePath,
+      icon: <TrophyIcon />,
       isActive: true,
       items: [
         {
-          title: "History",
-          url: "#",
+          title: "Workspace",
+          url: workspaceBasePath,
+        },
+      ],
+    },
+    {
+      title: "Competition",
+      url: workspaceBasePath,
+      icon: <CalendarDaysIcon />,
+      items: [
+        {
+          title: "Seasons",
+          url: workspaceBasePath,
         },
         {
-          title: "Starred",
-          url: "#",
+          title: "Schedules",
+          url: workspaceBasePath,
+        },
+      ],
+    },
+    {
+      title: "People",
+      url: workspaceBasePath,
+      icon: <Users2Icon />,
+      items: [
+        {
+          title: "Teams",
+          url: workspaceBasePath,
+        },
+        {
+          title: "Players",
+          url: workspaceBasePath,
+        },
+      ],
+    },
+    {
+      title: "Access",
+      url: workspaceBasePath,
+      icon: <ShieldCheckIcon />,
+      items: [
+        {
+          title: "Roles",
+          url: workspaceBasePath,
         },
         {
           title: "Settings",
-          url: "#",
+          url: workspaceBasePath,
         },
       ],
     },
-    {
-      title: "Models",
-      url: "#",
-      icon: (
-        <BotIcon
-        />
-      ),
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Documentation",
-      url: "#",
-      icon: (
-        <BookOpenIcon
-        />
-      ),
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: (
-        <Settings2Icon
-        />
-      ),
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: (
-        <FrameIcon
-        />
-      ),
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: (
-        <PieChartIcon
-        />
-      ),
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: (
-        <MapIcon
-        />
-      ),
-    },
-  ],
-}
+  ]
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const quickLinks = organization
+    ? [
+        {
+          name: "Open docs",
+          url: "/docs",
+          icon: <Settings2Icon />,
+        },
+        {
+          name: "All organizations",
+          url: "/organizations",
+          icon: <Building2Icon />,
+        },
+      ]
+    : [
+        {
+          name: "Planning docs",
+          url: "/docs",
+          icon: <Settings2Icon />,
+        },
+      ]
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <TeamSwitcher teams={workspaceItems} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        <NavMain items={navMain} />
+        <NavProjects projects={quickLinks} />
+        {organization ? (
+          <div className="px-4 py-2 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
+            <Link href="/organizations" className="hover:text-foreground">
+              Switch organization
+            </Link>
+          </div>
+        ) : null}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={baseData.user} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

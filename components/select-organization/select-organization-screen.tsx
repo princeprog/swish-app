@@ -351,7 +351,7 @@ export function SelectOrganizationScreen() {
                     </div>
 
                     <Button asChild>
-                      <Link href="/docs">
+                      <Link href={`/organizations/${organization.slug}`}>
                         Continue
                         <ArrowRight className="size-4" />
                       </Link>

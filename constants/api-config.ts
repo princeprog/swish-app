@@ -15,8 +15,8 @@ export const AUTH_COOKIE_NAMES = {
 } as const
 
 export const AUTH_ROUTES = ["/login", "/signup"] as const
-export const AUTHENTICATED_REDIRECT_ROUTE = "/select-organization"
-export const PROTECTED_ROUTE_PREFIXES = ["/select-organization"] as const
+export const AUTHENTICATED_REDIRECT_ROUTE = "/organizations"
+export const PROTECTED_ROUTE_PREFIXES = ["/organizations"] as const
 
 export const API_ENDPOINTS = {
   auth: {

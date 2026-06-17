@@ -40,7 +40,7 @@ export function SignupForm() {
         password,
       })
       toast.success("Account created successfully")
-      router.push("/select-organization")
+      router.push("/organizations")
     } catch (error) {
       toast.error(getApiErrorMessage(error))
     }

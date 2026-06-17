@@ -14,6 +14,7 @@ export function TeamSwitcher({
     name: string
     logo: React.ReactNode
     plan: string
+    href?: string
   }[]
 }) {
   const [activeTeam, setActiveTeam] = React.useState(teams[0])
@@ -51,7 +52,14 @@ export function TeamSwitcher({
                 <div className="flex size-6 items-center justify-center rounded-md border">
                   {team.logo}
                 </div>
-                <span className="truncate">{team.name}</span>
+                <div className="min-w-0">
+                  <span className="block truncate">{team.name}</span>
+                  {team.href ? (
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {team.href}
+                    </span>
+                  ) : null}
+                </div>
               </button>
             ))}
             <button
