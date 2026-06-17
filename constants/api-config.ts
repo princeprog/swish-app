@@ -30,4 +30,16 @@ export const API_ENDPOINTS = {
     create: "/organizations",
     list: "/organizations",
   },
+  leagueSeasons: {
+    create: (organizationId: string) =>
+      `/organizations/${organizationId}/league-seasons`,
+    list: (organizationId: string) =>
+      `/organizations/${organizationId}/league-seasons`,
+  },
+  divisions: {
+    create: (organizationId: string) =>
+      `/organizations/${organizationId}/divisions`,
+    list: (organizationId: string) =>
+      `/organizations/${organizationId}/divisions`,
+  },
 } as const

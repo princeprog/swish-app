@@ -78,7 +78,11 @@ export function AppSidebar({
       items: [
         {
           title: "Seasons",
-          url: workspaceBasePath,
+          url: `${workspaceBasePath}/seasons`,
+        },
+        {
+          title: "Divisions",
+          url: `${workspaceBasePath}/divisions`,
         },
         {
           title: "Schedules",

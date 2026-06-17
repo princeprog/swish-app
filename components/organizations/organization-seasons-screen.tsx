@@ -1,9 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { Building2 } from "lucide-react"
+import { CalendarDays } from "lucide-react"
 
-import { OrganizationWorkspaceView } from "@/components/organizations/organization-workspace-view"
+import { OrganizationSeasonsView } from "@/components/organizations/organization-seasons-view"
 import { Button } from "@/components/ui/button"
 import {
   Empty,
@@ -15,36 +15,26 @@ import {
 } from "@/components/ui/empty"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getApiErrorMessage } from "@/hooks/use-auth"
+import { useLeagueSeasonsQuery } from "@/hooks/use-league-season"
 import { useOrganizationsQuery } from "@/hooks/use-organization"
 
-type OrganizationWorkspaceScreenProps = {
+type OrganizationSeasonsScreenProps = {
   slug: string
 }
 
-function WorkspaceLoadingState() {
+function SeasonsLoadingState() {
   return (
     <main className="min-h-screen bg-background p-6 text-foreground">
       <div className="mx-auto max-w-7xl space-y-6">
-        <Skeleton className="h-12 w-80 rounded-xl" />
-        <Skeleton className="h-40 rounded-2xl" />
-        <div className="grid gap-4 xl:grid-cols-6">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <Skeleton key={index} className="h-28 rounded-xl" />
-          ))}
-        </div>
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.8fr)]">
-          <Skeleton className="h-[480px] rounded-2xl" />
-          <div className="space-y-6">
-            <Skeleton className="h-56 rounded-2xl" />
-            <Skeleton className="h-56 rounded-2xl" />
-          </div>
-        </div>
+        <Skeleton className="h-10 w-80 rounded-xl" />
+        <Skeleton className="h-36 rounded-2xl" />
+        <Skeleton className="h-[420px] rounded-2xl" />
       </div>
     </main>
   )
 }
 
-function WorkspaceEmptyState({
+function SeasonsEmptyShell({
   title,
   description,
 }: {
@@ -57,7 +47,7 @@ function WorkspaceEmptyState({
         <Empty className="border bg-card">
           <EmptyHeader>
             <EmptyMedia variant="icon">
-              <Building2 className="size-5" />
+              <CalendarDays className="size-5" />
             </EmptyMedia>
             <EmptyTitle>{title}</EmptyTitle>
             <EmptyDescription>{description}</EmptyDescription>
@@ -73,19 +63,20 @@ function WorkspaceEmptyState({
   )
 }
 
-export function OrganizationWorkspaceScreen({
+export function OrganizationSeasonsScreen({
   slug,
-}: OrganizationWorkspaceScreenProps) {
+}: OrganizationSeasonsScreenProps) {
   const organizationsQuery = useOrganizationsQuery()
   const organization = organizationsQuery.data?.find((item) => item.slug === slug)
+  const seasonsQuery = useLeagueSeasonsQuery(organization?.id)
 
-  if (organizationsQuery.isLoading) {
-    return <WorkspaceLoadingState />
+  if (organizationsQuery.isLoading || (organization && seasonsQuery.isLoading)) {
+    return <SeasonsLoadingState />
   }
 
   if (organizationsQuery.isError) {
     return (
-      <WorkspaceEmptyState
+      <SeasonsEmptyShell
         title="We couldn't load this organization"
         description={getApiErrorMessage(organizationsQuery.error)}
       />
@@ -94,12 +85,26 @@ export function OrganizationWorkspaceScreen({
 
   if (!organization) {
     return (
-      <WorkspaceEmptyState
+      <SeasonsEmptyShell
         title="Organization not found"
         description="This workspace does not exist or you do not have access to it."
       />
     )
   }
 
-  return <OrganizationWorkspaceView organization={organization} />
+  if (seasonsQuery.isError) {
+    return (
+      <SeasonsEmptyShell
+        title="We couldn't load league seasons"
+        description={getApiErrorMessage(seasonsQuery.error)}
+      />
+    )
+  }
+
+  return (
+    <OrganizationSeasonsView
+      organization={organization}
+      seasons={seasonsQuery.data ?? []}
+    />
+  )
 }
