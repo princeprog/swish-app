@@ -97,11 +97,11 @@ export function AppSidebar({
       items: [
         {
           title: "Teams",
-          url: workspaceBasePath,
+          url: `${workspaceBasePath}/teams`,
         },
         {
           title: "Players",
-          url: workspaceBasePath,
+          url: `${workspaceBasePath}/players`,
         },
       ],
     },
