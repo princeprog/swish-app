@@ -8,6 +8,7 @@ import {
   Check,
   CheckCircle2,
   Clock3,
+  Eye,
   Loader2,
   MoreHorizontal,
   PencilLine,
@@ -86,10 +87,12 @@ function statusTone(status: string) {
 function RosterPlayerActionsPopover({
   onDelete,
   onEdit,
+  onView,
   player,
 }: {
   onDelete: () => void
   onEdit: () => void
+  onView: () => void
   player: Player
 }) {
   const [open, setOpen] = React.useState(false)
@@ -168,6 +171,18 @@ function RosterPlayerActionsPopover({
                   variant="ghost"
                   onClick={() => {
                     setOpen(false)
+                    onView()
+                  }}
+                >
+                  <Eye className="size-4" />
+                  View details
+                </Button>
+                <Button
+                  className="w-full justify-start"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setOpen(false)
                     onEdit()
                   }}
                 >
@@ -192,6 +207,180 @@ function RosterPlayerActionsPopover({
           )
         : null}
     </div>
+  )
+}
+
+function PlayerDetailsSheet({
+  mounted,
+  onOpenChange,
+  open,
+  player,
+  team,
+}: {
+  mounted: boolean
+  onOpenChange: (open: boolean) => void
+  open: boolean
+  player: Player | null
+  team: Team
+}) {
+  if (!mounted || !player) {
+    return null
+  }
+
+  const createdAt = new Date(player.created_at)
+  const updatedAt = new Date(player.updated_at)
+
+  return (
+    <>
+      <div
+        aria-hidden="true"
+        className={cn(
+          "fixed inset-0 z-40 bg-black/10 backdrop-blur-xs transition-all duration-300 ease-out",
+          open ? "opacity-100" : "pointer-events-none opacity-0",
+        )}
+        onClick={() => onOpenChange(false)}
+      />
+      <aside
+        aria-label={`${player.name} details`}
+        aria-modal="true"
+        className={cn(
+          "fixed inset-y-0 right-0 z-50 flex w-full max-w-xl flex-col border-l border-border/70 bg-background/95 shadow-xl transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
+          open
+            ? "translate-x-0 opacity-100"
+            : "translate-x-[104%] opacity-0",
+        )}
+        role="dialog"
+      >
+        <div
+          className={cn(
+            "flex items-start gap-3 border-b border-border/60 px-6 py-5 transition-all duration-300 ease-out",
+            open ? "translate-y-0 opacity-100 delay-75" : "translate-y-2 opacity-0",
+          )}
+        >
+          <div className="flex items-center gap-4">
+            <div className="flex size-14 shrink-0 items-center justify-center rounded-full border border-border/70 bg-background/70 text-sm font-semibold text-foreground">
+              {getInitials(player.name)}
+            </div>
+            <div className="min-w-0 space-y-1">
+              <div className="text-xl font-semibold">{player.name}</div>
+              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                <span className="rounded-full border border-border/70 px-2 py-1 text-xs">
+                  #{player.jersey_number}
+                </span>
+                <span
+                  className={`rounded-full border px-2 py-1 text-xs font-medium ${statusTone(player.status)}`}
+                >
+                  {player.status}
+                </span>
+              </div>
+            </div>
+          </div>
+          <Button
+            aria-label="Close player details"
+            className="ml-auto"
+            size="icon-sm"
+            variant="ghost"
+            onClick={() => onOpenChange(false)}
+          >
+            <X className="size-4" />
+          </Button>
+        </div>
+
+        <div
+          className={cn(
+            "flex-1 space-y-6 overflow-y-auto px-6 py-6 transition-all duration-300 ease-out",
+            open ? "translate-y-0 opacity-100 delay-100" : "translate-y-3 opacity-0",
+          )}
+        >
+          <Card className="border border-border/60 bg-card/95 shadow-none">
+            <CardHeader>
+              <CardTitle className="text-base">Roster assignment</CardTitle>
+              <CardDescription>Current team context for this player.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                  Team
+                </div>
+                <div className="font-medium">{team.name}</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                  Team status
+                </div>
+                <div className="font-medium">{team.status}</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border border-border/60 bg-card/95 shadow-none">
+            <CardHeader>
+              <CardTitle className="text-base">Player record</CardTitle>
+              <CardDescription>Current stored details for this roster member.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                  Full name
+                </div>
+                <div className="font-medium">{player.name}</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                  Jersey number
+                </div>
+                <div className="font-medium">#{player.jersey_number}</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                  Status
+                </div>
+                <div className="font-medium">{player.status}</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                  Player ID
+                </div>
+                <div className="font-mono text-sm text-muted-foreground">{player.id}</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border border-border/60 bg-card/95 shadow-none">
+            <CardHeader>
+              <CardTitle className="text-base">Activity</CardTitle>
+              <CardDescription>Audit-friendly timestamps for this player record.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                  Created
+                </div>
+                <div className="font-medium">{createdAt.toLocaleDateString()}</div>
+                <div className="text-sm text-muted-foreground">
+                  {createdAt.toLocaleTimeString([], {
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                  Last updated
+                </div>
+                <div className="font-medium">{updatedAt.toLocaleDateString()}</div>
+                <div className="text-sm text-muted-foreground">
+                  {updatedAt.toLocaleTimeString([], {
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </aside>
+    </>
   )
 }
 
@@ -540,10 +729,12 @@ function TeamRosterSummaryCards({
 function TeamRosterTable({
   onDeletePlayer,
   onEditPlayer,
+  onViewPlayer,
   players,
 }: {
   onDeletePlayer: (player: Player) => void
   onEditPlayer: (player: Player) => void
+  onViewPlayer: (player: Player) => void
   players: Player[]
 }) {
   if (players.length === 0) {
@@ -583,7 +774,11 @@ function TeamRosterTable({
           </TableHeader>
           <TableBody>
             {players.map((player) => (
-              <TableRow key={player.id} className="border-border/50 hover:bg-background/40">
+              <TableRow
+                key={player.id}
+                className="cursor-pointer border-border/50 transition-colors hover:bg-background/40"
+                onClick={() => onViewPlayer(player)}
+              >
                 <TableCell className="whitespace-normal">
                   <div className="flex items-center gap-3">
                     <div className="flex size-11 shrink-0 items-center justify-center rounded-full border border-border/70 bg-background/60 text-[11px] font-semibold text-foreground">
@@ -621,11 +816,14 @@ function TeamRosterTable({
                   </div>
                 </TableCell>
                 <TableCell className="text-right">
-                  <RosterPlayerActionsPopover
-                    onDelete={() => onDeletePlayer(player)}
-                    onEdit={() => onEditPlayer(player)}
-                    player={player}
-                  />
+                  <div onClick={(event) => event.stopPropagation()}>
+                    <RosterPlayerActionsPopover
+                      onDelete={() => onDeletePlayer(player)}
+                      onEdit={() => onEditPlayer(player)}
+                      onView={() => onViewPlayer(player)}
+                      player={player}
+                    />
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -681,6 +879,9 @@ export function TeamRosterView({
   const [createModalOpen, setCreateModalOpen] = React.useState(false)
   const [playerToDelete, setPlayerToDelete] = React.useState<Player | null>(null)
   const [playerToEdit, setPlayerToEdit] = React.useState<Player | null>(null)
+  const [playerToView, setPlayerToView] = React.useState<Player | null>(null)
+  const [playerDetailsOpen, setPlayerDetailsOpen] = React.useState(false)
+  const [mountedPlayerDetails, setMountedPlayerDetails] = React.useState<Player | null>(null)
 
   const division = divisions.find((item) => item.id === team.division_id)
   const rosterPlayers = React.useMemo(
@@ -700,6 +901,22 @@ export function TeamRosterView({
   const recentlyUpdatedPlayers = rosterPlayers.filter(
     (player) => new Date(player.updated_at).getTime() >= recentThreshold,
   ).length
+
+  React.useEffect(() => {
+    if (playerToView) {
+      setMountedPlayerDetails(playerToView)
+      setPlayerDetailsOpen(true)
+      return
+    }
+
+    if (!playerDetailsOpen) {
+      const timeoutId = window.setTimeout(() => {
+        setMountedPlayerDetails(null)
+      }, 320)
+
+      return () => window.clearTimeout(timeoutId)
+    }
+  }, [playerDetailsOpen, playerToView])
 
   async function handleCreatePlayer(payload: {
     jerseyNumber: string
@@ -807,6 +1024,11 @@ export function TeamRosterView({
               <TeamRosterTable
                 onDeletePlayer={setPlayerToDelete}
                 onEditPlayer={setPlayerToEdit}
+                onViewPlayer={(player) => {
+                  setPlayerToView(player)
+                  setMountedPlayerDetails(player)
+                  setPlayerDetailsOpen(true)
+                }}
                 players={rosterPlayers}
               />
             </div>
@@ -878,6 +1100,19 @@ export function TeamRosterView({
           onDelete={handleDeletePlayer}
         />
       ) : null}
+
+      <PlayerDetailsSheet
+        mounted={Boolean(mountedPlayerDetails)}
+        open={playerDetailsOpen}
+        player={mountedPlayerDetails}
+        team={team}
+        onOpenChange={(open) => {
+          setPlayerDetailsOpen(open)
+          if (!open) {
+            setPlayerToView(null)
+          }
+        }}
+      />
     </SidebarProvider>
   )
 }
