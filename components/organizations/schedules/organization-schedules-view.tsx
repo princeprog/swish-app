@@ -15,7 +15,7 @@ import {
 import { toast } from "sonner"
 
 import { AppSidebar } from "@/components/app-sidebar"
-import { WorkspaceHeader } from "@/components/organizations/workspace-header"
+import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
 import { Button } from "@/components/ui/button"
 import {
   Card,

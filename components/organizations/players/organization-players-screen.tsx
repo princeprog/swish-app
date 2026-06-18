@@ -1,9 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { Layers3 } from "lucide-react"
+import { Users2 } from "lucide-react"
 
-import { OrganizationDivisionsView } from "@/components/organizations/organization-divisions-view"
+import { OrganizationPlayersView } from "@/components/organizations/players/organization-players-view"
 import { Button } from "@/components/ui/button"
 import {
   Empty,
@@ -16,14 +16,15 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { getApiErrorMessage } from "@/hooks/use-auth"
 import { useDivisionsQuery } from "@/hooks/use-division"
-import { useLeagueSeasonsQuery } from "@/hooks/use-league-season"
 import { useOrganizationsQuery } from "@/hooks/use-organization"
+import { usePlayersQuery } from "@/hooks/use-player"
+import { useTeamsQuery } from "@/hooks/use-team"
 
-type OrganizationDivisionsScreenProps = {
+type OrganizationPlayersScreenProps = {
   slug: string
 }
 
-function DivisionsLoadingState() {
+function PlayersLoadingState() {
   return (
     <main className="min-h-screen bg-background p-6 text-foreground">
       <div className="mx-auto max-w-7xl space-y-6">
@@ -35,12 +36,12 @@ function DivisionsLoadingState() {
   )
 }
 
-function DivisionsEmptyShell({
-  title,
+function PlayersEmptyShell({
   description,
+  title,
 }: {
-  title: string
   description: string
+  title: string
 }) {
   return (
     <main className="min-h-screen bg-background p-6 text-foreground">
@@ -48,7 +49,7 @@ function DivisionsEmptyShell({
         <Empty className="border bg-card">
           <EmptyHeader>
             <EmptyMedia variant="icon">
-              <Layers3 className="size-5" />
+              <Users2 className="size-5" />
             </EmptyMedia>
             <EmptyTitle>{title}</EmptyTitle>
             <EmptyDescription>{description}</EmptyDescription>
@@ -64,24 +65,24 @@ function DivisionsEmptyShell({
   )
 }
 
-export function OrganizationDivisionsScreen({
-  slug,
-}: OrganizationDivisionsScreenProps) {
+export function OrganizationPlayersScreen({ slug }: OrganizationPlayersScreenProps) {
   const organizationsQuery = useOrganizationsQuery()
   const organization = organizationsQuery.data?.find((item) => item.slug === slug)
-  const seasonsQuery = useLeagueSeasonsQuery(organization?.id)
   const divisionsQuery = useDivisionsQuery(organization?.id)
+  const teamsQuery = useTeamsQuery(organization?.id)
+  const playersQuery = usePlayersQuery(organization?.id)
 
   if (
     organizationsQuery.isLoading ||
-    (organization && (seasonsQuery.isLoading || divisionsQuery.isLoading))
+    (organization &&
+      (divisionsQuery.isLoading || teamsQuery.isLoading || playersQuery.isLoading))
   ) {
-    return <DivisionsLoadingState />
+    return <PlayersLoadingState />
   }
 
   if (organizationsQuery.isError) {
     return (
-      <DivisionsEmptyShell
+      <PlayersEmptyShell
         title="We couldn't load this organization"
         description={getApiErrorMessage(organizationsQuery.error)}
       />
@@ -90,36 +91,46 @@ export function OrganizationDivisionsScreen({
 
   if (!organization) {
     return (
-      <DivisionsEmptyShell
+      <PlayersEmptyShell
         title="Organization not found"
         description="This workspace does not exist or you do not have access to it."
       />
     )
   }
 
-  if (seasonsQuery.isError) {
-    return (
-      <DivisionsEmptyShell
-        title="We couldn't load league seasons"
-        description={getApiErrorMessage(seasonsQuery.error)}
-      />
-    )
-  }
-
   if (divisionsQuery.isError) {
     return (
-      <DivisionsEmptyShell
+      <PlayersEmptyShell
         title="We couldn't load divisions"
         description={getApiErrorMessage(divisionsQuery.error)}
       />
     )
   }
 
+  if (teamsQuery.isError) {
+    return (
+      <PlayersEmptyShell
+        title="We couldn't load teams"
+        description={getApiErrorMessage(teamsQuery.error)}
+      />
+    )
+  }
+
+  if (playersQuery.isError) {
+    return (
+      <PlayersEmptyShell
+        title="We couldn't load players"
+        description={getApiErrorMessage(playersQuery.error)}
+      />
+    )
+  }
+
   return (
-    <OrganizationDivisionsView
+    <OrganizationPlayersView
       divisions={divisionsQuery.data ?? []}
       organization={organization}
-      seasons={seasonsQuery.data ?? []}
+      players={playersQuery.data ?? []}
+      teams={teamsQuery.data ?? []}
     />
   )
 }

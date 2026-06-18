@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { Building2 } from "lucide-react"
 
-import { OrganizationWorkspaceView } from "@/components/organizations/organization-workspace-view"
+import { OrganizationWorkspaceView } from "@/components/organizations/workspace/organization-workspace-view"
 import { Button } from "@/components/ui/button"
 import {
   Empty,

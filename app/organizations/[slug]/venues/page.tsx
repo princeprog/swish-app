@@ -1,4 +1,4 @@
-import { OrganizationVenuesScreen } from "@/components/organizations/organization-venues-screen"
+import { OrganizationVenuesScreen } from "@/components/organizations/venues/organization-venues-screen"
 
 type OrganizationVenuesPageProps = {
   params: Promise<{

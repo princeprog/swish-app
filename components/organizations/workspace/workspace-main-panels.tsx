@@ -9,8 +9,8 @@ import {
   type Activity,
   type Division,
   type UpcomingGame,
-} from "@/components/organizations/organization-workspace-data"
-import { cx, statusClasses } from "@/components/organizations/organization-workspace-utils"
+} from "@/components/organizations/workspace/organization-workspace-data"
+import { cx, statusClasses } from "@/components/organizations/workspace/organization-workspace-utils"
 import { Button } from "@/components/ui/button"
 import {
   Card,

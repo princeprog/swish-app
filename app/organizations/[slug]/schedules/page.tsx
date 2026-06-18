@@ -1,4 +1,4 @@
-import { OrganizationSchedulesScreen } from "@/components/organizations/organization-schedules-screen"
+import { OrganizationSchedulesScreen } from "@/components/organizations/schedules/organization-schedules-screen"
 
 type OrganizationSchedulesPageProps = {
   params: Promise<{

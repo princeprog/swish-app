@@ -1,9 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { Users2 } from "lucide-react"
+import { Shield, Users2 } from "lucide-react"
 
-import { OrganizationPlayersView } from "@/components/organizations/organization-players-view"
+import { OrganizationTeamsView } from "@/components/organizations/teams/organization-teams-view"
 import { Button } from "@/components/ui/button"
 import {
   Empty,
@@ -20,11 +20,11 @@ import { useOrganizationsQuery } from "@/hooks/use-organization"
 import { usePlayersQuery } from "@/hooks/use-player"
 import { useTeamsQuery } from "@/hooks/use-team"
 
-type OrganizationPlayersScreenProps = {
+type OrganizationTeamsScreenProps = {
   slug: string
 }
 
-function PlayersLoadingState() {
+function TeamsLoadingState() {
   return (
     <main className="min-h-screen bg-background p-6 text-foreground">
       <div className="mx-auto max-w-7xl space-y-6">
@@ -36,7 +36,7 @@ function PlayersLoadingState() {
   )
 }
 
-function PlayersEmptyShell({
+function TeamsEmptyShell({
   description,
   title,
 }: {
@@ -65,7 +65,7 @@ function PlayersEmptyShell({
   )
 }
 
-export function OrganizationPlayersScreen({ slug }: OrganizationPlayersScreenProps) {
+export function OrganizationTeamsScreen({ slug }: OrganizationTeamsScreenProps) {
   const organizationsQuery = useOrganizationsQuery()
   const organization = organizationsQuery.data?.find((item) => item.slug === slug)
   const divisionsQuery = useDivisionsQuery(organization?.id)
@@ -77,12 +77,12 @@ export function OrganizationPlayersScreen({ slug }: OrganizationPlayersScreenPro
     (organization &&
       (divisionsQuery.isLoading || teamsQuery.isLoading || playersQuery.isLoading))
   ) {
-    return <PlayersLoadingState />
+    return <TeamsLoadingState />
   }
 
   if (organizationsQuery.isError) {
     return (
-      <PlayersEmptyShell
+      <TeamsEmptyShell
         title="We couldn't load this organization"
         description={getApiErrorMessage(organizationsQuery.error)}
       />
@@ -91,7 +91,7 @@ export function OrganizationPlayersScreen({ slug }: OrganizationPlayersScreenPro
 
   if (!organization) {
     return (
-      <PlayersEmptyShell
+      <TeamsEmptyShell
         title="Organization not found"
         description="This workspace does not exist or you do not have access to it."
       />
@@ -100,7 +100,7 @@ export function OrganizationPlayersScreen({ slug }: OrganizationPlayersScreenPro
 
   if (divisionsQuery.isError) {
     return (
-      <PlayersEmptyShell
+      <TeamsEmptyShell
         title="We couldn't load divisions"
         description={getApiErrorMessage(divisionsQuery.error)}
       />
@@ -109,7 +109,7 @@ export function OrganizationPlayersScreen({ slug }: OrganizationPlayersScreenPro
 
   if (teamsQuery.isError) {
     return (
-      <PlayersEmptyShell
+      <TeamsEmptyShell
         title="We couldn't load teams"
         description={getApiErrorMessage(teamsQuery.error)}
       />
@@ -118,7 +118,7 @@ export function OrganizationPlayersScreen({ slug }: OrganizationPlayersScreenPro
 
   if (playersQuery.isError) {
     return (
-      <PlayersEmptyShell
+      <TeamsEmptyShell
         title="We couldn't load players"
         description={getApiErrorMessage(playersQuery.error)}
       />
@@ -126,7 +126,7 @@ export function OrganizationPlayersScreen({ slug }: OrganizationPlayersScreenPro
   }
 
   return (
-    <OrganizationPlayersView
+    <OrganizationTeamsView
       divisions={divisionsQuery.data ?? []}
       organization={organization}
       players={playersQuery.data ?? []}

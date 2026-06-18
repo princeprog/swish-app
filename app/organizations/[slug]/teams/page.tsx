@@ -1,4 +1,4 @@
-import { OrganizationTeamsScreen } from "@/components/organizations/organization-teams-screen"
+import { OrganizationTeamsScreen } from "@/components/organizations/teams/organization-teams-screen"
 
 type OrganizationTeamsPageProps = {
   params: Promise<{

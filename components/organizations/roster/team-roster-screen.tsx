@@ -1,9 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { MapPin } from "lucide-react"
+import { Users2 } from "lucide-react"
 
-import { OrganizationVenuesView } from "@/components/organizations/organization-venues-view"
+import { TeamRosterView } from "@/components/organizations/roster/team-roster-view"
 import { Button } from "@/components/ui/button"
 import {
   Empty,
@@ -15,15 +15,17 @@ import {
 } from "@/components/ui/empty"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getApiErrorMessage } from "@/hooks/use-auth"
-import { useLeagueSeasonsQuery } from "@/hooks/use-league-season"
+import { useDivisionsQuery } from "@/hooks/use-division"
 import { useOrganizationsQuery } from "@/hooks/use-organization"
-import { useVenuesQuery } from "@/hooks/use-venue"
+import { usePlayersQuery } from "@/hooks/use-player"
+import { useTeamsQuery } from "@/hooks/use-team"
 
-type OrganizationVenuesScreenProps = {
+type TeamRosterScreenProps = {
   slug: string
+  teamId: string
 }
 
-function VenuesLoadingState() {
+function TeamRosterLoadingState() {
   return (
     <main className="min-h-screen bg-background p-6 text-foreground">
       <div className="mx-auto max-w-7xl space-y-6">
@@ -35,7 +37,7 @@ function VenuesLoadingState() {
   )
 }
 
-function VenuesEmptyShell({
+function TeamRosterEmptyShell({
   description,
   title,
 }: {
@@ -48,7 +50,7 @@ function VenuesEmptyShell({
         <Empty className="border bg-card">
           <EmptyHeader>
             <EmptyMedia variant="icon">
-              <MapPin className="size-5" />
+              <Users2 className="size-5" />
             </EmptyMedia>
             <EmptyTitle>{title}</EmptyTitle>
             <EmptyDescription>{description}</EmptyDescription>
@@ -64,22 +66,25 @@ function VenuesEmptyShell({
   )
 }
 
-export function OrganizationVenuesScreen({ slug }: OrganizationVenuesScreenProps) {
+export function TeamRosterScreen({ slug, teamId }: TeamRosterScreenProps) {
   const organizationsQuery = useOrganizationsQuery()
   const organization = organizationsQuery.data?.find((item) => item.slug === slug)
-  const seasonsQuery = useLeagueSeasonsQuery(organization?.id)
-  const venuesQuery = useVenuesQuery(organization?.id)
+  const divisionsQuery = useDivisionsQuery(organization?.id)
+  const teamsQuery = useTeamsQuery(organization?.id)
+  const playersQuery = usePlayersQuery(organization?.id)
+  const team = teamsQuery.data?.find((item) => item.id === teamId)
 
   if (
     organizationsQuery.isLoading ||
-    (organization && (seasonsQuery.isLoading || venuesQuery.isLoading))
+    (organization &&
+      (divisionsQuery.isLoading || teamsQuery.isLoading || playersQuery.isLoading))
   ) {
-    return <VenuesLoadingState />
+    return <TeamRosterLoadingState />
   }
 
   if (organizationsQuery.isError) {
     return (
-      <VenuesEmptyShell
+      <TeamRosterEmptyShell
         title="We couldn't load this organization"
         description={getApiErrorMessage(organizationsQuery.error)}
       />
@@ -88,36 +93,55 @@ export function OrganizationVenuesScreen({ slug }: OrganizationVenuesScreenProps
 
   if (!organization) {
     return (
-      <VenuesEmptyShell
+      <TeamRosterEmptyShell
         title="Organization not found"
         description="This workspace does not exist or you do not have access to it."
       />
     )
   }
 
-  if (seasonsQuery.isError) {
+  if (divisionsQuery.isError) {
     return (
-      <VenuesEmptyShell
-        title="We couldn't load league seasons"
-        description={getApiErrorMessage(seasonsQuery.error)}
+      <TeamRosterEmptyShell
+        title="We couldn't load divisions"
+        description={getApiErrorMessage(divisionsQuery.error)}
       />
     )
   }
 
-  if (venuesQuery.isError) {
+  if (teamsQuery.isError) {
     return (
-      <VenuesEmptyShell
-        title="We couldn't load venues"
-        description={getApiErrorMessage(venuesQuery.error)}
+      <TeamRosterEmptyShell
+        title="We couldn't load teams"
+        description={getApiErrorMessage(teamsQuery.error)}
+      />
+    )
+  }
+
+  if (playersQuery.isError) {
+    return (
+      <TeamRosterEmptyShell
+        title="We couldn't load players"
+        description={getApiErrorMessage(playersQuery.error)}
+      />
+    )
+  }
+
+  if (!team) {
+    return (
+      <TeamRosterEmptyShell
+        title="Team not found"
+        description="This team does not belong to the current organization."
       />
     )
   }
 
   return (
-    <OrganizationVenuesView
+    <TeamRosterView
+      divisions={divisionsQuery.data ?? []}
       organization={organization}
-      seasons={seasonsQuery.data ?? []}
-      venues={venuesQuery.data ?? []}
+      players={playersQuery.data ?? []}
+      team={team}
     />
   )
 }

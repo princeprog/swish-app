@@ -5,8 +5,8 @@ import {
   publicPortalItems,
   staffPermissionRows,
   type ReadinessItem,
-} from "@/components/organizations/organization-workspace-data"
-import { statusClasses } from "@/components/organizations/organization-workspace-utils"
+} from "@/components/organizations/workspace/organization-workspace-data"
+import { statusClasses } from "@/components/organizations/workspace/organization-workspace-utils"
 import { Button } from "@/components/ui/button"
 import {
   Card,

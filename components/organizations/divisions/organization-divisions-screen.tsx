@@ -1,9 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { CalendarRange } from "lucide-react"
+import { Layers3 } from "lucide-react"
 
-import { OrganizationSchedulesView } from "@/components/organizations/organization-schedules-view"
+import { OrganizationDivisionsView } from "@/components/organizations/divisions/organization-divisions-view"
 import { Button } from "@/components/ui/button"
 import {
   Empty,
@@ -18,15 +18,12 @@ import { getApiErrorMessage } from "@/hooks/use-auth"
 import { useDivisionsQuery } from "@/hooks/use-division"
 import { useLeagueSeasonsQuery } from "@/hooks/use-league-season"
 import { useOrganizationsQuery } from "@/hooks/use-organization"
-import { useSchedulesQuery } from "@/hooks/use-schedule"
-import { useTeamsQuery } from "@/hooks/use-team"
-import { useVenuesQuery } from "@/hooks/use-venue"
 
-type OrganizationSchedulesScreenProps = {
+type OrganizationDivisionsScreenProps = {
   slug: string
 }
 
-function SchedulesLoadingState() {
+function DivisionsLoadingState() {
   return (
     <main className="min-h-screen bg-background p-6 text-foreground">
       <div className="mx-auto max-w-7xl space-y-6">
@@ -38,12 +35,12 @@ function SchedulesLoadingState() {
   )
 }
 
-function SchedulesEmptyShell({
-  description,
+function DivisionsEmptyShell({
   title,
+  description,
 }: {
-  description: string
   title: string
+  description: string
 }) {
   return (
     <main className="min-h-screen bg-background p-6 text-foreground">
@@ -51,7 +48,7 @@ function SchedulesEmptyShell({
         <Empty className="border bg-card">
           <EmptyHeader>
             <EmptyMedia variant="icon">
-              <CalendarRange className="size-5" />
+              <Layers3 className="size-5" />
             </EmptyMedia>
             <EmptyTitle>{title}</EmptyTitle>
             <EmptyDescription>{description}</EmptyDescription>
@@ -67,32 +64,24 @@ function SchedulesEmptyShell({
   )
 }
 
-export function OrganizationSchedulesScreen({
+export function OrganizationDivisionsScreen({
   slug,
-}: OrganizationSchedulesScreenProps) {
+}: OrganizationDivisionsScreenProps) {
   const organizationsQuery = useOrganizationsQuery()
   const organization = organizationsQuery.data?.find((item) => item.slug === slug)
-  const leagueSeasonsQuery = useLeagueSeasonsQuery(organization?.id)
+  const seasonsQuery = useLeagueSeasonsQuery(organization?.id)
   const divisionsQuery = useDivisionsQuery(organization?.id)
-  const teamsQuery = useTeamsQuery(organization?.id)
-  const venuesQuery = useVenuesQuery(organization?.id)
-  const schedulesQuery = useSchedulesQuery(organization?.id)
 
   if (
     organizationsQuery.isLoading ||
-    (organization &&
-      (leagueSeasonsQuery.isLoading ||
-        divisionsQuery.isLoading ||
-        teamsQuery.isLoading ||
-        venuesQuery.isLoading ||
-        schedulesQuery.isLoading))
+    (organization && (seasonsQuery.isLoading || divisionsQuery.isLoading))
   ) {
-    return <SchedulesLoadingState />
+    return <DivisionsLoadingState />
   }
 
   if (organizationsQuery.isError) {
     return (
-      <SchedulesEmptyShell
+      <DivisionsEmptyShell
         title="We couldn't load this organization"
         description={getApiErrorMessage(organizationsQuery.error)}
       />
@@ -101,66 +90,36 @@ export function OrganizationSchedulesScreen({
 
   if (!organization) {
     return (
-      <SchedulesEmptyShell
+      <DivisionsEmptyShell
         title="Organization not found"
         description="This workspace does not exist or you do not have access to it."
       />
     )
   }
 
-  if (leagueSeasonsQuery.isError) {
+  if (seasonsQuery.isError) {
     return (
-      <SchedulesEmptyShell
-        title="We couldn't load seasons"
-        description={getApiErrorMessage(leagueSeasonsQuery.error)}
+      <DivisionsEmptyShell
+        title="We couldn't load league seasons"
+        description={getApiErrorMessage(seasonsQuery.error)}
       />
     )
   }
 
   if (divisionsQuery.isError) {
     return (
-      <SchedulesEmptyShell
+      <DivisionsEmptyShell
         title="We couldn't load divisions"
         description={getApiErrorMessage(divisionsQuery.error)}
       />
     )
   }
 
-  if (teamsQuery.isError) {
-    return (
-      <SchedulesEmptyShell
-        title="We couldn't load teams"
-        description={getApiErrorMessage(teamsQuery.error)}
-      />
-    )
-  }
-
-  if (venuesQuery.isError) {
-    return (
-      <SchedulesEmptyShell
-        title="We couldn't load venues"
-        description={getApiErrorMessage(venuesQuery.error)}
-      />
-    )
-  }
-
-  if (schedulesQuery.isError) {
-    return (
-      <SchedulesEmptyShell
-        title="We couldn't load schedules"
-        description={getApiErrorMessage(schedulesQuery.error)}
-      />
-    )
-  }
-
   return (
-    <OrganizationSchedulesView
+    <OrganizationDivisionsView
       divisions={divisionsQuery.data ?? []}
       organization={organization}
-      schedules={schedulesQuery.data ?? []}
-      seasons={leagueSeasonsQuery.data ?? []}
-      teams={teamsQuery.data ?? []}
-      venues={venuesQuery.data ?? []}
+      seasons={seasonsQuery.data ?? []}
     />
   )
 }

@@ -3,12 +3,12 @@
 import { AppSidebar } from "@/components/app-sidebar"
 import {
   workspaceMetrics,
-} from "@/components/organizations/organization-workspace-data"
-import { WorkspaceHeader } from "@/components/organizations/workspace-header"
-import { WorkspaceHeroCard } from "@/components/organizations/workspace-hero-card"
-import { WorkspaceMainPanels } from "@/components/organizations/workspace-main-panels"
-import { WorkspaceMetricsGrid } from "@/components/organizations/workspace-metrics-grid"
-import { WorkspaceSidePanels } from "@/components/organizations/workspace-side-panels"
+} from "@/components/organizations/workspace/organization-workspace-data"
+import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
+import { WorkspaceHeroCard } from "@/components/organizations/workspace/workspace-hero-card"
+import { WorkspaceMainPanels } from "@/components/organizations/workspace/workspace-main-panels"
+import { WorkspaceMetricsGrid } from "@/components/organizations/workspace/workspace-metrics-grid"
+import { WorkspaceSidePanels } from "@/components/organizations/workspace/workspace-side-panels"
 import {
   SidebarInset,
   SidebarProvider,

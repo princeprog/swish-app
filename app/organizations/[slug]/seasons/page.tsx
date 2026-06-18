@@ -1,4 +1,4 @@
-import { OrganizationSeasonsScreen } from "@/components/organizations/organization-seasons-screen"
+import { OrganizationSeasonsScreen } from "@/components/organizations/seasons/organization-seasons-screen"
 
 type OrganizationSeasonsPageProps = {
   params: Promise<{

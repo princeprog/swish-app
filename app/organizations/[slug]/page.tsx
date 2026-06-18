@@ -1,4 +1,4 @@
-import { OrganizationWorkspaceScreen } from "@/components/organizations/organization-workspace-screen"
+import { OrganizationWorkspaceScreen } from "@/components/organizations/workspace/organization-workspace-screen"
 
 type OrganizationWorkspacePageProps = {
   params: Promise<{

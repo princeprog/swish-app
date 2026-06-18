@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { CalendarDays } from "lucide-react"
 
-import { OrganizationSeasonsView } from "@/components/organizations/organization-seasons-view"
+import { OrganizationSeasonsView } from "@/components/organizations/seasons/organization-seasons-view"
 import { Button } from "@/components/ui/button"
 import {
   Empty,

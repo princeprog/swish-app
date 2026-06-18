@@ -1,4 +1,4 @@
-import { TeamRosterScreen } from "@/components/organizations/team-roster-screen"
+import { TeamRosterScreen } from "@/components/organizations/roster/team-roster-screen"
 
 type TeamRosterPageProps = {
   params: Promise<{

@@ -3,7 +3,7 @@
 import { ArrowRight } from "lucide-react"
 
 import { Card, CardContent } from "@/components/ui/card"
-import type { Metric } from "@/components/organizations/organization-workspace-data"
+import type { Metric } from "@/components/organizations/workspace/organization-workspace-data"
 
 function MetricCard({ metric }: { metric: Metric }) {
   const Icon = metric.icon

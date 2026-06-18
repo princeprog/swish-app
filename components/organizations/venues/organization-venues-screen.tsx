@@ -1,9 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { Shield, Users2 } from "lucide-react"
+import { MapPin } from "lucide-react"
 
-import { OrganizationTeamsView } from "@/components/organizations/organization-teams-view"
+import { OrganizationVenuesView } from "@/components/organizations/venues/organization-venues-view"
 import { Button } from "@/components/ui/button"
 import {
   Empty,
@@ -15,16 +15,15 @@ import {
 } from "@/components/ui/empty"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getApiErrorMessage } from "@/hooks/use-auth"
-import { useDivisionsQuery } from "@/hooks/use-division"
+import { useLeagueSeasonsQuery } from "@/hooks/use-league-season"
 import { useOrganizationsQuery } from "@/hooks/use-organization"
-import { usePlayersQuery } from "@/hooks/use-player"
-import { useTeamsQuery } from "@/hooks/use-team"
+import { useVenuesQuery } from "@/hooks/use-venue"
 
-type OrganizationTeamsScreenProps = {
+type OrganizationVenuesScreenProps = {
   slug: string
 }
 
-function TeamsLoadingState() {
+function VenuesLoadingState() {
   return (
     <main className="min-h-screen bg-background p-6 text-foreground">
       <div className="mx-auto max-w-7xl space-y-6">
@@ -36,7 +35,7 @@ function TeamsLoadingState() {
   )
 }
 
-function TeamsEmptyShell({
+function VenuesEmptyShell({
   description,
   title,
 }: {
@@ -49,7 +48,7 @@ function TeamsEmptyShell({
         <Empty className="border bg-card">
           <EmptyHeader>
             <EmptyMedia variant="icon">
-              <Users2 className="size-5" />
+              <MapPin className="size-5" />
             </EmptyMedia>
             <EmptyTitle>{title}</EmptyTitle>
             <EmptyDescription>{description}</EmptyDescription>
@@ -65,24 +64,22 @@ function TeamsEmptyShell({
   )
 }
 
-export function OrganizationTeamsScreen({ slug }: OrganizationTeamsScreenProps) {
+export function OrganizationVenuesScreen({ slug }: OrganizationVenuesScreenProps) {
   const organizationsQuery = useOrganizationsQuery()
   const organization = organizationsQuery.data?.find((item) => item.slug === slug)
-  const divisionsQuery = useDivisionsQuery(organization?.id)
-  const teamsQuery = useTeamsQuery(organization?.id)
-  const playersQuery = usePlayersQuery(organization?.id)
+  const seasonsQuery = useLeagueSeasonsQuery(organization?.id)
+  const venuesQuery = useVenuesQuery(organization?.id)
 
   if (
     organizationsQuery.isLoading ||
-    (organization &&
-      (divisionsQuery.isLoading || teamsQuery.isLoading || playersQuery.isLoading))
+    (organization && (seasonsQuery.isLoading || venuesQuery.isLoading))
   ) {
-    return <TeamsLoadingState />
+    return <VenuesLoadingState />
   }
 
   if (organizationsQuery.isError) {
     return (
-      <TeamsEmptyShell
+      <VenuesEmptyShell
         title="We couldn't load this organization"
         description={getApiErrorMessage(organizationsQuery.error)}
       />
@@ -91,46 +88,36 @@ export function OrganizationTeamsScreen({ slug }: OrganizationTeamsScreenProps) 
 
   if (!organization) {
     return (
-      <TeamsEmptyShell
+      <VenuesEmptyShell
         title="Organization not found"
         description="This workspace does not exist or you do not have access to it."
       />
     )
   }
 
-  if (divisionsQuery.isError) {
+  if (seasonsQuery.isError) {
     return (
-      <TeamsEmptyShell
-        title="We couldn't load divisions"
-        description={getApiErrorMessage(divisionsQuery.error)}
+      <VenuesEmptyShell
+        title="We couldn't load league seasons"
+        description={getApiErrorMessage(seasonsQuery.error)}
       />
     )
   }
 
-  if (teamsQuery.isError) {
+  if (venuesQuery.isError) {
     return (
-      <TeamsEmptyShell
-        title="We couldn't load teams"
-        description={getApiErrorMessage(teamsQuery.error)}
-      />
-    )
-  }
-
-  if (playersQuery.isError) {
-    return (
-      <TeamsEmptyShell
-        title="We couldn't load players"
-        description={getApiErrorMessage(playersQuery.error)}
+      <VenuesEmptyShell
+        title="We couldn't load venues"
+        description={getApiErrorMessage(venuesQuery.error)}
       />
     )
   }
 
   return (
-    <OrganizationTeamsView
-      divisions={divisionsQuery.data ?? []}
+    <OrganizationVenuesView
       organization={organization}
-      players={playersQuery.data ?? []}
-      teams={teamsQuery.data ?? []}
+      seasons={seasonsQuery.data ?? []}
+      venues={venuesQuery.data ?? []}
     />
   )
 }

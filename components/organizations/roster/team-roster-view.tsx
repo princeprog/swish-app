@@ -1,17 +1,18 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import { createPortal } from "react-dom"
 import {
+  ArrowLeft,
   Check,
   CheckCircle2,
   Clock3,
-  Filter,
+  Eye,
   Loader2,
   MoreHorizontal,
   PencilLine,
   Plus,
-  Search,
   Shield,
   Trash2,
   Users2,
@@ -20,7 +21,7 @@ import {
 import { toast } from "sonner"
 
 import { AppSidebar } from "@/components/app-sidebar"
-import { WorkspaceHeader } from "@/components/organizations/workspace-header"
+import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -45,7 +46,6 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import {
   Table,
@@ -67,14 +67,6 @@ import type { Organization } from "@/services/organization.service"
 import type { Player } from "@/services/player.service"
 import type { Team } from "@/services/team.service"
 
-function statusTone(status: string) {
-  if (status === "active") {
-    return "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
-  }
-
-  return "border-zinc-500/20 bg-zinc-500/10 text-zinc-300"
-}
-
 function getInitials(name: string) {
   return name
     .split(" ")
@@ -84,13 +76,23 @@ function getInitials(name: string) {
     .join("")
 }
 
-function PlayerActionsPopover({
+function statusTone(status: string) {
+  if (status === "active") {
+    return "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+  }
+
+  return "border-zinc-500/20 bg-zinc-500/10 text-zinc-300"
+}
+
+function RosterPlayerActionsPopover({
   onDelete,
   onEdit,
+  onView,
   player,
 }: {
   onDelete: () => void
   onEdit: () => void
+  onView: () => void
   player: Player
 }) {
   const [open, setOpen] = React.useState(false)
@@ -116,7 +118,7 @@ function PlayerActionsPopover({
 
     function handlePointerDown(event: MouseEvent) {
       const target = event.target as HTMLElement | null
-      if (!target?.closest(`[data-player-actions="${player.id}"]`)) {
+      if (!target?.closest(`[data-roster-player-actions="${player.id}"]`)) {
         setOpen(false)
       }
     }
@@ -139,7 +141,10 @@ function PlayerActionsPopover({
   }, [open, player.id])
 
   return (
-    <div className="relative inline-flex justify-end" data-player-actions={player.id}>
+    <div
+      className="relative inline-flex justify-end"
+      data-roster-player-actions={player.id}
+    >
       <Button
         aria-expanded={open}
         aria-haspopup="menu"
@@ -159,7 +164,19 @@ function PlayerActionsPopover({
               role="menu"
               style={{ left: Math.max(menuPosition.left, 12), top: menuPosition.top }}
             >
-              <div data-player-actions={player.id}>
+              <div data-roster-player-actions={player.id}>
+                <Button
+                  className="w-full justify-start"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setOpen(false)
+                    onView()
+                  }}
+                >
+                  <Eye className="size-4" />
+                  View details
+                </Button>
                 <Button
                   className="w-full justify-start"
                   size="sm"
@@ -182,7 +199,7 @@ function PlayerActionsPopover({
                   }}
                 >
                   <Trash2 className="size-4" />
-                  Delete player
+                  Remove player
                 </Button>
               </div>
             </div>,
@@ -193,14 +210,188 @@ function PlayerActionsPopover({
   )
 }
 
-function PlayerFormModal({
+function PlayerDetailsSheet({
+  mounted,
+  onOpenChange,
+  open,
+  player,
+  team,
+}: {
+  mounted: boolean
+  onOpenChange: (open: boolean) => void
+  open: boolean
+  player: Player | null
+  team: Team
+}) {
+  if (!mounted || !player) {
+    return null
+  }
+
+  const createdAt = new Date(player.created_at)
+  const updatedAt = new Date(player.updated_at)
+
+  return (
+    <>
+      <div
+        aria-hidden="true"
+        className={cn(
+          "fixed inset-0 z-40 bg-black/10 backdrop-blur-xs transition-all duration-300 ease-out",
+          open ? "opacity-100" : "pointer-events-none opacity-0",
+        )}
+        onClick={() => onOpenChange(false)}
+      />
+      <aside
+        aria-label={`${player.name} details`}
+        aria-modal="true"
+        className={cn(
+          "fixed inset-y-0 right-0 z-50 flex w-full max-w-xl flex-col border-l border-border/70 bg-background/95 shadow-xl transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
+          open
+            ? "translate-x-0 opacity-100"
+            : "translate-x-[104%] opacity-0",
+        )}
+        role="dialog"
+      >
+        <div
+          className={cn(
+            "flex items-start gap-3 border-b border-border/60 px-6 py-5 transition-all duration-300 ease-out",
+            open ? "translate-y-0 opacity-100 delay-75" : "translate-y-2 opacity-0",
+          )}
+        >
+          <div className="flex items-center gap-4">
+            <div className="flex size-14 shrink-0 items-center justify-center rounded-full border border-border/70 bg-background/70 text-sm font-semibold text-foreground">
+              {getInitials(player.name)}
+            </div>
+            <div className="min-w-0 space-y-1">
+              <div className="text-xl font-semibold">{player.name}</div>
+              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                <span className="rounded-full border border-border/70 px-2 py-1 text-xs">
+                  #{player.jersey_number}
+                </span>
+                <span
+                  className={`rounded-full border px-2 py-1 text-xs font-medium ${statusTone(player.status)}`}
+                >
+                  {player.status}
+                </span>
+              </div>
+            </div>
+          </div>
+          <Button
+            aria-label="Close player details"
+            className="ml-auto"
+            size="icon-sm"
+            variant="ghost"
+            onClick={() => onOpenChange(false)}
+          >
+            <X className="size-4" />
+          </Button>
+        </div>
+
+        <div
+          className={cn(
+            "flex-1 space-y-6 overflow-y-auto px-6 py-6 transition-all duration-300 ease-out",
+            open ? "translate-y-0 opacity-100 delay-100" : "translate-y-3 opacity-0",
+          )}
+        >
+          <Card className="border border-border/60 bg-card/95 shadow-none">
+            <CardHeader>
+              <CardTitle className="text-base">Roster assignment</CardTitle>
+              <CardDescription>Current team context for this player.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                  Team
+                </div>
+                <div className="font-medium">{team.name}</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                  Team status
+                </div>
+                <div className="font-medium">{team.status}</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border border-border/60 bg-card/95 shadow-none">
+            <CardHeader>
+              <CardTitle className="text-base">Player record</CardTitle>
+              <CardDescription>Current stored details for this roster member.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                  Full name
+                </div>
+                <div className="font-medium">{player.name}</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                  Jersey number
+                </div>
+                <div className="font-medium">#{player.jersey_number}</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                  Status
+                </div>
+                <div className="font-medium">{player.status}</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                  Player ID
+                </div>
+                <div className="font-mono text-sm text-muted-foreground">{player.id}</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border border-border/60 bg-card/95 shadow-none">
+            <CardHeader>
+              <CardTitle className="text-base">Activity</CardTitle>
+              <CardDescription>Audit-friendly timestamps for this player record.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                  Created
+                </div>
+                <div className="font-medium">{createdAt.toLocaleDateString()}</div>
+                <div className="text-sm text-muted-foreground">
+                  {createdAt.toLocaleTimeString([], {
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                  Last updated
+                </div>
+                <div className="font-medium">{updatedAt.toLocaleDateString()}</div>
+                <div className="text-sm text-muted-foreground">
+                  {updatedAt.toLocaleTimeString([], {
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </aside>
+    </>
+  )
+}
+
+function RosterPlayerFormModal({
   errorMessage,
   mode,
   onClose,
   onSubmit,
   pending,
   player,
-  teams,
+  team,
 }: {
   errorMessage?: string | null
   mode: "create" | "edit"
@@ -209,43 +400,39 @@ function PlayerFormModal({
     jerseyNumber: string
     name: string
     status: "active" | "inactive"
-    teamId: string
   }) => Promise<void>
   pending: boolean
   player?: Player | null
-  teams: Team[]
+  team: Team
 }) {
   const [name, setName] = React.useState(player?.name ?? "")
-  const [teamId, setTeamId] = React.useState(player?.team_id ?? teams[0]?.id ?? "")
   const [jerseyNumber, setJerseyNumber] = React.useState(player?.jersey_number ?? "")
   const [status, setStatus] = React.useState<"active" | "inactive">(
     (player?.status as "active" | "inactive") ?? "active",
   )
   const [validationError, setValidationError] = React.useState<string | null>(null)
   const previewName = name.trim() || "Player name"
-  const previewTeam = teams.find((team) => team.id === teamId)?.name ?? "Team"
   const previewInitials = getInitials(previewName)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!teamId) {
-      setValidationError("Team is required.")
-      return
-    }
+
     if (!name.trim()) {
       setValidationError("Player name is required.")
       return
     }
+
     if (!jerseyNumber.trim()) {
       setValidationError("Jersey number is required.")
       return
     }
+
     setValidationError(null)
+
     await onSubmit({
       jerseyNumber: jerseyNumber.trim(),
       name: name.trim(),
       status,
-      teamId,
     })
   }
 
@@ -256,15 +443,14 @@ function PlayerFormModal({
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
               <CardTitle className="text-xl">
-                {mode === "create" ? "Create player" : "Edit player"}
+                {mode === "create" ? "Add player to roster" : "Edit roster player"}
               </CardTitle>
               <CardDescription>
-                Manage player records, jersey numbers, and roster status inside
-                the organization.
+                This player will stay scoped to {team.name}. Team reassignment is managed from the Players page.
               </CardDescription>
             </div>
             <Button
-              aria-label={`Close ${mode} player modal`}
+              aria-label={`Close ${mode} roster player modal`}
               size="icon-sm"
               variant="ghost"
               onClick={onClose}
@@ -278,28 +464,20 @@ function PlayerFormModal({
             <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_360px]">
               <div className="space-y-5 p-6">
                 <Field>
-                  <FieldLabel htmlFor="player-team">Team</FieldLabel>
+                  <FieldLabel htmlFor="roster-player-team">Team</FieldLabel>
                   <FieldContent>
-                    <NativeSelect
-                      id="player-team"
-                      value={teamId}
-                      onChange={(event) => setTeamId(event.target.value)}
-                    >
-                      <NativeSelectOption value="">Select a team</NativeSelectOption>
-                      {teams.map((team) => (
-                        <NativeSelectOption key={team.id} value={team.id}>
-                          {team.name}
-                        </NativeSelectOption>
-                      ))}
-                    </NativeSelect>
+                    <Input id="roster-player-team" value={team.name} readOnly disabled />
+                    <FieldDescription>
+                      Team assignment is locked in this workflow.
+                    </FieldDescription>
                   </FieldContent>
                 </Field>
 
                 <Field>
-                  <FieldLabel htmlFor="player-name">Player name</FieldLabel>
+                  <FieldLabel htmlFor="roster-player-name">Player name</FieldLabel>
                   <FieldContent>
                     <Input
-                      id="player-name"
+                      id="roster-player-name"
                       placeholder="Marcus Dela Cruz"
                       value={name}
                       onChange={(event) => setName(event.target.value)}
@@ -308,16 +486,16 @@ function PlayerFormModal({
                 </Field>
 
                 <Field>
-                  <FieldLabel htmlFor="player-jersey">Jersey number</FieldLabel>
+                  <FieldLabel htmlFor="roster-player-jersey">Jersey number</FieldLabel>
                   <FieldContent>
                     <Input
-                      id="player-jersey"
+                      id="roster-player-jersey"
                       placeholder="7"
                       value={jerseyNumber}
                       onChange={(event) => setJerseyNumber(event.target.value)}
                     />
                     <FieldDescription>
-                      Keep jersey numbers unique within each team.
+                      Jersey numbers should stay unique within this team.
                     </FieldDescription>
                   </FieldContent>
                 </Field>
@@ -331,6 +509,7 @@ function PlayerFormModal({
                         ["inactive", "Inactive"],
                       ] as const).map(([value, label]) => {
                         const selected = status === value
+
                         return (
                           <button
                             key={value}
@@ -365,9 +544,9 @@ function PlayerFormModal({
 
               <div className="border-t border-border/60 p-6 lg:border-t-0 lg:border-l">
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold">Player preview</h3>
+                  <h3 className="text-sm font-semibold">Roster preview</h3>
                   <p className="text-sm text-muted-foreground">
-                    This is how the player record will appear in the system.
+                    This is how the player record will appear inside {team.name}.
                   </p>
                 </div>
 
@@ -382,7 +561,7 @@ function PlayerFormModal({
                       </div>
                       <div className="mx-auto inline-flex items-center gap-2 rounded-md border border-border/70 bg-background/70 px-3 py-2 text-sm text-muted-foreground">
                         <Shield className="size-4" />
-                        <span>{previewTeam}</span>
+                        <span>{team.name}</span>
                       </div>
                       <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
                         <span className="rounded-full border border-border/70 px-2 py-1">
@@ -404,7 +583,7 @@ function PlayerFormModal({
                 {pending ? (
                   <>
                     <Loader2 className="size-4 animate-spin" />
-                    {mode === "create" ? "Creating" : "Saving"}
+                    {mode === "create" ? "Adding" : "Saving"}
                   </>
                 ) : (
                   <>
@@ -413,7 +592,7 @@ function PlayerFormModal({
                     ) : (
                       <PencilLine className="size-4" />
                     )}
-                    {mode === "create" ? "Create player" : "Save changes"}
+                    {mode === "create" ? "Add player" : "Save changes"}
                   </>
                 )}
               </Button>
@@ -425,26 +604,28 @@ function PlayerFormModal({
   )
 }
 
-function DeletePlayerModal({
+function DeleteRosterPlayerModal({
   errorMessage,
   onClose,
   onDelete,
   pending,
   player,
+  teamName,
 }: {
   errorMessage?: string | null
   onClose: () => void
   onDelete: () => Promise<void>
   pending: boolean
   player: Player
+  teamName: string
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4 py-8 backdrop-blur-sm">
       <Card className="w-full max-w-lg border border-border/70 bg-card shadow-2xl">
         <CardHeader>
-          <CardTitle>Delete player</CardTitle>
+          <CardTitle>Remove player from roster</CardTitle>
           <CardDescription>
-            You are about to delete <span className="font-medium">{player.name}</span>.
+            You are about to delete <span className="font-medium">{player.name}</span> from {teamName}.
             This action cannot be undone.
           </CardDescription>
         </CardHeader>
@@ -463,12 +644,12 @@ function DeletePlayerModal({
               {pending ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />
-                  Deleting
+                  Removing
                 </>
               ) : (
                 <>
                   <Trash2 className="size-4" />
-                  Delete player
+                  Remove player
                 </>
               )}
             </Button>
@@ -479,170 +660,41 @@ function DeletePlayerModal({
   )
 }
 
-function PlayersTable({
-  divisionsById,
-  onDeletePlayer,
-  onEditPlayer,
-  players,
-  teamsById,
-}: {
-  divisionsById: Map<string, Division>
-  onDeletePlayer: (player: Player) => void
-  onEditPlayer: (player: Player) => void
-  players: Player[]
-  teamsById: Map<string, Team>
-}) {
-  if (players.length === 0) {
-    return (
-      <Empty className="border bg-card">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <Users2 className="size-5" />
-          </EmptyMedia>
-          <EmptyTitle>No players yet</EmptyTitle>
-          <EmptyDescription>
-            Create the first player record for this organization so rosters can
-            become official.
-          </EmptyDescription>
-        </EmptyHeader>
-      </Empty>
-    )
-  }
-
-  return (
-    <Card className="border border-border/60 bg-card/95 shadow-none">
-      <CardHeader>
-        <CardTitle>Players</CardTitle>
-        <CardAction>
-          <div className="text-sm text-muted-foreground">{players.length} total</div>
-        </CardAction>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow className="border-border/60 hover:bg-transparent">
-              <TableHead>Player</TableHead>
-              <TableHead>Team</TableHead>
-              <TableHead>Division</TableHead>
-              <TableHead>Jersey no.</TableHead>
-              <TableHead>Position</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Updated</TableHead>
-              <TableHead className="w-14 text-right"> </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {players.map((player) => {
-              const team = teamsById.get(player.team_id)
-              const division = team ? divisionsById.get(team.division_id) : undefined
-
-              return (
-                <TableRow
-                  key={player.id}
-                  className="border-border/50 hover:bg-background/40"
-                >
-                  <TableCell className="whitespace-normal">
-                    <div className="flex items-center gap-3">
-                      <div className="flex size-11 shrink-0 items-center justify-center rounded-full border border-border/70 bg-background/60 text-[11px] font-semibold text-foreground">
-                        {getInitials(player.name)}
-                      </div>
-                      <div className="space-y-1">
-                        <div className="font-medium">{player.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {player.id.slice(0, 8).toUpperCase()}
-                        </div>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium">{team?.name ?? "Unknown team"}</div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-1">
-                      <div className="font-medium">{division?.name ?? "Unknown division"}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {team?.name ?? "No team context"}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="inline-flex rounded-full border border-border/70 px-2 py-1 text-xs font-medium">
-                      #{player.jersey_number}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-muted-foreground">Pending</span>
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className={`rounded-full border px-2 py-1 text-xs font-medium ${statusTone(player.status)}`}
-                    >
-                      {player.status}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-1">
-                      <div>{new Date(player.updated_at).toLocaleDateString()}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {new Date(player.updated_at).toLocaleTimeString([], {
-                          hour: "numeric",
-                          minute: "2-digit",
-                        })}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <PlayerActionsPopover
-                      onDelete={() => onDeletePlayer(player)}
-                      onEdit={() => onEditPlayer(player)}
-                      player={player}
-                    />
-                  </TableCell>
-                </TableRow>
-              )
-            })}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  )
-}
-
-function PlayersSummaryCards({
+function TeamRosterSummaryCards({
   activePlayers,
+  inactivePlayers,
   recentlyUpdatedPlayers,
-  teamsWithCompleteRosters,
   totalPlayers,
 }: {
   activePlayers: number
+  inactivePlayers: number
   recentlyUpdatedPlayers: number
-  teamsWithCompleteRosters: string
   totalPlayers: number
 }) {
   const cards = [
     {
-      description: "All registered players",
+      description: "All players assigned to this team",
       icon: Users2,
-      title: "Total players",
-      value: String(totalPlayers),
+      title: "Roster size",
+      value: totalPlayers,
     },
     {
-      description: "Currently active",
+      description: "Eligible active players",
       icon: CheckCircle2,
       title: "Active players",
-      value: String(activePlayers),
+      value: activePlayers,
     },
     {
-      description: "Teams are ready",
+      description: "Inactive or unavailable",
       icon: Shield,
-      title: "Teams with complete rosters",
-      value: teamsWithCompleteRosters,
+      title: "Inactive players",
+      value: inactivePlayers,
     },
     {
-      description: "In the last 7 days",
+      description: "Updated in the last 7 days",
       icon: Clock3,
-      title: "Recently updated players",
-      value: String(recentlyUpdatedPlayers),
+      title: "Recently updated",
+      value: recentlyUpdatedPlayers,
     },
   ]
 
@@ -650,6 +702,7 @@ function PlayersSummaryCards({
     <section className="grid gap-4 xl:grid-cols-4">
       {cards.map((card) => {
         const Icon = card.icon
+
         return (
           <Card key={card.title} className="border border-border/60 bg-card/95 shadow-none">
             <CardHeader className="gap-4 pb-3">
@@ -673,21 +726,127 @@ function PlayersSummaryCards({
   )
 }
 
-function PlayerSetupNotesCard() {
+function TeamRosterTable({
+  onDeletePlayer,
+  onEditPlayer,
+  onViewPlayer,
+  players,
+}: {
+  onDeletePlayer: (player: Player) => void
+  onEditPlayer: (player: Player) => void
+  onViewPlayer: (player: Player) => void
+  players: Player[]
+}) {
+  if (players.length === 0) {
+    return (
+      <Empty className="border bg-card">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <Users2 className="size-5" />
+          </EmptyMedia>
+          <EmptyTitle>No players on this roster yet</EmptyTitle>
+          <EmptyDescription>
+            Add the first player to start building this team&apos;s official roster.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    )
+  }
+
+  return (
+    <Card className="border border-border/60 bg-card/95 shadow-none">
+      <CardHeader>
+        <CardTitle>Roster</CardTitle>
+        <CardAction>
+          <div className="text-sm text-muted-foreground">{players.length} total</div>
+        </CardAction>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow className="border-border/60 hover:bg-transparent">
+              <TableHead>Player</TableHead>
+              <TableHead>Jersey no.</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Updated</TableHead>
+              <TableHead className="w-14 text-right"> </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {players.map((player) => (
+              <TableRow
+                key={player.id}
+                className="cursor-pointer border-border/50 transition-colors hover:bg-background/40"
+                onClick={() => onViewPlayer(player)}
+              >
+                <TableCell className="whitespace-normal">
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-11 shrink-0 items-center justify-center rounded-full border border-border/70 bg-background/60 text-[11px] font-semibold text-foreground">
+                      {getInitials(player.name)}
+                    </div>
+                    <div className="space-y-1">
+                      <div className="font-medium">{player.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {player.id.slice(0, 8).toUpperCase()}
+                      </div>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <span className="inline-flex rounded-full border border-border/70 px-2 py-1 text-xs font-medium">
+                    #{player.jersey_number}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <span
+                    className={`rounded-full border px-2 py-1 text-xs font-medium ${statusTone(player.status)}`}
+                  >
+                    {player.status}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <div className="space-y-1">
+                    <div>{new Date(player.updated_at).toLocaleDateString()}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(player.updated_at).toLocaleTimeString([], {
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div onClick={(event) => event.stopPropagation()}>
+                    <RosterPlayerActionsPopover
+                      onDelete={() => onDeletePlayer(player)}
+                      onEdit={() => onEditPlayer(player)}
+                      onView={() => onViewPlayer(player)}
+                      player={player}
+                    />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  )
+}
+
+function TeamRosterNotesCard({ teamName }: { teamName: string }) {
   const notes = [
-    "Assign each player to the correct team.",
-    "Keep jersey numbers unique within each team.",
-    "Use active status only for eligible rostered players.",
-    "Inactive players should not appear in competition rosters.",
+    "Use this page for players already assigned to this team.",
+    "Jersey numbers should stay unique within this roster.",
+    "Use active status only for eligible competition players.",
+    "Move players between teams from the organization-wide Players page, not here.",
   ]
 
   return (
     <Card className="border border-border/60 bg-card/95 shadow-none">
       <CardHeader>
-        <CardTitle className="text-base">Player setup notes</CardTitle>
-        <CardDescription>
-          Keep player records accurate and roster-ready.
-        </CardDescription>
+        <CardTitle className="text-base">Roster notes</CardTitle>
+        <CardDescription>Keep {teamName} ready for schedules and standings.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <ul className="space-y-3">
@@ -703,66 +862,16 @@ function PlayerSetupNotesCard() {
   )
 }
 
-function PlayersRecentActivityCard({
-  players,
-  teamsById,
-}: {
-  players: Player[]
-  teamsById: Map<string, Team>
-}) {
-  const recentPlayers = [...players]
-    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-    .slice(0, 5)
-
-  return (
-    <Card className="border border-border/60 bg-card/95 shadow-none">
-      <CardHeader>
-        <CardTitle className="text-base">Recent activity</CardTitle>
-        <CardDescription>Latest player record updates.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {recentPlayers.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No player activity yet.</p>
-        ) : (
-          recentPlayers.map((player) => {
-            const team = teamsById.get(player.team_id)
-            return (
-              <div key={player.id} className="flex items-start gap-3">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-full border border-border/70 bg-background/70 text-[10px] font-semibold">
-                  {getInitials(player.name)}
-                </div>
-                <div className="min-w-0 space-y-1">
-                  <div className="truncate text-sm font-medium">{player.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {team?.name ?? "Team unassigned"}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Updated {new Date(player.updated_at).toLocaleDateString()}{" "}
-                    {new Date(player.updated_at).toLocaleTimeString([], {
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })}
-                  </div>
-                </div>
-              </div>
-            )
-          })
-        )}
-      </CardContent>
-    </Card>
-  )
-}
-
-export function OrganizationPlayersView({
+export function TeamRosterView({
   divisions,
   organization,
   players,
-  teams,
+  team,
 }: {
   divisions: Division[]
   organization: Organization
   players: Player[]
-  teams: Team[]
+  team: Team
 }) {
   const createPlayerMutation = useCreatePlayerMutation(organization.id)
   const updatePlayerMutation = useUpdatePlayerMutation(organization.id)
@@ -770,75 +879,56 @@ export function OrganizationPlayersView({
   const [createModalOpen, setCreateModalOpen] = React.useState(false)
   const [playerToDelete, setPlayerToDelete] = React.useState<Player | null>(null)
   const [playerToEdit, setPlayerToEdit] = React.useState<Player | null>(null)
-  const [search, setSearch] = React.useState("")
-  const [teamFilter, setTeamFilter] = React.useState("all")
-  const [divisionFilter, setDivisionFilter] = React.useState("all")
-  const [statusFilter, setStatusFilter] = React.useState("all")
-  const [sortBy, setSortBy] = React.useState("recent")
+  const [playerToView, setPlayerToView] = React.useState<Player | null>(null)
+  const [playerDetailsOpen, setPlayerDetailsOpen] = React.useState(false)
+  const [mountedPlayerDetails, setMountedPlayerDetails] = React.useState<Player | null>(null)
 
-  const divisionsById = React.useMemo(
-    () => new Map(divisions.map((division) => [division.id, division])),
-    [divisions],
+  const division = divisions.find((item) => item.id === team.division_id)
+  const rosterPlayers = React.useMemo(
+    () =>
+      [...players]
+        .filter((player) => player.team_id === team.id)
+        .sort(
+          (left, right) =>
+            new Date(right.updated_at).getTime() - new Date(left.updated_at).getTime(),
+        ),
+    [players, team.id],
   )
-  const teamsById = React.useMemo(
-    () => new Map(teams.map((team) => [team.id, team])),
-    [teams],
-  )
 
-  const filteredPlayers = React.useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase()
-    const nextPlayers = players.filter((player) => {
-      const team = teamsById.get(player.team_id)
-      const division = team ? divisionsById.get(team.division_id) : undefined
-
-      const matchesSearch =
-        !normalizedSearch ||
-        player.name.toLowerCase().includes(normalizedSearch) ||
-        player.jersey_number.toLowerCase().includes(normalizedSearch)
-      const matchesTeam = teamFilter === "all" || player.team_id === teamFilter
-      const matchesDivision =
-        divisionFilter === "all" || team?.division_id === divisionFilter
-      const matchesStatus = statusFilter === "all" || player.status === statusFilter
-
-      return matchesSearch && matchesTeam && matchesDivision && matchesStatus
-    })
-
-    nextPlayers.sort((left, right) => {
-      if (sortBy === "name") return left.name.localeCompare(right.name)
-      if (sortBy === "team") {
-        const leftTeam = teamsById.get(left.team_id)?.name ?? ""
-        const rightTeam = teamsById.get(right.team_id)?.name ?? ""
-        return leftTeam.localeCompare(rightTeam)
-      }
-      return new Date(right.updated_at).getTime() - new Date(left.updated_at).getTime()
-    })
-
-    return nextPlayers
-  }, [divisionFilter, divisionsById, players, search, sortBy, statusFilter, teamFilter, teamsById])
-
-  const totalPlayers = players.length
-  const activePlayers = players.filter((player) => player.status === "active").length
+  const activePlayers = rosterPlayers.filter((player) => player.status === "active").length
+  const inactivePlayers = rosterPlayers.length - activePlayers
   const recentThreshold = Date.now() - 7 * 24 * 60 * 60 * 1000
-  const recentlyUpdatedPlayers = players.filter(
+  const recentlyUpdatedPlayers = rosterPlayers.filter(
     (player) => new Date(player.updated_at).getTime() >= recentThreshold,
   ).length
-  const rosterCounts = teams.map((team) => ({
-    count: players.filter((player) => player.team_id === team.id).length,
-    teamId: team.id,
-  }))
-  const teamsWithCompleteRosters = `${
-    rosterCounts.filter((item) => item.count >= 8).length
-  } / ${teams.length || 0}`
+
+  React.useEffect(() => {
+    if (playerToView) {
+      setMountedPlayerDetails(playerToView)
+      setPlayerDetailsOpen(true)
+      return
+    }
+
+    if (!playerDetailsOpen) {
+      const timeoutId = window.setTimeout(() => {
+        setMountedPlayerDetails(null)
+      }, 320)
+
+      return () => window.clearTimeout(timeoutId)
+    }
+  }, [playerDetailsOpen, playerToView])
 
   async function handleCreatePlayer(payload: {
     jerseyNumber: string
     name: string
     status: "active" | "inactive"
-    teamId: string
   }) {
     try {
-      const player = await createPlayerMutation.mutateAsync(payload)
-      toast.success(`Created ${player.name}`)
+      const player = await createPlayerMutation.mutateAsync({
+        ...payload,
+        teamId: team.id,
+      })
+      toast.success(`Added ${player.name} to ${team.name}`)
       setCreateModalOpen(false)
     } catch (error) {
       toast.error(getApiErrorMessage(error))
@@ -849,9 +939,9 @@ export function OrganizationPlayersView({
     jerseyNumber: string
     name: string
     status: "active" | "inactive"
-    teamId: string
   }) {
     if (!playerToEdit) return
+
     try {
       const player = await updatePlayerMutation.mutateAsync({
         payload,
@@ -866,9 +956,10 @@ export function OrganizationPlayersView({
 
   async function handleDeletePlayer() {
     if (!playerToDelete) return
+
     try {
       await deletePlayerMutation.mutateAsync(playerToDelete.id)
-      toast.success(`Deleted ${playerToDelete.name}`)
+      toast.success(`Removed ${playerToDelete.name}`)
       setPlayerToDelete(null)
     } catch (error) {
       toast.error(getApiErrorMessage(error))
@@ -888,104 +979,57 @@ export function OrganizationPlayersView({
         <WorkspaceHeader organizationName={organization.name} />
 
         <main className="flex flex-1 flex-col gap-6 bg-background px-4 py-4 lg:px-6 lg:py-5">
-          <section className="flex flex-wrap items-start justify-between gap-4">
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">People setup</p>
-              <h1 className="text-3xl font-semibold tracking-tight">Players</h1>
-              <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-                Manage player records, jersey numbers, team assignments, and roster
-                readiness across the organization.
-              </p>
+          <section className="space-y-4">
+            <Button asChild variant="ghost" className="w-fit">
+              <Link href={`/organizations/${organization.slug}/teams`}>
+                <ArrowLeft className="size-4" />
+                Back to teams
+              </Link>
+            </Button>
+
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">People setup</p>
+                <h1 className="text-3xl font-semibold tracking-tight">{team.name} roster</h1>
+                <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
+                  Manage the official roster for {team.name}. Players created here stay assigned to this
+                  team, while cross-team transfers continue to live on the main Players page.
+                </p>
+                <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+                  <span className="rounded-full border border-border/70 px-3 py-1">
+                    {division?.name ?? "Unknown division"}
+                  </span>
+                  <span className="rounded-full border border-border/70 px-3 py-1">
+                    {team.status}
+                  </span>
+                </div>
+              </div>
+
+              <Button onClick={() => setCreateModalOpen(true)}>
+                <Plus className="size-4" />
+                New player
+              </Button>
             </div>
           </section>
 
-          <PlayersSummaryCards
+          <TeamRosterSummaryCards
             activePlayers={activePlayers}
+            inactivePlayers={inactivePlayers}
             recentlyUpdatedPlayers={recentlyUpdatedPlayers}
-            teamsWithCompleteRosters={teamsWithCompleteRosters}
-            totalPlayers={totalPlayers}
+            totalPlayers={rosterPlayers.length}
           />
-
-          {teams.length === 0 ? (
-            <Card className="border border-dashed border-border/70 bg-card/70 shadow-none">
-              <CardHeader>
-                <CardTitle>Create a team first</CardTitle>
-                <CardDescription>
-                  Players belong to a team. Add teams before creating player
-                  records for this organization.
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          ) : null}
 
           <section className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_320px]">
             <div className="space-y-6">
-              <Card className="border border-border/60 bg-card/95 shadow-none">
-                <CardContent className="space-y-4 p-4">
-                  <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px_180px_140px_180px_130px]">
-                    <div className="relative">
-                      <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        className="pl-9"
-                        placeholder="Search players..."
-                        value={search}
-                        onChange={(event) => setSearch(event.target.value)}
-                      />
-                    </div>
-                    <NativeSelect
-                      value={teamFilter}
-                      onChange={(event) => setTeamFilter(event.target.value)}
-                    >
-                      <NativeSelectOption value="all">All teams</NativeSelectOption>
-                      {teams.map((team) => (
-                        <NativeSelectOption key={team.id} value={team.id}>
-                          {team.name}
-                        </NativeSelectOption>
-                      ))}
-                    </NativeSelect>
-                    <NativeSelect
-                      value={divisionFilter}
-                      onChange={(event) => setDivisionFilter(event.target.value)}
-                    >
-                      <NativeSelectOption value="all">All divisions</NativeSelectOption>
-                      {divisions.map((division) => (
-                        <NativeSelectOption key={division.id} value={division.id}>
-                          {division.name}
-                        </NativeSelectOption>
-                      ))}
-                    </NativeSelect>
-                    <NativeSelect
-                      value={statusFilter}
-                      onChange={(event) => setStatusFilter(event.target.value)}
-                    >
-                      <NativeSelectOption value="all">All status</NativeSelectOption>
-                      <NativeSelectOption value="active">Active</NativeSelectOption>
-                      <NativeSelectOption value="inactive">Inactive</NativeSelectOption>
-                    </NativeSelect>
-                    <NativeSelect
-                      value={sortBy}
-                      onChange={(event) => setSortBy(event.target.value)}
-                    >
-                      <NativeSelectOption value="recent">Sort: Recently updated</NativeSelectOption>
-                      <NativeSelectOption value="name">Sort: Player name</NativeSelectOption>
-                      <NativeSelectOption value="team">Sort: Team</NativeSelectOption>
-                    </NativeSelect>
-                    <div className="flex gap-2">
-                      <Button className="flex-1" variant="outline">
-                        <Filter className="size-4" />
-                        View options
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <PlayersTable
-                divisionsById={divisionsById}
+              <TeamRosterTable
                 onDeletePlayer={setPlayerToDelete}
                 onEditPlayer={setPlayerToEdit}
-                players={filteredPlayers}
-                teamsById={teamsById}
+                onViewPlayer={(player) => {
+                  setPlayerToView(player)
+                  setMountedPlayerDetails(player)
+                  setPlayerDetailsOpen(true)
+                }}
+                players={rosterPlayers}
               />
             </div>
 
@@ -993,66 +1037,82 @@ export function OrganizationPlayersView({
               <Card className="border border-border/60 bg-card/95 shadow-none">
                 <CardHeader className="flex-row items-start justify-between gap-4 space-y-0">
                   <div className="space-y-1">
-                    <CardTitle className="text-base">Player operations</CardTitle>
+                    <CardTitle className="text-base">Roster operations</CardTitle>
                     <CardDescription>
-                      Register players and keep roster eligibility current.
+                      Add, update, and maintain the official roster for this team.
                     </CardDescription>
                   </div>
-                  <Button
-                    onClick={() => setCreateModalOpen(true)}
-                    disabled={teams.length === 0}
-                  >
+                  <Button onClick={() => setCreateModalOpen(true)}>
                     <Plus className="size-4" />
                     New player
                   </Button>
                 </CardHeader>
               </Card>
 
-              <PlayerSetupNotesCard />
-              <PlayersRecentActivityCard players={players} teamsById={teamsById} />
+              <TeamRosterNotesCard teamName={team.name} />
             </div>
           </section>
         </main>
       </SidebarInset>
 
       {createModalOpen ? (
-        <PlayerFormModal
+        <RosterPlayerFormModal
           errorMessage={
-            createPlayerMutation.isError ? getApiErrorMessage(createPlayerMutation.error) : null
+            createPlayerMutation.isError
+              ? getApiErrorMessage(createPlayerMutation.error)
+              : null
           }
           mode="create"
           pending={createPlayerMutation.isPending}
-          teams={teams}
+          team={team}
           onClose={() => setCreateModalOpen(false)}
           onSubmit={handleCreatePlayer}
         />
       ) : null}
 
       {playerToEdit ? (
-        <PlayerFormModal
+        <RosterPlayerFormModal
           errorMessage={
-            updatePlayerMutation.isError ? getApiErrorMessage(updatePlayerMutation.error) : null
+            updatePlayerMutation.isError
+              ? getApiErrorMessage(updatePlayerMutation.error)
+              : null
           }
           mode="edit"
           pending={updatePlayerMutation.isPending}
           player={playerToEdit}
-          teams={teams}
+          team={team}
           onClose={() => setPlayerToEdit(null)}
           onSubmit={handleUpdatePlayer}
         />
       ) : null}
 
       {playerToDelete ? (
-        <DeletePlayerModal
+        <DeleteRosterPlayerModal
           errorMessage={
-            deletePlayerMutation.isError ? getApiErrorMessage(deletePlayerMutation.error) : null
+            deletePlayerMutation.isError
+              ? getApiErrorMessage(deletePlayerMutation.error)
+              : null
           }
           pending={deletePlayerMutation.isPending}
           player={playerToDelete}
+          teamName={team.name}
           onClose={() => setPlayerToDelete(null)}
           onDelete={handleDeletePlayer}
         />
       ) : null}
+
+      <PlayerDetailsSheet
+        mounted={Boolean(mountedPlayerDetails)}
+        open={playerDetailsOpen}
+        player={mountedPlayerDetails}
+        team={team}
+        onOpenChange={(open) => {
+          setPlayerDetailsOpen(open)
+          if (!open) {
+            setPlayerToView(null)
+          }
+        }}
+      />
     </SidebarProvider>
   )
 }
