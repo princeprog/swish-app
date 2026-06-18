@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { createPortal } from "react-dom"
+import Link from "next/link"
 import {
   Check,
   CheckCircle2,
@@ -64,6 +65,7 @@ import {
 } from "@/hooks/use-team"
 import type { Division } from "@/services/division.service"
 import type { Organization } from "@/services/organization.service"
+import type { Player } from "@/services/player.service"
 import type { Team } from "@/services/team.service"
 
 function slugifyName(name: string): string {
@@ -93,10 +95,12 @@ function getTeamInitials(name: string) {
 }
 
 function TeamActionsPopover({
+  organizationSlug,
   onDelete,
   onEdit,
   team,
 }: {
+  organizationSlug: string
   onDelete: () => void
   onEdit: () => void
   team: Team
@@ -174,6 +178,17 @@ function TeamActionsPopover({
               style={{ left: Math.max(menuPosition.left, 12), top: menuPosition.top }}
             >
               <div data-team-actions={team.id}>
+                <Button
+                  asChild
+                  className="w-full justify-start"
+                  size="sm"
+                  variant="ghost"
+                >
+                  <Link href={`/organizations/${organizationSlug}/teams/${team.id}/roster`}>
+                    <Users2 className="size-4" />
+                    Manage roster
+                  </Link>
+                </Button>
                 <Button
                   className="w-full justify-start"
                   size="sm"
@@ -538,13 +553,17 @@ function DeleteTeamModal({
 
 function TeamsTable({
   divisionsById,
+  organizationSlug,
   onDeleteTeam,
   onEditTeam,
+  playersByTeamId,
   teams,
 }: {
   divisionsById: Map<string, Division>
+  organizationSlug: string
   onDeleteTeam: (team: Team) => void
   onEditTeam: (team: Team) => void
+  playersByTeamId: Map<string, Player[]>
   teams: Team[]
 }) {
   if (teams.length === 0) {
@@ -589,6 +608,10 @@ function TeamsTable({
           <TableBody>
             {teams.map((team) => {
               const division = divisionsById.get(team.division_id)
+              const rosterPlayers = playersByTeamId.get(team.id) ?? []
+              const activeRosterPlayers = rosterPlayers.filter(
+                (player) => player.status === "active",
+              ).length
 
               return (
                 <TableRow
@@ -650,9 +673,11 @@ function TeamsTable({
                   </TableCell>
                   <TableCell>
                     <div className="space-y-1">
-                      <div className="font-medium">No roster data</div>
+                      <div className="font-medium">
+                        {rosterPlayers.length} {rosterPlayers.length === 1 ? "player" : "players"}
+                      </div>
                       <div className="text-xs text-muted-foreground">
-                        Player module pending
+                        {activeRosterPlayers} active
                       </div>
                     </div>
                   </TableCell>
@@ -669,6 +694,7 @@ function TeamsTable({
                   </TableCell>
                   <TableCell className="text-right">
                     <TeamActionsPopover
+                      organizationSlug={organizationSlug}
                       onDelete={() => onDeleteTeam(team)}
                       onEdit={() => onEditTeam(team)}
                       team={team}
@@ -839,10 +865,12 @@ function TeamsRecentActivityCard({
 export function OrganizationTeamsView({
   divisions,
   organization,
+  players,
   teams,
 }: {
   divisions: Division[]
   organization: Organization
+  players: Player[]
   teams: Team[]
 }) {
   const createTeamMutation = useCreateTeamMutation(organization.id)
@@ -859,6 +887,17 @@ export function OrganizationTeamsView({
     () => new Map(divisions.map((division) => [division.id, division])),
     [divisions],
   )
+  const playersByTeamId = React.useMemo(() => {
+    const nextMap = new Map<string, Player[]>()
+
+    for (const player of players) {
+      const nextPlayers = nextMap.get(player.team_id) ?? []
+      nextPlayers.push(player)
+      nextMap.set(player.team_id, nextPlayers)
+    }
+
+    return nextMap
+  }, [players])
   const filteredTeams = React.useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase()
 
@@ -1051,8 +1090,10 @@ export function OrganizationTeamsView({
 
               <TeamsTable
                 divisionsById={divisionsById}
+                organizationSlug={organization.slug}
                 onDeleteTeam={setTeamToDelete}
                 onEditTeam={setTeamToEdit}
+                playersByTeamId={playersByTeamId}
                 teams={filteredTeams}
               />
             </div>
