@@ -14,7 +14,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { Building2Icon, CalendarDaysIcon, Settings2Icon, ShieldCheckIcon, TrophyIcon, Users2Icon } from "lucide-react"
+import { Building2Icon, CalendarDaysIcon, MapPinIcon, Settings2Icon, ShieldCheckIcon, TrophyIcon, Users2Icon } from "lucide-react"
 
 const baseData = {
   user: {
@@ -87,6 +87,10 @@ export function AppSidebar({
         {
           title: "Schedules",
           url: workspaceBasePath,
+        },
+        {
+          title: "Venues",
+          url: `${workspaceBasePath}/venues`,
         },
       ],
     },
