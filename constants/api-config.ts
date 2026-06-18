@@ -60,4 +60,10 @@ export const API_ENDPOINTS = {
     list: (organizationId: string) =>
       `/organizations/${organizationId}/venues`,
   },
+  schedules: {
+    create: (organizationId: string) =>
+      `/organizations/${organizationId}/games`,
+    list: (organizationId: string) =>
+      `/organizations/${organizationId}/games`,
+  },
 } as const

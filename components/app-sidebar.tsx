@@ -86,7 +86,7 @@ export function AppSidebar({
         },
         {
           title: "Schedules",
-          url: workspaceBasePath,
+          url: `${workspaceBasePath}/schedules`,
         },
         {
           title: "Venues",
