@@ -596,7 +596,6 @@ function TeamsTable({
               </TableHead>
               <TableHead className="h-12 text-muted-foreground">Team</TableHead>
               <TableHead className="text-muted-foreground">Division</TableHead>
-              <TableHead className="text-muted-foreground">Slug</TableHead>
               <TableHead className="text-muted-foreground">Color</TableHead>
               <TableHead className="text-muted-foreground">Status</TableHead>
               <TableHead className="text-muted-foreground">Roster</TableHead>
@@ -643,17 +642,7 @@ function TeamsTable({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-col gap-1">
-                      <div className="font-medium">{division?.name ?? "Unknown division"}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {division?.status ?? "Unavailable"}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="font-mono font-normal text-muted-foreground">
-                      {team.slug}
-                    </Badge>
+                    <div className="font-medium">{division?.name ?? "Unknown division"}</div>
                   </TableCell>
                   <TableCell>
                     {team.color ? (
