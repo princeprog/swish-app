@@ -19,10 +19,12 @@ export function WorkspaceHeader({
   onCreateSeason,
   organizationName,
   organizationSlug,
+  pageTitle,
 }: {
   onCreateSeason?: () => void
   organizationName: string
   organizationSlug: string
+  pageTitle?: string
 }) {
   return (
     <header className="sticky top-0 z-20 border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -41,9 +43,25 @@ export function WorkspaceHeader({
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
-              <BreadcrumbItem>
-                <BreadcrumbPage>{organizationName}</BreadcrumbPage>
-              </BreadcrumbItem>
+              {pageTitle ? (
+                <>
+                  <BreadcrumbItem className="hidden md:block">
+                    <BreadcrumbLink asChild>
+                      <Link href={`/organizations/${organizationSlug}`}>
+                        {organizationName}
+                      </Link>
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator className="hidden md:block" />
+                  <BreadcrumbItem>
+                    <BreadcrumbPage>{pageTitle}</BreadcrumbPage>
+                  </BreadcrumbItem>
+                </>
+              ) : (
+                <BreadcrumbItem>
+                  <BreadcrumbPage>{organizationName}</BreadcrumbPage>
+                </BreadcrumbItem>
+              )}
             </BreadcrumbList>
           </Breadcrumb>
         </div>

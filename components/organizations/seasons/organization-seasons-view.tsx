@@ -752,6 +752,7 @@ export function OrganizationSeasonsView({
         <WorkspaceHeader
           organizationName={organization.name}
           organizationSlug={organization.slug}
+          pageTitle="Seasons"
           onCreateSeason={() => setCreateModalOpen(true)}
         />
 

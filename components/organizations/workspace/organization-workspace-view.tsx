@@ -35,6 +35,7 @@ export function OrganizationWorkspaceView({
         <WorkspaceHeader
           organizationName={organization.name}
           organizationSlug={organization.slug}
+          pageTitle="Dashboard"
         />
 
         <main className="flex flex-1 flex-col gap-4 bg-background px-4 py-4 lg:px-6 lg:py-5">

@@ -979,6 +979,7 @@ export function TeamRosterView({
         <WorkspaceHeader
           organizationName={organization.name}
           organizationSlug={organization.slug}
+          pageTitle={`${team.name} roster`}
         />
 
         <main className="flex flex-1 flex-col gap-6 bg-background px-4 py-4 lg:px-6 lg:py-5">
