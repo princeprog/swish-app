@@ -36,7 +36,6 @@ import {
 import { Button } from "@/components/ui/button"
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -418,13 +417,6 @@ function ScheduleBoard({
 
   return (
     <Card className="border border-border/60 bg-card/95 shadow-none">
-      <CardHeader>
-        <CardTitle>Schedule</CardTitle>
-        <CardDescription>Official game records across visible divisions and venues.</CardDescription>
-        <CardAction>
-          <div className="text-sm text-muted-foreground">{games.length} total</div>
-        </CardAction>
-      </CardHeader>
       <CardContent className="p-0">
         <Table>
           <TableHeader className="bg-muted/40">

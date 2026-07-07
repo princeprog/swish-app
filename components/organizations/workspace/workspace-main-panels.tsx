@@ -15,7 +15,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
-  CardAction,
   CardContent,
   CardHeader,
   CardTitle,
@@ -91,14 +90,6 @@ function ActiveSeasonCard() {
 function DivisionOverviewCard({ divisions }: { divisions: Division[] }) {
   return (
     <Card className="border border-border/60 bg-card/95 shadow-none">
-      <CardHeader>
-        <CardTitle>Division overview</CardTitle>
-        <CardAction>
-          <Button size="sm" variant="ghost">
-            View all divisions
-          </Button>
-        </CardAction>
-      </CardHeader>
       <CardContent className="p-0">
         <Table>
           <TableHeader className="bg-muted/40">
@@ -194,14 +185,6 @@ function RecentActivityCard({ activity }: { activity: Activity[] }) {
 function UpcomingGamesCard({ games }: { games: UpcomingGame[] }) {
   return (
     <Card className="border border-border/60 bg-card/95 shadow-none">
-      <CardHeader>
-        <CardTitle>Upcoming games</CardTitle>
-        <CardAction>
-          <Button size="sm" variant="ghost">
-            View full schedule
-          </Button>
-        </CardAction>
-      </CardHeader>
       <CardContent className="p-0">
         <Table>
           <TableHeader className="bg-muted/40">

@@ -19,7 +19,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -476,12 +475,6 @@ function VenuesTable({
 
   return (
     <Card className="border border-border/60 bg-card/95 shadow-none">
-      <CardHeader>
-        <CardTitle>Venues</CardTitle>
-        <CardAction>
-          <div className="text-sm text-muted-foreground">{venues.length} total</div>
-        </CardAction>
-      </CardHeader>
       <CardContent className="p-0">
         <Table>
           <TableHeader className="bg-muted/40">
