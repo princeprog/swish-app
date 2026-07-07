@@ -7,10 +7,14 @@ import {
   CalendarClock,
   CalendarRange,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  CircleDashed,
   CopyCheck,
   Ellipsis,
   Filter,
   Globe,
+  MapPin,
   Loader2,
   PencilLine,
   Plus,
@@ -36,6 +40,7 @@ import {
 import { Button } from "@/components/ui/button"
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -52,15 +57,6 @@ import { Field, FieldContent, FieldError, FieldLabel } from "@/components/ui/fie
 import { Input } from "@/components/ui/input"
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
-import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { getApiErrorMessage } from "@/hooks/use-auth"
 import {
   useCreateScheduleMutation,
@@ -390,6 +386,27 @@ function ScheduleActionsPopover({
   )
 }
 
+function groupSchedulesByDay(games: Schedule[]) {
+  const groups = new Map<string, Schedule[]>()
+
+  for (const game of games) {
+    const key = new Date(game.starts_at).toDateString()
+    const entries = groups.get(key)
+    if (entries) {
+      entries.push(game)
+    } else {
+      groups.set(key, [game])
+    }
+  }
+
+  return Array.from(groups.entries()).map(([dateKey, items]) => ({
+    dateKey,
+    games: items.sort(
+      (left, right) => new Date(left.starts_at).getTime() - new Date(right.starts_at).getTime(),
+    ),
+  }))
+}
+
 function ScheduleBoard({
   games,
   onDeleteGame,
@@ -415,84 +432,135 @@ function ScheduleBoard({
     )
   }
 
+  const groupedSchedules = groupSchedulesByDay(games)
+
   return (
-    <Card className="border border-border/60 bg-card/95 py-0 shadow-none">
-      <CardContent className="p-0">
-        <Table>
-          <TableHeader className="bg-muted/40">
-            <TableRow className="border-border/60 hover:bg-transparent">
-              <TableHead className="w-12 px-4">
-                <Checkbox aria-label="Select all games" />
-              </TableHead>
-              <TableHead className="h-12 text-muted-foreground">Date & time</TableHead>
-              <TableHead className="text-muted-foreground">Matchup</TableHead>
-              <TableHead className="text-muted-foreground">Division</TableHead>
-              <TableHead className="text-muted-foreground">Venue</TableHead>
-              <TableHead className="text-muted-foreground">Status</TableHead>
-              <TableHead className="w-14 text-right"> </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {games.map((game) => (
-              <TableRow key={game.id} className="h-18 border-border/60 hover:bg-muted/30">
-                <TableCell className="px-4">
-                  <Checkbox
-                    aria-label={`Select ${game.home_team_name} vs ${game.away_team_name}`}
-                  />
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-col gap-1">
-                    <div className="font-medium">
-                      {new Date(game.starts_at).toLocaleDateString()}
+    <Card className="border border-border/60 bg-card/95 shadow-none">
+      <CardHeader className="gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="space-y-1">
+            <CardTitle>Schedule board</CardTitle>
+            <CardDescription>Grouped by play date across all visible divisions and venues.</CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button aria-label="Previous dates" size="icon-sm" variant="outline">
+              <ChevronLeft className="size-4" />
+            </Button>
+            <Button aria-label="Next dates" size="icon-sm" variant="outline">
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+        </div>
+        <CardAction>
+          <div className="text-sm text-muted-foreground">{games.length} total</div>
+        </CardAction>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {groupedSchedules.map((group, index) => {
+            const date = new Date(group.dateKey)
+            const isFirst = index === 0
+
+            return (
+              <button
+                key={group.dateKey}
+                className="flex min-w-20 flex-col items-center rounded-lg border px-3 py-2 text-sm transition-colors hover:bg-accent"
+                type="button"
+              >
+                <span className="text-xs text-muted-foreground">
+                  {date.toLocaleDateString([], { weekday: "short" }).toUpperCase()}
+                </span>
+                <span className={isFirst ? "font-semibold text-foreground" : "font-medium"}>
+                  {date.toLocaleDateString([], { day: "numeric" })}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="space-y-5">
+          {groupedSchedules.map((group) => {
+            const date = new Date(group.dateKey)
+
+            return (
+              <section key={group.dateKey} className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-sm font-semibold">
+                    {date.toLocaleDateString([], {
+                      weekday: "long",
+                      month: "long",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </h3>
+                  <Badge variant="outline">{group.games.length} games</Badge>
+                </div>
+
+                <div className="overflow-hidden rounded-xl border border-border/60">
+                  {group.games.map((game, index) => (
+                    <div
+                      key={game.id}
+                      className={[
+                        "grid gap-3 bg-card px-4 py-4",
+                        "md:grid-cols-[130px_minmax(0,1.2fr)_180px_190px_120px_44px]",
+                        index !== group.games.length - 1 ? "border-b border-border/60" : "",
+                      ].join(" ")}
+                    >
+                      <div className="space-y-1">
+                        <div className="text-sm font-medium">
+                          {new Date(game.starts_at).toLocaleTimeString([], {
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })}
+                        </div>
+                        <div className="text-xs text-muted-foreground">Game #{index + 1}</div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{game.home_team_name}</span>
+                          <Badge variant="secondary">vs</Badge>
+                          <span className="font-medium">{game.away_team_name}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">{game.league_season_name}</div>
+                      </div>
+
+                      <div className="space-y-1 text-sm">
+                        <div>{game.division_name}</div>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <CircleDashed className="size-3" />
+                          {game.home_team_slug} / {game.away_team_slug}
+                        </div>
+                      </div>
+
+                      <div className="space-y-1 text-sm">
+                        <div className="flex items-center gap-1">
+                          <MapPin className="size-3.5 text-muted-foreground" />
+                          {game.venue_name}
+                        </div>
+                        <div className="text-xs text-muted-foreground">{game.venue_slug}</div>
+                      </div>
+
+                      <div className="flex items-start md:justify-end">
+                        <Badge className={scheduleStatusTone(game.status)} variant="outline">
+                          {toTitleCase(game.status)}
+                        </Badge>
+                      </div>
+
+                      <div className="flex items-start justify-end">
+                        <ScheduleActionsPopover
+                          game={game}
+                          onDelete={() => onDeleteGame(game)}
+                          onEdit={() => onEditGame(game)}
+                        />
+                      </div>
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {new Date(game.starts_at).toLocaleTimeString([], {
-                        hour: "numeric",
-                        minute: "2-digit",
-                      })}
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell className="whitespace-normal">
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{game.home_team_name}</span>
-                      <Badge variant="secondary">vs</Badge>
-                      <span className="font-medium">{game.away_team_name}</span>
-                    </div>
-                    <div className="text-xs text-muted-foreground">{game.league_season_name}</div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-col gap-1">
-                    <div className="font-medium">{game.division_name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {game.home_team_slug} / {game.away_team_slug}
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-col gap-1">
-                    <div className="font-medium">{game.venue_name}</div>
-                    <div className="text-xs text-muted-foreground">{game.venue_slug}</div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge className={scheduleStatusTone(game.status)} variant="outline">
-                    {toTitleCase(game.status)}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <ScheduleActionsPopover
-                    game={game}
-                    onDelete={() => onDeleteGame(game)}
-                    onEdit={() => onEditGame(game)}
-                  />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                  ))}
+                </div>
+              </section>
+            )
+          })}
+        </div>
       </CardContent>
     </Card>
   )

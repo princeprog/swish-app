@@ -484,7 +484,6 @@ function VenuesTable({
               </TableHead>
               <TableHead className="h-12 text-muted-foreground">Venue</TableHead>
               <TableHead className="text-muted-foreground">Season</TableHead>
-              <TableHead className="text-muted-foreground">Slug</TableHead>
               <TableHead className="text-muted-foreground">Status</TableHead>
               <TableHead className="text-muted-foreground">Updated</TableHead>
               <TableHead className="w-14 text-right"> </TableHead>
@@ -500,25 +499,10 @@ function VenuesTable({
                     <Checkbox aria-label={`Select ${venue.name}`} />
                   </TableCell>
                   <TableCell className="whitespace-normal">
-                    <div className="flex flex-col gap-1">
-                      <div className="font-medium">{venue.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        Venue ID: {venue.id}
-                      </div>
-                    </div>
+                    <div className="font-medium">{venue.name}</div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-col gap-1">
-                      <div className="font-medium">{season?.name ?? "Unknown season"}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {season?.status ?? "Unavailable"}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="font-mono font-normal text-muted-foreground">
-                      {venue.slug}
-                    </Badge>
+                    <div className="font-medium">{season?.name ?? "Unknown season"}</div>
                   </TableCell>
                   <TableCell>
                     <Badge className={statusTone(venue.status)} variant="outline">
