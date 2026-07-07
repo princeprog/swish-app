@@ -655,7 +655,7 @@ function DivisionsTable({
   }
 
   return (
-    <Card className="border border-border/60 bg-card/95 shadow-none">
+    <Card className="border border-border/60 bg-card/95 py-0 shadow-none">
       <CardContent className="p-0">
         <Table>
           <TableHeader className="bg-muted/40">
@@ -684,21 +684,11 @@ function DivisionsTable({
                     <Checkbox aria-label={`Select ${division.name}`} />
                   </TableCell>
                   <TableCell className="whitespace-normal">
-                    <div className="flex flex-col gap-1">
-                      <div className="font-medium">{division.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        Division ID: {division.id}
-                      </div>
-                    </div>
+                    <div className="font-medium">{division.name}</div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-col gap-1">
-                      <div className="font-medium">
-                        {season?.name ?? "Unknown season"}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {season?.status ?? "Unavailable"}
-                      </div>
+                    <div className="font-medium">
+                      {season?.name ?? "Unknown season"}
                     </div>
                   </TableCell>
                   <TableCell>

@@ -89,7 +89,7 @@ function ActiveSeasonCard() {
 
 function DivisionOverviewCard({ divisions }: { divisions: Division[] }) {
   return (
-    <Card className="border border-border/60 bg-card/95 shadow-none">
+    <Card className="border border-border/60 bg-card/95 py-0 shadow-none">
       <CardContent className="p-0">
         <Table>
           <TableHeader className="bg-muted/40">
@@ -184,7 +184,7 @@ function RecentActivityCard({ activity }: { activity: Activity[] }) {
 
 function UpcomingGamesCard({ games }: { games: UpcomingGame[] }) {
   return (
-    <Card className="border border-border/60 bg-card/95 shadow-none">
+    <Card className="border border-border/60 bg-card/95 py-0 shadow-none">
       <CardContent className="p-0">
         <Table>
           <TableHeader className="bg-muted/40">

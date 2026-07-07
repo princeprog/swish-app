@@ -512,7 +512,7 @@ function PlayersTable({
   }
 
   return (
-    <Card className="border border-border/60 bg-card/95 shadow-none">
+    <Card className="border border-border/60 bg-card/95 py-0 shadow-none">
       <CardContent className="p-0">
         <Table>
           <TableHeader className="bg-muted/40">
