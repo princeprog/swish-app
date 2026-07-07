@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from "@/constants/api-config"
 import { apiService } from "@/services/api.service"
+import type { PaginatedResponse, PaginationParams } from "@/services/pagination"
 
 export type LeagueSeason = {
   created_at: string
@@ -33,11 +34,12 @@ export const leagueSeasonService = {
         credentials: "include",
       },
     ),
-  list: (organizationId: string) =>
-    apiService.get<LeagueSeason[]>(
+  list: (organizationId: string, params: PaginationParams = {}) =>
+    apiService.get<PaginatedResponse<LeagueSeason>>(
       API_ENDPOINTS.leagueSeasons.list(organizationId),
       {
         credentials: "include",
+        query: params,
       },
     ),
   remove: (organizationId: string, leagueSeasonId: string) =>

@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from "@/constants/api-config"
 import { apiService } from "@/services/api.service"
+import type { PaginatedResponse, PaginationParams } from "@/services/pagination"
 
 export type Division = {
   created_at: string
@@ -29,9 +30,10 @@ export const divisionService = {
         credentials: "include",
       },
     ),
-  list: (organizationId: string) =>
-    apiService.get<Division[]>(API_ENDPOINTS.divisions.list(organizationId), {
+  list: (organizationId: string, params: PaginationParams = {}) =>
+    apiService.get<PaginatedResponse<Division>>(API_ENDPOINTS.divisions.list(organizationId), {
       credentials: "include",
+      query: params,
     }),
   remove: (organizationId: string, divisionId: string) =>
     apiService.delete<void>(

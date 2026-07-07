@@ -20,6 +20,7 @@ import {
 import { toast } from "sonner"
 
 import { AppSidebar } from "@/components/app-sidebar"
+import { DataTablePagination } from "@/components/organizations/shared/data-table-pagination"
 import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -66,8 +67,17 @@ import {
 } from "@/hooks/use-player"
 import type { Division } from "@/services/division.service"
 import type { Organization } from "@/services/organization.service"
+import type { PageSizeOption, PaginationMeta } from "@/services/pagination"
 import type { Player } from "@/services/player.service"
 import type { Team } from "@/services/team.service"
+
+type PlayerTableFilters = {
+  divisionFilter: string
+  search: string
+  sortBy: "name" | "recent" | "team"
+  statusFilter: string
+  teamFilter: string
+}
 
 function statusTone(status: string) {
   if (status === "active") {
@@ -483,14 +493,20 @@ function DeletePlayerModal({
 
 function PlayersTable({
   divisionsById,
+  onPageChange,
+  onPageSizeChange,
   onDeletePlayer,
   onEditPlayer,
+  pagination,
   players,
   teamsById,
 }: {
   divisionsById: Map<string, Division>
+  onPageChange: (page: number) => void
+  onPageSizeChange: (pageSize: PageSizeOption) => void
   onDeletePlayer: (player: Player) => void
   onEditPlayer: (player: Player) => void
+  pagination: PaginationMeta
   players: Player[]
   teamsById: Map<string, Team>
 }) {
@@ -605,6 +621,11 @@ function PlayersTable({
             })}
           </TableBody>
         </Table>
+        <DataTablePagination
+          pagination={pagination}
+          onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
+        />
       </CardContent>
     </Card>
   )
@@ -757,12 +778,22 @@ function PlayersRecentActivityCard({
 
 export function OrganizationPlayersView({
   divisions,
+  filters,
+  onFiltersChange,
+  onPageChange,
+  onPageSizeChange,
   organization,
+  pagination,
   players,
   teams,
 }: {
   divisions: Division[]
+  filters: PlayerTableFilters
+  onFiltersChange: (filters: PlayerTableFilters) => void
+  onPageChange: (page: number) => void
+  onPageSizeChange: (pageSize: PageSizeOption) => void
   organization: Organization
+  pagination: PaginationMeta
   players: Player[]
   teams: Team[]
 }) {
@@ -772,11 +803,6 @@ export function OrganizationPlayersView({
   const [createModalOpen, setCreateModalOpen] = React.useState(false)
   const [playerToDelete, setPlayerToDelete] = React.useState<Player | null>(null)
   const [playerToEdit, setPlayerToEdit] = React.useState<Player | null>(null)
-  const [search, setSearch] = React.useState("")
-  const [teamFilter, setTeamFilter] = React.useState("all")
-  const [divisionFilter, setDivisionFilter] = React.useState("all")
-  const [statusFilter, setStatusFilter] = React.useState("all")
-  const [sortBy, setSortBy] = React.useState("recent")
 
   const divisionsById = React.useMemo(
     () => new Map(divisions.map((division) => [division.id, division])),
@@ -786,37 +812,6 @@ export function OrganizationPlayersView({
     () => new Map(teams.map((team) => [team.id, team])),
     [teams],
   )
-
-  const filteredPlayers = React.useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase()
-    const nextPlayers = players.filter((player) => {
-      const team = teamsById.get(player.team_id)
-      const division = team ? divisionsById.get(team.division_id) : undefined
-
-      const matchesSearch =
-        !normalizedSearch ||
-        player.name.toLowerCase().includes(normalizedSearch) ||
-        player.jersey_number.toLowerCase().includes(normalizedSearch)
-      const matchesTeam = teamFilter === "all" || player.team_id === teamFilter
-      const matchesDivision =
-        divisionFilter === "all" || team?.division_id === divisionFilter
-      const matchesStatus = statusFilter === "all" || player.status === statusFilter
-
-      return matchesSearch && matchesTeam && matchesDivision && matchesStatus
-    })
-
-    nextPlayers.sort((left, right) => {
-      if (sortBy === "name") return left.name.localeCompare(right.name)
-      if (sortBy === "team") {
-        const leftTeam = teamsById.get(left.team_id)?.name ?? ""
-        const rightTeam = teamsById.get(right.team_id)?.name ?? ""
-        return leftTeam.localeCompare(rightTeam)
-      }
-      return new Date(right.updated_at).getTime() - new Date(left.updated_at).getTime()
-    })
-
-    return nextPlayers
-  }, [divisionFilter, divisionsById, players, search, sortBy, statusFilter, teamFilter, teamsById])
 
   const totalPlayers = players.length
   const activePlayers = players.filter((player) => player.status === "active").length
@@ -939,13 +934,17 @@ export function OrganizationPlayersView({
                       <Input
                         className="pl-9"
                         placeholder="Search players..."
-                        value={search}
-                        onChange={(event) => setSearch(event.target.value)}
+                        value={filters.search}
+                        onChange={(event) =>
+                          onFiltersChange({ ...filters, search: event.target.value })
+                        }
                       />
                     </div>
                     <NativeSelect
-                      value={teamFilter}
-                      onChange={(event) => setTeamFilter(event.target.value)}
+                      value={filters.teamFilter}
+                      onChange={(event) =>
+                        onFiltersChange({ ...filters, teamFilter: event.target.value })
+                      }
                     >
                       <NativeSelectOption value="all">All teams</NativeSelectOption>
                       {teams.map((team) => (
@@ -955,8 +954,13 @@ export function OrganizationPlayersView({
                       ))}
                     </NativeSelect>
                     <NativeSelect
-                      value={divisionFilter}
-                      onChange={(event) => setDivisionFilter(event.target.value)}
+                      value={filters.divisionFilter}
+                      onChange={(event) =>
+                        onFiltersChange({
+                          ...filters,
+                          divisionFilter: event.target.value,
+                        })
+                      }
                     >
                       <NativeSelectOption value="all">All divisions</NativeSelectOption>
                       {divisions.map((division) => (
@@ -966,16 +970,23 @@ export function OrganizationPlayersView({
                       ))}
                     </NativeSelect>
                     <NativeSelect
-                      value={statusFilter}
-                      onChange={(event) => setStatusFilter(event.target.value)}
+                      value={filters.statusFilter}
+                      onChange={(event) =>
+                        onFiltersChange({ ...filters, statusFilter: event.target.value })
+                      }
                     >
                       <NativeSelectOption value="all">All status</NativeSelectOption>
                       <NativeSelectOption value="active">Active</NativeSelectOption>
                       <NativeSelectOption value="inactive">Inactive</NativeSelectOption>
                     </NativeSelect>
                     <NativeSelect
-                      value={sortBy}
-                      onChange={(event) => setSortBy(event.target.value)}
+                      value={filters.sortBy}
+                      onChange={(event) =>
+                        onFiltersChange({
+                          ...filters,
+                          sortBy: event.target.value as PlayerTableFilters["sortBy"],
+                        })
+                      }
                     >
                       <NativeSelectOption value="recent">Sort: Recently updated</NativeSelectOption>
                       <NativeSelectOption value="name">Sort: Player name</NativeSelectOption>
@@ -993,9 +1004,12 @@ export function OrganizationPlayersView({
 
               <PlayersTable
                 divisionsById={divisionsById}
+                onPageChange={onPageChange}
+                onPageSizeChange={onPageSizeChange}
                 onDeletePlayer={setPlayerToDelete}
                 onEditPlayer={setPlayerToEdit}
-                players={filteredPlayers}
+                pagination={pagination}
+                players={players}
                 teamsById={teamsById}
               />
             </div>

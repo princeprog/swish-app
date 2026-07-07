@@ -14,6 +14,7 @@ import { toast } from "sonner"
 
 import { AppSidebar } from "@/components/app-sidebar"
 import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
+import { DataTablePagination } from "@/components/organizations/shared/data-table-pagination"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -64,6 +65,7 @@ import {
 } from "@/hooks/use-league-season"
 import type { Organization } from "@/services/organization.service"
 import type { LeagueSeason } from "@/services/league-season.service"
+import type { PageSizeOption, PaginationMeta } from "@/services/pagination"
 
 function slugifyName(name: string): string {
   return name
@@ -616,14 +618,20 @@ function SeasonActionsPopover({
 }
 
 function SeasonsTable({
+  onPageChange,
+  onPageSizeChange,
   onDeleteSeason,
   onEditSeason,
   organizationSlug,
+  pagination,
   seasons,
 }: {
+  onPageChange: (page: number) => void
+  onPageSizeChange: (pageSize: PageSizeOption) => void
   onDeleteSeason: (season: LeagueSeason) => void
   onEditSeason: (season: LeagueSeason) => void
   organizationSlug: string
+  pagination: PaginationMeta
   seasons: LeagueSeason[]
 }) {
   if (seasons.length === 0) {
@@ -721,16 +729,27 @@ function SeasonsTable({
             ))}
           </TableBody>
         </Table>
+        <DataTablePagination
+          pagination={pagination}
+          onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
+        />
       </CardContent>
     </Card>
   )
 }
 
 export function OrganizationSeasonsView({
+  onPageChange,
+  onPageSizeChange,
   organization,
+  pagination,
   seasons,
 }: {
+  onPageChange: (page: number) => void
+  onPageSizeChange: (pageSize: PageSizeOption) => void
   organization: Organization
+  pagination: PaginationMeta
   seasons: LeagueSeason[]
 }) {
   const [createModalOpen, setCreateModalOpen] = React.useState(false)
@@ -772,9 +791,12 @@ export function OrganizationSeasonsView({
 
           <section className="grid gap-6">
             <SeasonsTable
+              onPageChange={onPageChange}
+              onPageSizeChange={onPageSizeChange}
               onDeleteSeason={setSeasonToDelete}
               onEditSeason={setSeasonToEdit}
               organizationSlug={organization.slug}
+              pagination={pagination}
               seasons={seasons}
             />
           </section>

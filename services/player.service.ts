@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from "@/constants/api-config"
 import { apiService } from "@/services/api.service"
+import type { PaginatedResponse, PaginationParams } from "@/services/pagination"
 
 export type Player = {
   created_at: string
@@ -20,6 +21,14 @@ export type CreatePlayerPayload = {
 
 export type UpdatePlayerPayload = Partial<CreatePlayerPayload>
 
+export type PlayerListParams = PaginationParams & {
+  divisionId?: string
+  search?: string
+  sortBy?: "name" | "recent" | "team"
+  status?: "active" | "inactive"
+  teamId?: string
+}
+
 export const playerService = {
   create: (organizationId: string, data: CreatePlayerPayload) =>
     apiService.post<Player, CreatePlayerPayload>(
@@ -29,9 +38,10 @@ export const playerService = {
         credentials: "include",
       },
     ),
-  list: (organizationId: string) =>
-    apiService.get<Player[]>(API_ENDPOINTS.players.list(organizationId), {
+  list: (organizationId: string, params: PlayerListParams = {}) =>
+    apiService.get<PaginatedResponse<Player>>(API_ENDPOINTS.players.list(organizationId), {
       credentials: "include",
+      query: params,
     }),
   remove: (organizationId: string, playerId: string) =>
     apiService.delete<void>(

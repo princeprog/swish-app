@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from "@/constants/api-config"
 import { apiService } from "@/services/api.service"
+import type { PaginatedResponse, PaginationParams } from "@/services/pagination"
 
 export type Venue = {
   created_at: string
@@ -27,9 +28,10 @@ export const venueService = {
       data,
       { credentials: "include" },
     ),
-  list: (organizationId: string) =>
-    apiService.get<Venue[]>(API_ENDPOINTS.venues.list(organizationId), {
+  list: (organizationId: string, params: PaginationParams = {}) =>
+    apiService.get<PaginatedResponse<Venue>>(API_ENDPOINTS.venues.list(organizationId), {
       credentials: "include",
+      query: params,
     }),
   remove: (organizationId: string, venueId: string) =>
     apiService.delete<void>(`${API_ENDPOINTS.venues.list(organizationId)}/${venueId}`, {

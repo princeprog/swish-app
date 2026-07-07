@@ -8,16 +8,22 @@ import {
   type UpdateVenuePayload,
   type Venue,
 } from "@/services/venue.service"
+import type { PaginationParams } from "@/services/pagination"
 
 export const VENUE_QUERY_KEYS = {
   list: (organizationId: string) => ["venues", "list", organizationId] as const,
+  listWithParams: (organizationId: string, params: PaginationParams) =>
+    ["venues", "list", organizationId, params] as const,
 }
 
-export function useVenuesQuery(organizationId?: string) {
+export function useVenuesQuery(
+  organizationId?: string,
+  params: PaginationParams = {},
+) {
   return useQuery({
     enabled: Boolean(organizationId),
-    queryFn: () => venueService.list(organizationId!),
-    queryKey: VENUE_QUERY_KEYS.list(organizationId ?? "unknown"),
+    queryFn: () => venueService.list(organizationId!, params),
+    queryKey: VENUE_QUERY_KEYS.listWithParams(organizationId ?? "unknown", params),
     retry: false,
   })
 }

@@ -21,6 +21,7 @@ import {
 import { toast } from "sonner"
 
 import { AppSidebar } from "@/components/app-sidebar"
+import { DataTablePagination } from "@/components/organizations/shared/data-table-pagination"
 import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -67,8 +68,16 @@ import {
 } from "@/hooks/use-team"
 import type { Division } from "@/services/division.service"
 import type { Organization } from "@/services/organization.service"
+import type { PageSizeOption, PaginationMeta } from "@/services/pagination"
 import type { Player } from "@/services/player.service"
 import type { Team } from "@/services/team.service"
+
+type TeamTableFilters = {
+  divisionFilter: string
+  search: string
+  sortBy: "division" | "name" | "recent"
+  statusFilter: string
+}
 
 function slugifyName(name: string): string {
   return name
@@ -555,16 +564,22 @@ function DeleteTeamModal({
 
 function TeamsTable({
   divisionsById,
+  onPageChange,
+  onPageSizeChange,
   organizationSlug,
   onDeleteTeam,
   onEditTeam,
+  pagination,
   playersByTeamId,
   teams,
 }: {
   divisionsById: Map<string, Division>
+  onPageChange: (page: number) => void
+  onPageSizeChange: (pageSize: PageSizeOption) => void
   organizationSlug: string
   onDeleteTeam: (team: Team) => void
   onEditTeam: (team: Team) => void
+  pagination: PaginationMeta
   playersByTeamId: Map<string, Player[]>
   teams: Team[]
 }) {
@@ -696,6 +711,11 @@ function TeamsTable({
             })}
           </TableBody>
         </Table>
+        <DataTablePagination
+          pagination={pagination}
+          onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
+        />
       </CardContent>
     </Card>
   )
@@ -855,12 +875,22 @@ function TeamsRecentActivityCard({
 
 export function OrganizationTeamsView({
   divisions,
+  filters,
+  onFiltersChange,
+  onPageChange,
+  onPageSizeChange,
   organization,
+  pagination,
   players,
   teams,
 }: {
   divisions: Division[]
+  filters: TeamTableFilters
+  onFiltersChange: (filters: TeamTableFilters) => void
+  onPageChange: (page: number) => void
+  onPageSizeChange: (pageSize: PageSizeOption) => void
   organization: Organization
+  pagination: PaginationMeta
   players: Player[]
   teams: Team[]
 }) {
@@ -870,10 +900,6 @@ export function OrganizationTeamsView({
   const [createModalOpen, setCreateModalOpen] = React.useState(false)
   const [teamToDelete, setTeamToDelete] = React.useState<Team | null>(null)
   const [teamToEdit, setTeamToEdit] = React.useState<Team | null>(null)
-  const [search, setSearch] = React.useState("")
-  const [divisionFilter, setDivisionFilter] = React.useState("all")
-  const [statusFilter, setStatusFilter] = React.useState("all")
-  const [sortBy, setSortBy] = React.useState("recent")
   const divisionsById = React.useMemo(
     () => new Map(divisions.map((division) => [division.id, division])),
     [divisions],
@@ -889,40 +915,6 @@ export function OrganizationTeamsView({
 
     return nextMap
   }, [players])
-  const filteredTeams = React.useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase()
-
-    const nextTeams = teams.filter((team) => {
-      const matchesSearch =
-        !normalizedSearch ||
-        team.name.toLowerCase().includes(normalizedSearch) ||
-        team.slug.toLowerCase().includes(normalizedSearch)
-      const matchesDivision =
-        divisionFilter === "all" || team.division_id === divisionFilter
-      const matchesStatus =
-        statusFilter === "all" || team.status === statusFilter
-
-      return matchesSearch && matchesDivision && matchesStatus
-    })
-
-    nextTeams.sort((left, right) => {
-      if (sortBy === "name") {
-        return left.name.localeCompare(right.name)
-      }
-
-      if (sortBy === "division") {
-        const leftDivision = divisionsById.get(left.division_id)?.name ?? ""
-        const rightDivision = divisionsById.get(right.division_id)?.name ?? ""
-        return leftDivision.localeCompare(rightDivision)
-      }
-
-      return (
-        new Date(right.updated_at).getTime() - new Date(left.updated_at).getTime()
-      )
-    })
-
-    return nextTeams
-  }, [divisionFilter, divisionsById, search, sortBy, statusFilter, teams])
   const totalTeams = teams.length
   const activeTeams = teams.filter((team) => team.status === "active").length
   const divisionsWithTeams = new Set(teams.map((team) => team.division_id)).size
@@ -1047,13 +1039,20 @@ export function OrganizationTeamsView({
                       <Input
                         className="pl-9"
                         placeholder="Search teams..."
-                        value={search}
-                        onChange={(event) => setSearch(event.target.value)}
+                        value={filters.search}
+                        onChange={(event) =>
+                          onFiltersChange({ ...filters, search: event.target.value })
+                        }
                       />
                     </div>
                     <NativeSelect
-                      value={divisionFilter}
-                      onChange={(event) => setDivisionFilter(event.target.value)}
+                      value={filters.divisionFilter}
+                      onChange={(event) =>
+                        onFiltersChange({
+                          ...filters,
+                          divisionFilter: event.target.value,
+                        })
+                      }
                     >
                       <NativeSelectOption value="all">All divisions</NativeSelectOption>
                       {divisions.map((division) => (
@@ -1063,16 +1062,23 @@ export function OrganizationTeamsView({
                       ))}
                     </NativeSelect>
                     <NativeSelect
-                      value={statusFilter}
-                      onChange={(event) => setStatusFilter(event.target.value)}
+                      value={filters.statusFilter}
+                      onChange={(event) =>
+                        onFiltersChange({ ...filters, statusFilter: event.target.value })
+                      }
                     >
                       <NativeSelectOption value="all">All status</NativeSelectOption>
                       <NativeSelectOption value="active">Active</NativeSelectOption>
                       <NativeSelectOption value="inactive">Inactive</NativeSelectOption>
                     </NativeSelect>
                     <NativeSelect
-                      value={sortBy}
-                      onChange={(event) => setSortBy(event.target.value)}
+                      value={filters.sortBy}
+                      onChange={(event) =>
+                        onFiltersChange({
+                          ...filters,
+                          sortBy: event.target.value as TeamTableFilters["sortBy"],
+                        })
+                      }
                     >
                       <NativeSelectOption value="recent">Sort: Recently updated</NativeSelectOption>
                       <NativeSelectOption value="name">Sort: Team name</NativeSelectOption>
@@ -1090,11 +1096,14 @@ export function OrganizationTeamsView({
 
               <TeamsTable
                 divisionsById={divisionsById}
+                onPageChange={onPageChange}
+                onPageSizeChange={onPageSizeChange}
                 organizationSlug={organization.slug}
                 onDeleteTeam={setTeamToDelete}
                 onEditTeam={setTeamToEdit}
+                pagination={pagination}
                 playersByTeamId={playersByTeamId}
-                teams={filteredTeams}
+                teams={teams}
               />
             </div>
 

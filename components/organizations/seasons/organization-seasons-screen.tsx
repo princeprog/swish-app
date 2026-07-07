@@ -17,6 +17,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { getApiErrorMessage } from "@/hooks/use-auth"
 import { useLeagueSeasonsQuery } from "@/hooks/use-league-season"
 import { useOrganizationsQuery } from "@/hooks/use-organization"
+import { useTablePaginationState } from "@/hooks/use-table-pagination-state"
+import { getDefaultPaginationMeta } from "@/services/pagination"
 
 type OrganizationSeasonsScreenProps = {
   slug: string
@@ -68,7 +70,8 @@ export function OrganizationSeasonsScreen({
 }: OrganizationSeasonsScreenProps) {
   const organizationsQuery = useOrganizationsQuery()
   const organization = organizationsQuery.data?.find((item) => item.slug === slug)
-  const seasonsQuery = useLeagueSeasonsQuery(organization?.id)
+  const tablePagination = useTablePaginationState()
+  const seasonsQuery = useLeagueSeasonsQuery(organization?.id, tablePagination.params)
 
   if (organizationsQuery.isLoading || (organization && seasonsQuery.isLoading)) {
     return <SeasonsLoadingState />
@@ -104,7 +107,10 @@ export function OrganizationSeasonsScreen({
   return (
     <OrganizationSeasonsView
       organization={organization}
-      seasons={seasonsQuery.data ?? []}
+      pagination={seasonsQuery.data?.pagination ?? getDefaultPaginationMeta()}
+      seasons={seasonsQuery.data?.data ?? []}
+      onPageChange={tablePagination.setPage}
+      onPageSizeChange={tablePagination.setPageSize}
     />
   )
 }

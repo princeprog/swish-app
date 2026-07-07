@@ -17,7 +17,9 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { getApiErrorMessage } from "@/hooks/use-auth"
 import { useLeagueSeasonsQuery } from "@/hooks/use-league-season"
 import { useOrganizationsQuery } from "@/hooks/use-organization"
+import { useTablePaginationState } from "@/hooks/use-table-pagination-state"
 import { useVenuesQuery } from "@/hooks/use-venue"
+import { getDefaultPaginationMeta } from "@/services/pagination"
 
 type OrganizationVenuesScreenProps = {
   slug: string
@@ -67,8 +69,9 @@ function VenuesEmptyShell({
 export function OrganizationVenuesScreen({ slug }: OrganizationVenuesScreenProps) {
   const organizationsQuery = useOrganizationsQuery()
   const organization = organizationsQuery.data?.find((item) => item.slug === slug)
-  const seasonsQuery = useLeagueSeasonsQuery(organization?.id)
-  const venuesQuery = useVenuesQuery(organization?.id)
+  const tablePagination = useTablePaginationState()
+  const seasonsQuery = useLeagueSeasonsQuery(organization?.id, { pageSize: 50 })
+  const venuesQuery = useVenuesQuery(organization?.id, tablePagination.params)
 
   if (
     organizationsQuery.isLoading ||
@@ -116,8 +119,11 @@ export function OrganizationVenuesScreen({ slug }: OrganizationVenuesScreenProps
   return (
     <OrganizationVenuesView
       organization={organization}
-      seasons={seasonsQuery.data ?? []}
-      venues={venuesQuery.data ?? []}
+      pagination={venuesQuery.data?.pagination ?? getDefaultPaginationMeta()}
+      seasons={seasonsQuery.data?.data ?? []}
+      venues={venuesQuery.data?.data ?? []}
+      onPageChange={tablePagination.setPage}
+      onPageSizeChange={tablePagination.setPageSize}
     />
   )
 }

@@ -19,6 +19,9 @@ import { useDivisionsQuery } from "@/hooks/use-division"
 import { useOrganizationsQuery } from "@/hooks/use-organization"
 import { usePlayersQuery } from "@/hooks/use-player"
 import { useTeamsQuery } from "@/hooks/use-team"
+import { useTablePaginationState } from "@/hooks/use-table-pagination-state"
+import { getDefaultPaginationMeta } from "@/services/pagination"
+import type { TeamListParams } from "@/services/team.service"
 
 type OrganizationTeamsScreenProps = {
   slug: string
@@ -68,9 +71,27 @@ function TeamsEmptyShell({
 export function OrganizationTeamsScreen({ slug }: OrganizationTeamsScreenProps) {
   const organizationsQuery = useOrganizationsQuery()
   const organization = organizationsQuery.data?.find((item) => item.slug === slug)
-  const divisionsQuery = useDivisionsQuery(organization?.id)
-  const teamsQuery = useTeamsQuery(organization?.id)
-  const playersQuery = usePlayersQuery(organization?.id)
+  const tablePagination = useTablePaginationState()
+  const search = tablePagination.searchParams.get("search") ?? ""
+  const divisionFilter = tablePagination.searchParams.get("divisionId") ?? "all"
+  const statusParam = tablePagination.searchParams.get("status")
+  const statusFilter =
+    statusParam === "active" || statusParam === "inactive" ? statusParam : "all"
+  const sortParam = tablePagination.searchParams.get("sortBy")
+  const sortBy =
+    sortParam === "name" || sortParam === "division" || sortParam === "recent"
+      ? sortParam
+      : "recent"
+  const teamParams: TeamListParams = {
+    ...tablePagination.params,
+    divisionId: divisionFilter === "all" ? undefined : divisionFilter,
+    search: search || undefined,
+    sortBy,
+    status: statusFilter === "all" ? undefined : statusFilter,
+  }
+  const divisionsQuery = useDivisionsQuery(organization?.id, { pageSize: 50 })
+  const teamsQuery = useTeamsQuery(organization?.id, teamParams)
+  const playersQuery = usePlayersQuery(organization?.id, { pageSize: 50 })
 
   if (
     organizationsQuery.isLoading ||
@@ -127,10 +148,28 @@ export function OrganizationTeamsScreen({ slug }: OrganizationTeamsScreenProps) 
 
   return (
     <OrganizationTeamsView
-      divisions={divisionsQuery.data ?? []}
+      divisions={divisionsQuery.data?.data ?? []}
+      filters={{
+        divisionFilter,
+        search,
+        sortBy,
+        statusFilter,
+      }}
       organization={organization}
-      players={playersQuery.data ?? []}
-      teams={teamsQuery.data ?? []}
+      pagination={teamsQuery.data?.pagination ?? getDefaultPaginationMeta()}
+      players={playersQuery.data?.data ?? []}
+      teams={teamsQuery.data?.data ?? []}
+      onFiltersChange={(updates) =>
+        tablePagination.setParams({
+          divisionId: updates.divisionFilter === "all" ? null : updates.divisionFilter,
+          page: null,
+          search: updates.search,
+          sortBy: updates.sortBy === "recent" ? null : updates.sortBy,
+          status: updates.statusFilter === "all" ? null : updates.statusFilter,
+        })
+      }
+      onPageChange={tablePagination.setPage}
+      onPageSizeChange={tablePagination.setPageSize}
     />
   )
 }

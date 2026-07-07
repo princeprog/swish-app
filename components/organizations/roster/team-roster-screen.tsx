@@ -19,6 +19,8 @@ import { useDivisionsQuery } from "@/hooks/use-division"
 import { useOrganizationsQuery } from "@/hooks/use-organization"
 import { usePlayersQuery } from "@/hooks/use-player"
 import { useTeamsQuery } from "@/hooks/use-team"
+import { useTablePaginationState } from "@/hooks/use-table-pagination-state"
+import { getDefaultPaginationMeta } from "@/services/pagination"
 
 type TeamRosterScreenProps = {
   slug: string
@@ -69,10 +71,14 @@ function TeamRosterEmptyShell({
 export function TeamRosterScreen({ slug, teamId }: TeamRosterScreenProps) {
   const organizationsQuery = useOrganizationsQuery()
   const organization = organizationsQuery.data?.find((item) => item.slug === slug)
-  const divisionsQuery = useDivisionsQuery(organization?.id)
-  const teamsQuery = useTeamsQuery(organization?.id)
-  const playersQuery = usePlayersQuery(organization?.id)
-  const team = teamsQuery.data?.find((item) => item.id === teamId)
+  const tablePagination = useTablePaginationState()
+  const divisionsQuery = useDivisionsQuery(organization?.id, { pageSize: 50 })
+  const teamsQuery = useTeamsQuery(organization?.id, { pageSize: 50 })
+  const playersQuery = usePlayersQuery(organization?.id, {
+    ...tablePagination.params,
+    teamId,
+  })
+  const team = teamsQuery.data?.data.find((item) => item.id === teamId)
 
   if (
     organizationsQuery.isLoading ||
@@ -138,10 +144,13 @@ export function TeamRosterScreen({ slug, teamId }: TeamRosterScreenProps) {
 
   return (
     <TeamRosterView
-      divisions={divisionsQuery.data ?? []}
+      divisions={divisionsQuery.data?.data ?? []}
       organization={organization}
-      players={playersQuery.data ?? []}
+      pagination={playersQuery.data?.pagination ?? getDefaultPaginationMeta()}
+      players={playersQuery.data?.data ?? []}
       team={team}
+      onPageChange={tablePagination.setPage}
+      onPageSizeChange={tablePagination.setPageSize}
     />
   )
 }

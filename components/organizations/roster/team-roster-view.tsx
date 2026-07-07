@@ -21,6 +21,7 @@ import {
 import { toast } from "sonner"
 
 import { AppSidebar } from "@/components/app-sidebar"
+import { DataTablePagination } from "@/components/organizations/shared/data-table-pagination"
 import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -66,6 +67,7 @@ import {
 } from "@/hooks/use-player"
 import type { Division } from "@/services/division.service"
 import type { Organization } from "@/services/organization.service"
+import type { PageSizeOption, PaginationMeta } from "@/services/pagination"
 import type { Player } from "@/services/player.service"
 import type { Team } from "@/services/team.service"
 
@@ -729,14 +731,20 @@ function TeamRosterSummaryCards({
 }
 
 function TeamRosterTable({
+  onPageChange,
+  onPageSizeChange,
   onDeletePlayer,
   onEditPlayer,
   onViewPlayer,
+  pagination,
   players,
 }: {
+  onPageChange: (page: number) => void
+  onPageSizeChange: (pageSize: PageSizeOption) => void
   onDeletePlayer: (player: Player) => void
   onEditPlayer: (player: Player) => void
   onViewPlayer: (player: Player) => void
+  pagination: PaginationMeta
   players: Player[]
 }) {
   if (players.length === 0) {
@@ -834,6 +842,11 @@ function TeamRosterTable({
             ))}
           </TableBody>
         </Table>
+        <DataTablePagination
+          pagination={pagination}
+          onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
+        />
       </CardContent>
     </Card>
   )
@@ -869,12 +882,18 @@ function TeamRosterNotesCard({ teamName }: { teamName: string }) {
 
 export function TeamRosterView({
   divisions,
+  onPageChange,
+  onPageSizeChange,
   organization,
+  pagination,
   players,
   team,
 }: {
   divisions: Division[]
+  onPageChange: (page: number) => void
+  onPageSizeChange: (pageSize: PageSizeOption) => void
   organization: Organization
+  pagination: PaginationMeta
   players: Player[]
   team: Team
 }) {
@@ -889,16 +908,7 @@ export function TeamRosterView({
   const [mountedPlayerDetails, setMountedPlayerDetails] = React.useState<Player | null>(null)
 
   const division = divisions.find((item) => item.id === team.division_id)
-  const rosterPlayers = React.useMemo(
-    () =>
-      [...players]
-        .filter((player) => player.team_id === team.id)
-        .sort(
-          (left, right) =>
-            new Date(right.updated_at).getTime() - new Date(left.updated_at).getTime(),
-        ),
-    [players, team.id],
-  )
+  const rosterPlayers = players
 
   const activePlayers = rosterPlayers.filter((player) => player.status === "active").length
   const inactivePlayers = rosterPlayers.length - activePlayers
@@ -1031,6 +1041,8 @@ export function TeamRosterView({
           <section className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_320px]">
             <div className="space-y-6">
               <TeamRosterTable
+                onPageChange={onPageChange}
+                onPageSizeChange={onPageSizeChange}
                 onDeletePlayer={setPlayerToDelete}
                 onEditPlayer={setPlayerToEdit}
                 onViewPlayer={(player) => {
@@ -1038,6 +1050,7 @@ export function TeamRosterView({
                   setMountedPlayerDetails(player)
                   setPlayerDetailsOpen(true)
                 }}
+                pagination={pagination}
                 players={rosterPlayers}
               />
             </div>

@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from "@/constants/api-config"
 import { apiService } from "@/services/api.service"
+import type { PaginatedResponse, PaginationParams } from "@/services/pagination"
 
 export type Team = {
   color: string | null
@@ -22,6 +23,13 @@ export type CreateTeamPayload = {
 
 export type UpdateTeamPayload = Partial<CreateTeamPayload>
 
+export type TeamListParams = PaginationParams & {
+  divisionId?: string
+  search?: string
+  sortBy?: "division" | "name" | "recent"
+  status?: "active" | "inactive"
+}
+
 export const teamService = {
   create: (organizationId: string, data: CreateTeamPayload) =>
     apiService.post<Team, CreateTeamPayload>(
@@ -31,9 +39,10 @@ export const teamService = {
         credentials: "include",
       },
     ),
-  list: (organizationId: string) =>
-    apiService.get<Team[]>(API_ENDPOINTS.teams.list(organizationId), {
+  list: (organizationId: string, params: TeamListParams = {}) =>
+    apiService.get<PaginatedResponse<Team>>(API_ENDPOINTS.teams.list(organizationId), {
       credentials: "include",
+      query: params,
     }),
   remove: (organizationId: string, teamId: string) =>
     apiService.delete<void>(`${API_ENDPOINTS.teams.list(organizationId)}/${teamId}`, {

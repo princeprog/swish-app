@@ -19,6 +19,9 @@ import { useDivisionsQuery } from "@/hooks/use-division"
 import { useOrganizationsQuery } from "@/hooks/use-organization"
 import { usePlayersQuery } from "@/hooks/use-player"
 import { useTeamsQuery } from "@/hooks/use-team"
+import { useTablePaginationState } from "@/hooks/use-table-pagination-state"
+import { getDefaultPaginationMeta } from "@/services/pagination"
+import type { PlayerListParams } from "@/services/player.service"
 
 type OrganizationPlayersScreenProps = {
   slug: string
@@ -68,9 +71,29 @@ function PlayersEmptyShell({
 export function OrganizationPlayersScreen({ slug }: OrganizationPlayersScreenProps) {
   const organizationsQuery = useOrganizationsQuery()
   const organization = organizationsQuery.data?.find((item) => item.slug === slug)
-  const divisionsQuery = useDivisionsQuery(organization?.id)
-  const teamsQuery = useTeamsQuery(organization?.id)
-  const playersQuery = usePlayersQuery(organization?.id)
+  const tablePagination = useTablePaginationState()
+  const search = tablePagination.searchParams.get("search") ?? ""
+  const teamFilter = tablePagination.searchParams.get("teamId") ?? "all"
+  const divisionFilter = tablePagination.searchParams.get("divisionId") ?? "all"
+  const statusParam = tablePagination.searchParams.get("status")
+  const statusFilter =
+    statusParam === "active" || statusParam === "inactive" ? statusParam : "all"
+  const sortParam = tablePagination.searchParams.get("sortBy")
+  const sortBy =
+    sortParam === "name" || sortParam === "team" || sortParam === "recent"
+      ? sortParam
+      : "recent"
+  const playerParams: PlayerListParams = {
+    ...tablePagination.params,
+    divisionId: divisionFilter === "all" ? undefined : divisionFilter,
+    search: search || undefined,
+    sortBy,
+    status: statusFilter === "all" ? undefined : statusFilter,
+    teamId: teamFilter === "all" ? undefined : teamFilter,
+  }
+  const divisionsQuery = useDivisionsQuery(organization?.id, { pageSize: 50 })
+  const teamsQuery = useTeamsQuery(organization?.id, { pageSize: 50 })
+  const playersQuery = usePlayersQuery(organization?.id, playerParams)
 
   if (
     organizationsQuery.isLoading ||
@@ -127,10 +150,30 @@ export function OrganizationPlayersScreen({ slug }: OrganizationPlayersScreenPro
 
   return (
     <OrganizationPlayersView
-      divisions={divisionsQuery.data ?? []}
+      divisions={divisionsQuery.data?.data ?? []}
+      filters={{
+        divisionFilter,
+        search,
+        sortBy,
+        statusFilter,
+        teamFilter,
+      }}
       organization={organization}
-      players={playersQuery.data ?? []}
-      teams={teamsQuery.data ?? []}
+      pagination={playersQuery.data?.pagination ?? getDefaultPaginationMeta()}
+      players={playersQuery.data?.data ?? []}
+      teams={teamsQuery.data?.data ?? []}
+      onFiltersChange={(updates) =>
+        tablePagination.setParams({
+          divisionId: updates.divisionFilter === "all" ? null : updates.divisionFilter,
+          page: null,
+          search: updates.search,
+          sortBy: updates.sortBy === "recent" ? null : updates.sortBy,
+          status: updates.statusFilter === "all" ? null : updates.statusFilter,
+          teamId: updates.teamFilter === "all" ? null : updates.teamFilter,
+        })
+      }
+      onPageChange={tablePagination.setPage}
+      onPageSizeChange={tablePagination.setPageSize}
     />
   )
 }

@@ -18,6 +18,8 @@ import { getApiErrorMessage } from "@/hooks/use-auth"
 import { useDivisionsQuery } from "@/hooks/use-division"
 import { useLeagueSeasonsQuery } from "@/hooks/use-league-season"
 import { useOrganizationsQuery } from "@/hooks/use-organization"
+import { useTablePaginationState } from "@/hooks/use-table-pagination-state"
+import { getDefaultPaginationMeta } from "@/services/pagination"
 
 type OrganizationDivisionsScreenProps = {
   slug: string
@@ -69,8 +71,9 @@ export function OrganizationDivisionsScreen({
 }: OrganizationDivisionsScreenProps) {
   const organizationsQuery = useOrganizationsQuery()
   const organization = organizationsQuery.data?.find((item) => item.slug === slug)
-  const seasonsQuery = useLeagueSeasonsQuery(organization?.id)
-  const divisionsQuery = useDivisionsQuery(organization?.id)
+  const tablePagination = useTablePaginationState()
+  const seasonsQuery = useLeagueSeasonsQuery(organization?.id, { pageSize: 50 })
+  const divisionsQuery = useDivisionsQuery(organization?.id, tablePagination.params)
 
   if (
     organizationsQuery.isLoading ||
@@ -117,9 +120,12 @@ export function OrganizationDivisionsScreen({
 
   return (
     <OrganizationDivisionsView
-      divisions={divisionsQuery.data ?? []}
+      divisions={divisionsQuery.data?.data ?? []}
       organization={organization}
-      seasons={seasonsQuery.data ?? []}
+      pagination={divisionsQuery.data?.pagination ?? getDefaultPaginationMeta()}
+      seasons={seasonsQuery.data?.data ?? []}
+      onPageChange={tablePagination.setPage}
+      onPageSizeChange={tablePagination.setPageSize}
     />
   )
 }

@@ -8,16 +8,22 @@ import {
   type Division,
   type UpdateDivisionPayload,
 } from "@/services/division.service"
+import type { PaginationParams } from "@/services/pagination"
 
 export const DIVISION_QUERY_KEYS = {
   list: (organizationId: string) => ["divisions", "list", organizationId] as const,
+  listWithParams: (organizationId: string, params: PaginationParams) =>
+    ["divisions", "list", organizationId, params] as const,
 }
 
-export function useDivisionsQuery(organizationId?: string) {
+export function useDivisionsQuery(
+  organizationId?: string,
+  params: PaginationParams = {},
+) {
   return useQuery({
     enabled: Boolean(organizationId),
-    queryFn: () => divisionService.list(organizationId!),
-    queryKey: DIVISION_QUERY_KEYS.list(organizationId ?? "unknown"),
+    queryFn: () => divisionService.list(organizationId!, params),
+    queryKey: DIVISION_QUERY_KEYS.listWithParams(organizationId ?? "unknown", params),
     retry: false,
   })
 }

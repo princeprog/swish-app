@@ -6,18 +6,24 @@ import {
   teamService,
   type CreateTeamPayload,
   type Team,
+  type TeamListParams,
   type UpdateTeamPayload,
 } from "@/services/team.service"
 
 export const TEAM_QUERY_KEYS = {
   list: (organizationId: string) => ["teams", "list", organizationId] as const,
+  listWithParams: (organizationId: string, params: TeamListParams) =>
+    ["teams", "list", organizationId, params] as const,
 }
 
-export function useTeamsQuery(organizationId?: string) {
+export function useTeamsQuery(
+  organizationId?: string,
+  params: TeamListParams = {},
+) {
   return useQuery({
     enabled: Boolean(organizationId),
-    queryFn: () => teamService.list(organizationId!),
-    queryKey: TEAM_QUERY_KEYS.list(organizationId ?? "unknown"),
+    queryFn: () => teamService.list(organizationId!, params),
+    queryKey: TEAM_QUERY_KEYS.listWithParams(organizationId ?? "unknown", params),
     retry: false,
   })
 }

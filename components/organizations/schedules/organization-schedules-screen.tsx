@@ -72,10 +72,12 @@ export function OrganizationSchedulesScreen({
 }: OrganizationSchedulesScreenProps) {
   const organizationsQuery = useOrganizationsQuery()
   const organization = organizationsQuery.data?.find((item) => item.slug === slug)
-  const leagueSeasonsQuery = useLeagueSeasonsQuery(organization?.id)
-  const divisionsQuery = useDivisionsQuery(organization?.id)
-  const teamsQuery = useTeamsQuery(organization?.id)
-  const venuesQuery = useVenuesQuery(organization?.id)
+  const leagueSeasonsQuery = useLeagueSeasonsQuery(organization?.id, {
+    pageSize: 50,
+  })
+  const divisionsQuery = useDivisionsQuery(organization?.id, { pageSize: 50 })
+  const teamsQuery = useTeamsQuery(organization?.id, { pageSize: 50 })
+  const venuesQuery = useVenuesQuery(organization?.id, { pageSize: 50 })
   const schedulesQuery = useSchedulesQuery(organization?.id)
 
   if (
@@ -155,12 +157,12 @@ export function OrganizationSchedulesScreen({
 
   return (
     <OrganizationSchedulesView
-      divisions={divisionsQuery.data ?? []}
+      divisions={divisionsQuery.data?.data ?? []}
       organization={organization}
       schedules={schedulesQuery.data ?? []}
-      seasons={leagueSeasonsQuery.data ?? []}
-      teams={teamsQuery.data ?? []}
-      venues={venuesQuery.data ?? []}
+      seasons={leagueSeasonsQuery.data?.data ?? []}
+      teams={teamsQuery.data?.data ?? []}
+      venues={venuesQuery.data?.data ?? []}
     />
   )
 }

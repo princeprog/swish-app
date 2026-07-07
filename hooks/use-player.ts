@@ -6,18 +6,24 @@ import {
   playerService,
   type CreatePlayerPayload,
   type Player,
+  type PlayerListParams,
   type UpdatePlayerPayload,
 } from "@/services/player.service"
 
 export const PLAYER_QUERY_KEYS = {
   list: (organizationId: string) => ["players", "list", organizationId] as const,
+  listWithParams: (organizationId: string, params: PlayerListParams) =>
+    ["players", "list", organizationId, params] as const,
 }
 
-export function usePlayersQuery(organizationId?: string) {
+export function usePlayersQuery(
+  organizationId?: string,
+  params: PlayerListParams = {},
+) {
   return useQuery({
     enabled: Boolean(organizationId),
-    queryFn: () => playerService.list(organizationId!),
-    queryKey: PLAYER_QUERY_KEYS.list(organizationId ?? "unknown"),
+    queryFn: () => playerService.list(organizationId!, params),
+    queryKey: PLAYER_QUERY_KEYS.listWithParams(organizationId ?? "unknown", params),
     retry: false,
   })
 }

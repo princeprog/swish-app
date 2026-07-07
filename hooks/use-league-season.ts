@@ -8,17 +8,26 @@ import {
   type LeagueSeason,
   type UpdateLeagueSeasonPayload,
 } from "@/services/league-season.service"
+import type { PaginationParams } from "@/services/pagination"
 
 export const LEAGUE_SEASON_QUERY_KEYS = {
   list: (organizationId: string) =>
     ["league-seasons", "list", organizationId] as const,
+  listWithParams: (organizationId: string, params: PaginationParams) =>
+    ["league-seasons", "list", organizationId, params] as const,
 }
 
-export function useLeagueSeasonsQuery(organizationId?: string) {
+export function useLeagueSeasonsQuery(
+  organizationId?: string,
+  params: PaginationParams = {},
+) {
   return useQuery({
     enabled: Boolean(organizationId),
-    queryFn: () => leagueSeasonService.list(organizationId!),
-    queryKey: LEAGUE_SEASON_QUERY_KEYS.list(organizationId ?? "unknown"),
+    queryFn: () => leagueSeasonService.list(organizationId!, params),
+    queryKey: LEAGUE_SEASON_QUERY_KEYS.listWithParams(
+      organizationId ?? "unknown",
+      params,
+    ),
     retry: false,
   })
 }
