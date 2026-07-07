@@ -1,21 +1,42 @@
 "use client"
 
 import * as React from "react"
+import { createPortal } from "react-dom"
 import {
+  CalendarDays,
   CalendarClock,
   CalendarRange,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  CircleDashed,
+  CopyCheck,
+  Ellipsis,
   Filter,
+  Globe,
+  MapPin,
   Loader2,
+  PencilLine,
   Plus,
   Search,
   Shield,
+  Sparkles,
+  Trash2,
   X,
 } from "lucide-react"
 import { toast } from "sonner"
 
 import { AppSidebar } from "@/components/app-sidebar"
 import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
+import { Badge } from "@/components/ui/badge"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -36,16 +57,12 @@ import { Field, FieldContent, FieldError, FieldLabel } from "@/components/ui/fie
 import { Input } from "@/components/ui/input"
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { getApiErrorMessage } from "@/hooks/use-auth"
-import { useCreateScheduleMutation } from "@/hooks/use-schedule"
+import {
+  useCreateScheduleMutation,
+  useDeleteScheduleMutation,
+  useUpdateScheduleMutation,
+} from "@/hooks/use-schedule"
 import type { Division } from "@/services/division.service"
 import type { LeagueSeason } from "@/services/league-season.service"
 import type { Organization } from "@/services/organization.service"
@@ -87,10 +104,16 @@ function scheduleStatusTone(status: string) {
   }
 }
 
+function toTitleCase(value: string) {
+  return value
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ")
+}
+
 function ScheduleSummaryCards({ schedules }: { schedules: Schedule[] }) {
-  const upcomingGames = schedules.filter((game) =>
-    ["draft", "scheduled", "live", "reopened"].includes(game.status),
-  ).length
+  const now = Date.now()
+  const upcomingGames = schedules.filter((game) => new Date(game.starts_at).getTime() >= now).length
   const completedGames = schedules.filter((game) => game.status === "final").length
   const venuesInUse = new Set(schedules.map((game) => game.venue_id)).size
 
@@ -102,13 +125,13 @@ function ScheduleSummaryCards({ schedules }: { schedules: Schedule[] }) {
       value: schedules.length,
     },
     {
-      description: "Ready, pending, or in progress",
+      description: "Next 7 days",
       icon: CalendarClock,
-      title: "Active schedule",
+      title: "Upcoming games",
       value: upcomingGames,
     },
     {
-      description: "Officially finalized",
+      description: "This season",
       icon: CheckCircle2,
       title: "Completed games",
       value: completedGames,
@@ -128,14 +151,12 @@ function ScheduleSummaryCards({ schedules }: { schedules: Schedule[] }) {
 
         return (
           <Card key={card.title} className="border border-border/60 bg-card/95 shadow-none">
-            <CardHeader className="gap-4 pb-3">
+            <CardHeader className="gap-3 pb-3">
               <div className="flex items-center gap-3">
                 <div className="flex size-9 items-center justify-center rounded-lg border border-border/70 bg-background/70">
                   <Icon className="size-4 text-muted-foreground" />
                 </div>
-                <CardDescription className="text-sm text-foreground/85">
-                  {card.title}
-                </CardDescription>
+                <CardDescription className="text-sm text-foreground/85">{card.title}</CardDescription>
               </div>
             </CardHeader>
             <CardContent className="space-y-2 pt-0">
@@ -151,10 +172,10 @@ function ScheduleSummaryCards({ schedules }: { schedules: Schedule[] }) {
 
 function ScheduleSetupNotesCard() {
   const notes = [
-    "Every game should point to the right season, division, teams, and venue.",
-    "Draft games stay internal until they are ready to be published or scored.",
-    "Only finalized games should later affect standings and playoff logic.",
-    "Postponed or cancelled games stay visible without polluting official results.",
+    "Create all division schedules before publishing the league calendar.",
+    "Assign the correct venue and game time before game day.",
+    "Review conflicts and overlaps before publishing schedule changes.",
+    "Publish only when all public-facing games are ready to be visible.",
   ]
 
   return (
@@ -202,9 +223,7 @@ function ScheduleRecentActivityCard({ schedules }: { schedules: Schedule[] }) {
               <div className="text-sm font-medium">
                 {game.home_team_name} vs {game.away_team_name}
               </div>
-              <div className="text-xs text-muted-foreground">
-                {game.division_name} • {game.venue_name}
-              </div>
+              <div className="text-xs text-muted-foreground">{game.division_name} • {game.venue_name}</div>
               <div className="text-xs text-muted-foreground">
                 Updated {new Date(game.updated_at).toLocaleString()}
               </div>
@@ -216,7 +235,187 @@ function ScheduleRecentActivityCard({ schedules }: { schedules: Schedule[] }) {
   )
 }
 
-function ScheduleTable({ games }: { games: Schedule[] }) {
+function ScheduleOperationsCard({
+  canCreateSchedule,
+  onCreateSchedule,
+}: {
+  canCreateSchedule: boolean
+  onCreateSchedule: () => void
+}) {
+  return (
+    <Card className="border border-border/60 bg-card/95 shadow-none">
+      <CardHeader>
+        <CardTitle className="text-base">Schedule operations</CardTitle>
+        <CardDescription>
+          Create, edit, and publish official game schedules for your league.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <Button className="w-full justify-start" disabled={!canCreateSchedule} onClick={onCreateSchedule}>
+          <Globe className="size-4" />
+          Publish schedule
+        </Button>
+        <Button className="w-full justify-start" variant="outline">
+          <CopyCheck className="size-4" />
+          Generate printable schedule
+        </Button>
+      </CardContent>
+    </Card>
+  )
+}
+
+function ScheduleActionsPopover({
+  game,
+  onDelete,
+  onEdit,
+}: {
+  game: Schedule
+  onDelete: () => void
+  onEdit: () => void
+}) {
+  const [open, setOpen] = React.useState(false)
+  const buttonRef = React.useRef<HTMLButtonElement | null>(null)
+  const [menuPosition, setMenuPosition] = React.useState<{
+    top: number
+    left: number
+  } | null>(null)
+
+  React.useEffect(() => {
+    if (!open) {
+      setMenuPosition(null)
+      return
+    }
+
+    function updatePosition() {
+      const rect = buttonRef.current?.getBoundingClientRect()
+
+      if (!rect) {
+        return
+      }
+
+      setMenuPosition({
+        top: rect.bottom + 8,
+        left: rect.right - 176,
+      })
+    }
+
+    updatePosition()
+
+    function handlePointerDown(event: MouseEvent) {
+      const target = event.target as HTMLElement | null
+
+      if (!target?.closest(`[data-schedule-actions="${game.id}"]`)) {
+        setOpen(false)
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown)
+    document.addEventListener("keydown", handleEscape)
+    window.addEventListener("resize", updatePosition)
+    window.addEventListener("scroll", updatePosition, true)
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown)
+      document.removeEventListener("keydown", handleEscape)
+      window.removeEventListener("resize", updatePosition)
+      window.removeEventListener("scroll", updatePosition, true)
+    }
+  }, [game.id, open])
+
+  return (
+    <div className="relative inline-flex justify-end" data-schedule-actions={game.id}>
+      <Button
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-label={`Open actions for ${game.home_team_name} vs ${game.away_team_name}`}
+        ref={buttonRef}
+        size="icon-sm"
+        variant="ghost"
+        onClick={() => setOpen((current) => !current)}
+      >
+        <Ellipsis className="size-4" />
+      </Button>
+
+      {open && menuPosition
+        ? createPortal(
+            <div
+              className="fixed z-50 min-w-44 rounded-xl border border-border/70 bg-popover p-1.5 shadow-xl"
+              role="menu"
+              style={{
+                left: Math.max(menuPosition.left, 12),
+                top: menuPosition.top,
+              }}
+            >
+              <div data-schedule-actions={game.id}>
+                <Button
+                  className="w-full justify-start"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setOpen(false)
+                    onEdit()
+                  }}
+                >
+                  <PencilLine className="size-4" />
+                  Edit game
+                </Button>
+                <Button
+                  className="w-full justify-start text-destructive hover:text-destructive"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setOpen(false)
+                    onDelete()
+                  }}
+                >
+                  <Trash2 className="size-4" />
+                  Delete game
+                </Button>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
+    </div>
+  )
+}
+
+function groupSchedulesByDay(games: Schedule[]) {
+  const groups = new Map<string, Schedule[]>()
+
+  for (const game of games) {
+    const key = new Date(game.starts_at).toDateString()
+    const entries = groups.get(key)
+    if (entries) {
+      entries.push(game)
+    } else {
+      groups.set(key, [game])
+    }
+  }
+
+  return Array.from(groups.entries()).map(([dateKey, items]) => ({
+    dateKey,
+    games: items.sort(
+      (left, right) => new Date(left.starts_at).getTime() - new Date(right.starts_at).getTime(),
+    ),
+  }))
+}
+
+function ScheduleBoard({
+  games,
+  onDeleteGame,
+  onEditGame,
+}: {
+  games: Schedule[]
+  onDeleteGame: (game: Schedule) => void
+  onEditGame: (game: Schedule) => void
+}) {
   if (games.length === 0) {
     return (
       <Empty className="border bg-card">
@@ -233,64 +432,481 @@ function ScheduleTable({ games }: { games: Schedule[] }) {
     )
   }
 
+  const groupedSchedules = groupSchedulesByDay(games)
+
   return (
     <Card className="border border-border/60 bg-card/95 shadow-none">
-      <CardHeader>
-        <CardTitle>Schedule</CardTitle>
+      <CardHeader className="gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="space-y-1">
+            <CardTitle>Schedule board</CardTitle>
+            <CardDescription>Grouped by play date across all visible divisions and venues.</CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button aria-label="Previous dates" size="icon-sm" variant="outline">
+              <ChevronLeft className="size-4" />
+            </Button>
+            <Button aria-label="Next dates" size="icon-sm" variant="outline">
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+        </div>
         <CardAction>
           <div className="text-sm text-muted-foreground">{games.length} total</div>
         </CardAction>
       </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow className="border-border/60 hover:bg-transparent">
-              <TableHead>Date & time</TableHead>
-              <TableHead>Matchup</TableHead>
-              <TableHead>Season</TableHead>
-              <TableHead>Division</TableHead>
-              <TableHead>Venue</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {games.map((game) => (
-              <TableRow key={game.id} className="border-border/50 hover:bg-background/40">
-                <TableCell>
-                  <div className="space-y-1">
-                    <div className="font-medium">
-                      {new Date(game.starts_at).toLocaleDateString()}
+      <CardContent className="space-y-5">
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {groupedSchedules.map((group, index) => {
+            const date = new Date(group.dateKey)
+            const isFirst = index === 0
+
+            return (
+              <button
+                key={group.dateKey}
+                className="flex min-w-20 flex-col items-center rounded-lg border px-3 py-2 text-sm transition-colors hover:bg-accent"
+                type="button"
+              >
+                <span className="text-xs text-muted-foreground">
+                  {date.toLocaleDateString([], { weekday: "short" }).toUpperCase()}
+                </span>
+                <span className={isFirst ? "font-semibold text-foreground" : "font-medium"}>
+                  {date.toLocaleDateString([], { day: "numeric" })}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="space-y-5">
+          {groupedSchedules.map((group) => {
+            const date = new Date(group.dateKey)
+
+            return (
+              <section key={group.dateKey} className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-sm font-semibold">
+                    {date.toLocaleDateString([], {
+                      weekday: "long",
+                      month: "long",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </h3>
+                  <Badge variant="outline">{group.games.length} games</Badge>
+                </div>
+
+                <div className="overflow-hidden rounded-xl border border-border/60">
+                  {group.games.map((game, index) => (
+                    <div
+                      key={game.id}
+                      className={[
+                        "grid gap-3 bg-card px-4 py-4",
+                        "md:grid-cols-[130px_minmax(0,1.2fr)_180px_190px_120px_44px]",
+                        index !== group.games.length - 1 ? "border-b border-border/60" : "",
+                      ].join(" ")}
+                    >
+                      <div className="space-y-1">
+                        <div className="text-sm font-medium">
+                          {new Date(game.starts_at).toLocaleTimeString([], {
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })}
+                        </div>
+                        <div className="text-xs text-muted-foreground">Game #{index + 1}</div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{game.home_team_name}</span>
+                          <Badge variant="secondary">vs</Badge>
+                          <span className="font-medium">{game.away_team_name}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">{game.league_season_name}</div>
+                      </div>
+
+                      <div className="space-y-1 text-sm">
+                        <div>{game.division_name}</div>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <CircleDashed className="size-3" />
+                          {game.home_team_slug} / {game.away_team_slug}
+                        </div>
+                      </div>
+
+                      <div className="space-y-1 text-sm">
+                        <div className="flex items-center gap-1">
+                          <MapPin className="size-3.5 text-muted-foreground" />
+                          {game.venue_name}
+                        </div>
+                        <div className="text-xs text-muted-foreground">{game.venue_slug}</div>
+                      </div>
+
+                      <div className="flex items-start md:justify-end">
+                        <Badge className={scheduleStatusTone(game.status)} variant="outline">
+                          {toTitleCase(game.status)}
+                        </Badge>
+                      </div>
+
+                      <div className="flex items-start justify-end">
+                        <ScheduleActionsPopover
+                          game={game}
+                          onDelete={() => onDeleteGame(game)}
+                          onEdit={() => onEditGame(game)}
+                        />
+                      </div>
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {new Date(game.starts_at).toLocaleTimeString([], {
-                        hour: "numeric",
-                        minute: "2-digit",
-                      })}
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell className="whitespace-normal">
-                  <div className="space-y-1">
-                    <div className="font-medium">{game.home_team_name}</div>
-                    <div className="text-xs text-muted-foreground">vs {game.away_team_name}</div>
-                  </div>
-                </TableCell>
-                <TableCell>{game.league_season_name}</TableCell>
-                <TableCell>{game.division_name}</TableCell>
-                <TableCell>{game.venue_name}</TableCell>
-                <TableCell>
-                  <span
-                    className={`rounded-full border px-2 py-1 text-xs font-medium ${scheduleStatusTone(game.status)}`}
-                  >
-                    {game.status}
-                  </span>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                  ))}
+                </div>
+              </section>
+            )
+          })}
+        </div>
       </CardContent>
     </Card>
+  )
+}
+
+function EditScheduleModal({
+  divisions,
+  game,
+  onClose,
+  organizationId,
+  seasons,
+  teams,
+  venues,
+}: {
+  divisions: Division[]
+  game: Schedule
+  onClose: () => void
+  organizationId: string
+  seasons: LeagueSeason[]
+  teams: Team[]
+  venues: Venue[]
+}) {
+  const updateScheduleMutation = useUpdateScheduleMutation(organizationId)
+  const [leagueSeasonId, setLeagueSeasonId] = React.useState(game.league_season_id)
+  const availableDivisions = React.useMemo(
+    () => divisions.filter((division) => division.league_season_id === leagueSeasonId),
+    [divisions, leagueSeasonId],
+  )
+  const [divisionId, setDivisionId] = React.useState(game.division_id)
+  const availableTeams = React.useMemo(
+    () => teams.filter((team) => team.division_id === divisionId),
+    [divisionId, teams],
+  )
+  const availableVenues = React.useMemo(
+    () => venues.filter((venue) => venue.league_season_id === leagueSeasonId),
+    [leagueSeasonId, venues],
+  )
+  const [homeTeamId, setHomeTeamId] = React.useState(game.home_team_id)
+  const [awayTeamId, setAwayTeamId] = React.useState(game.away_team_id)
+  const [venueId, setVenueId] = React.useState(game.venue_id)
+  const [startsAt, setStartsAt] = React.useState(toLocalDateTimeInputValue(game.starts_at))
+  const [status, setStatus] = React.useState<ScheduleStatus>(game.status as ScheduleStatus)
+  const [validationError, setValidationError] = React.useState<string | null>(null)
+
+  React.useEffect(() => {
+    const nextDivisionId =
+      availableDivisions.find((division) => division.id === divisionId)?.id ??
+      availableDivisions[0]?.id ??
+      ""
+    setDivisionId(nextDivisionId)
+  }, [availableDivisions, divisionId])
+
+  React.useEffect(() => {
+    const nextVenueId =
+      availableVenues.find((venue) => venue.id === venueId)?.id ?? availableVenues[0]?.id ?? ""
+    setVenueId(nextVenueId)
+  }, [availableVenues, venueId])
+
+  React.useEffect(() => {
+    const nextHomeTeamId =
+      availableTeams.find((team) => team.id === homeTeamId)?.id ?? availableTeams[0]?.id ?? ""
+    const nextAwayTeamId =
+      availableTeams.find((team) => team.id === awayTeamId && team.id !== nextHomeTeamId)?.id ??
+      availableTeams.find((team) => team.id !== nextHomeTeamId)?.id ??
+      ""
+
+    setHomeTeamId(nextHomeTeamId)
+    setAwayTeamId(nextAwayTeamId)
+  }, [availableTeams, awayTeamId, homeTeamId])
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!leagueSeasonId || !divisionId || !venueId || !homeTeamId || !awayTeamId) {
+      setValidationError("Season, division, venue, and both teams are required.")
+      return
+    }
+
+    if (homeTeamId === awayTeamId) {
+      setValidationError("Home and away teams must be different.")
+      return
+    }
+
+    if (!startsAt) {
+      setValidationError("Game date and time are required.")
+      return
+    }
+
+    setValidationError(null)
+
+    try {
+      const updatedGame = await updateScheduleMutation.mutateAsync({
+        payload: {
+          awayTeamId,
+          divisionId,
+          homeTeamId,
+          leagueSeasonId,
+          startsAt: new Date(startsAt).toISOString(),
+          status,
+          venueId,
+        },
+        scheduleId: game.id,
+      })
+
+      toast.success(`Updated ${updatedGame.home_team_name} vs ${updatedGame.away_team_name}`)
+      onClose()
+    } catch (error) {
+      toast.error(getApiErrorMessage(error))
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4 py-8 backdrop-blur-sm">
+      <Card className="w-full max-w-3xl border border-border/70 bg-card shadow-2xl">
+        <CardHeader className="gap-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <CardTitle className="text-xl">Edit game</CardTitle>
+              <CardDescription>Update the official schedule record for this matchup.</CardDescription>
+            </div>
+            <Button aria-label="Close edit game modal" size="icon-sm" variant="ghost" onClick={onClose}>
+              <X className="size-4" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <form className="space-y-5" onSubmit={handleSubmit}>
+            <div className="grid gap-5 md:grid-cols-2">
+              <Field>
+                <FieldLabel htmlFor="edit-schedule-season">Season</FieldLabel>
+                <FieldContent>
+                  <NativeSelect
+                    id="edit-schedule-season"
+                    value={leagueSeasonId}
+                    onChange={(event) => setLeagueSeasonId(event.target.value)}
+                  >
+                    <NativeSelectOption value="">Select a season</NativeSelectOption>
+                    {seasons.map((season) => (
+                      <NativeSelectOption key={season.id} value={season.id}>
+                        {season.name}
+                      </NativeSelectOption>
+                    ))}
+                  </NativeSelect>
+                </FieldContent>
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="edit-schedule-division">Division</FieldLabel>
+                <FieldContent>
+                  <NativeSelect
+                    id="edit-schedule-division"
+                    value={divisionId}
+                    onChange={(event) => setDivisionId(event.target.value)}
+                  >
+                    <NativeSelectOption value="">Select a division</NativeSelectOption>
+                    {availableDivisions.map((division) => (
+                      <NativeSelectOption key={division.id} value={division.id}>
+                        {division.name}
+                      </NativeSelectOption>
+                    ))}
+                  </NativeSelect>
+                </FieldContent>
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="edit-schedule-home-team">Home team</FieldLabel>
+                <FieldContent>
+                  <NativeSelect
+                    id="edit-schedule-home-team"
+                    value={homeTeamId}
+                    onChange={(event) => setHomeTeamId(event.target.value)}
+                  >
+                    <NativeSelectOption value="">Select a home team</NativeSelectOption>
+                    {availableTeams.map((team) => (
+                      <NativeSelectOption key={team.id} value={team.id}>
+                        {team.name}
+                      </NativeSelectOption>
+                    ))}
+                  </NativeSelect>
+                </FieldContent>
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="edit-schedule-away-team">Away team</FieldLabel>
+                <FieldContent>
+                  <NativeSelect
+                    id="edit-schedule-away-team"
+                    value={awayTeamId}
+                    onChange={(event) => setAwayTeamId(event.target.value)}
+                  >
+                    <NativeSelectOption value="">Select an away team</NativeSelectOption>
+                    {availableTeams
+                      .filter((team) => team.id !== homeTeamId)
+                      .map((team) => (
+                        <NativeSelectOption key={team.id} value={team.id}>
+                          {team.name}
+                        </NativeSelectOption>
+                      ))}
+                  </NativeSelect>
+                </FieldContent>
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="edit-schedule-venue">Venue</FieldLabel>
+                <FieldContent>
+                  <NativeSelect
+                    id="edit-schedule-venue"
+                    value={venueId}
+                    onChange={(event) => setVenueId(event.target.value)}
+                  >
+                    <NativeSelectOption value="">Select a venue</NativeSelectOption>
+                    {availableVenues.map((venue) => (
+                      <NativeSelectOption key={venue.id} value={venue.id}>
+                        {venue.name}
+                      </NativeSelectOption>
+                    ))}
+                  </NativeSelect>
+                </FieldContent>
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="edit-schedule-status">Status</FieldLabel>
+                <FieldContent>
+                  <NativeSelect
+                    id="edit-schedule-status"
+                    value={status}
+                    onChange={(event) => setStatus(event.target.value as ScheduleStatus)}
+                  >
+                    {["draft", "scheduled", "live", "final", "reopened", "postponed", "cancelled"].map(
+                      (value) => (
+                        <NativeSelectOption key={value} value={value}>
+                          {toTitleCase(value)}
+                        </NativeSelectOption>
+                      ),
+                    )}
+                  </NativeSelect>
+                </FieldContent>
+              </Field>
+            </div>
+
+            <Field>
+              <FieldLabel htmlFor="edit-schedule-starts-at">Game date and time</FieldLabel>
+              <FieldContent>
+                <Input
+                  id="edit-schedule-starts-at"
+                  type="datetime-local"
+                  value={startsAt}
+                  onChange={(event) => setStartsAt(event.target.value)}
+                />
+              </FieldContent>
+            </Field>
+
+            {validationError || updateScheduleMutation.isError ? (
+              <FieldError>{validationError ?? getApiErrorMessage(updateScheduleMutation.error)}</FieldError>
+            ) : null}
+
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={updateScheduleMutation.isPending}>
+                {updateScheduleMutation.isPending ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" />
+                    Saving
+                  </>
+                ) : (
+                  <>
+                    <PencilLine className="size-4" />
+                    Save changes
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+function DeleteScheduleModal({
+  game,
+  onClose,
+  organizationId,
+}: {
+  game: Schedule
+  onClose: () => void
+  organizationId: string
+}) {
+  const deleteScheduleMutation = useDeleteScheduleMutation(organizationId)
+
+  async function handleDelete() {
+    try {
+      await deleteScheduleMutation.mutateAsync(game.id)
+      toast.success(`Deleted ${game.home_team_name} vs ${game.away_team_name}`)
+      onClose()
+    } catch (error) {
+      toast.error(getApiErrorMessage(error))
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4 py-8 backdrop-blur-sm">
+      <Card className="w-full max-w-lg border border-border/70 bg-card shadow-2xl">
+        <CardHeader>
+          <CardTitle>Delete game</CardTitle>
+          <CardDescription>
+            You are about to delete{" "}
+            <span className="font-medium">
+              {game.home_team_name} vs {game.away_team_name}
+            </span>
+            . This action cannot be undone.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          {deleteScheduleMutation.isError ? (
+            <FieldError>{getApiErrorMessage(deleteScheduleMutation.error)}</FieldError>
+          ) : null}
+
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={deleteScheduleMutation.isPending}
+              onClick={handleDelete}
+            >
+              {deleteScheduleMutation.isPending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Deleting
+                </>
+              ) : (
+                <>
+                  <Trash2 className="size-4" />
+                  Delete game
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   )
 }
 
@@ -651,6 +1267,8 @@ export function OrganizationSchedulesView({
 }) {
   const createScheduleMutation = useCreateScheduleMutation(organization.id)
   const [createModalOpen, setCreateModalOpen] = React.useState(false)
+  const [gameToDelete, setGameToDelete] = React.useState<Schedule | null>(null)
+  const [gameToEdit, setGameToEdit] = React.useState<Schedule | null>(null)
   const [search, setSearch] = React.useState("")
   const [divisionFilter, setDivisionFilter] = React.useState("all")
   const [statusFilter, setStatusFilter] = React.useState("all")
@@ -724,12 +1342,39 @@ export function OrganizationSchedulesView({
         <main className="flex flex-1 flex-col gap-6 bg-background px-4 py-4 lg:px-6 lg:py-5">
           <section className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Competition setup</p>
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink href={`/organizations/${organization.slug}`}>Organizations</BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbLink href={`/organizations/${organization.slug}`}>{organization.name}</BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbPage>Schedules</BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
               <h1 className="text-3xl font-semibold tracking-tight">Schedules</h1>
               <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-                Build and review the live game calendar for {organization.name}.
-                This page now reads directly from the backend schedule records.
+                Manage the official game calendar for {organization.name} across all divisions and venues.
               </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button disabled={!canCreateSchedule} onClick={() => setCreateModalOpen(true)}>
+                <Plus className="size-4" />
+                New game
+              </Button>
+              <Button variant="outline">
+                <CalendarDays className="size-4" />
+                Import schedule
+              </Button>
+              <Button variant="outline">
+                <Globe className="size-4" />
+                Publish schedule
+              </Button>
             </div>
           </section>
 
@@ -750,7 +1395,7 @@ export function OrganizationSchedulesView({
             <div className="space-y-6">
               <Card className="border border-border/60 bg-card/95 shadow-none">
                 <CardContent className="space-y-4 p-4">
-                  <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px_160px_180px_130px]">
+                  <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_170px_160px_190px_180px_120px]">
                     <div className="relative">
                       <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
@@ -794,39 +1439,70 @@ export function OrganizationSchedulesView({
                       value={sortBy}
                       onChange={(event) => setSortBy(event.target.value)}
                     >
-                      <NativeSelectOption value="recent">Sort: Game date</NativeSelectOption>
+                      <NativeSelectOption value="recent">Sort: Date (Earliest)</NativeSelectOption>
                       <NativeSelectOption value="division">Sort: Division</NativeSelectOption>
                       <NativeSelectOption value="venue">Sort: Venue</NativeSelectOption>
                     </NativeSelect>
+                    <Button className="justify-start" variant="outline">
+                      <CalendarRange className="size-4" />
+                      {filteredGames.length > 0
+                        ? `${new Date(filteredGames[0].starts_at).toLocaleDateString()} - ${new Date(
+                            filteredGames[filteredGames.length - 1].starts_at,
+                          ).toLocaleDateString()}`
+                        : "Date range"}
+                    </Button>
                     <Button className="flex-1" variant="outline">
                       <Filter className="size-4" />
-                      View options
+                      Filters
                     </Button>
                   </div>
                 </CardContent>
               </Card>
 
-              <ScheduleTable games={filteredGames} />
+              <ScheduleBoard
+                games={filteredGames}
+                onDeleteGame={setGameToDelete}
+                onEditGame={setGameToEdit}
+              />
             </div>
 
             <div className="space-y-6">
-              <Card className="border border-border/60 bg-card/95 shadow-none">
-                <CardHeader className="flex-row items-start justify-between gap-4 space-y-0">
-                  <div className="space-y-1">
-                    <CardTitle className="text-base">Schedule operations</CardTitle>
-                    <CardDescription>
-                      Create and maintain official schedule records for this organization.
-                    </CardDescription>
-                  </div>
-                  <Button onClick={() => setCreateModalOpen(true)} disabled={!canCreateSchedule}>
-                    <Plus className="size-4" />
-                    New game
-                  </Button>
-                </CardHeader>
-              </Card>
-
+              <ScheduleOperationsCard
+                canCreateSchedule={canCreateSchedule}
+                onCreateSchedule={() => setCreateModalOpen(true)}
+              />
               <ScheduleSetupNotesCard />
               <ScheduleRecentActivityCard schedules={schedules} />
+              <Card className="border border-border/60 bg-card/95 shadow-none">
+                <CardHeader>
+                  <CardTitle className="text-base">Publishing status</CardTitle>
+                  <CardDescription>Public schedule pages depend on clean, verified game records.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Draft games pending review</span>
+                    <Badge variant="outline">
+                      {schedules.filter((game) => game.status === "draft").length}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Published-ready games</span>
+                    <Badge variant="outline">
+                      {schedules.filter((game) => ["scheduled", "live", "final"].includes(game.status)).length}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Needs follow-up</span>
+                    <Badge variant="outline">
+                      {schedules.filter((game) => ["postponed", "cancelled", "reopened"].includes(game.status)).length}
+                    </Badge>
+                  </div>
+                  <Button className="w-full justify-start" variant="outline">
+                    <Sparkles className="size-4" />
+                    Review publishing checklist
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           </section>
         </main>
@@ -846,6 +1522,26 @@ export function OrganizationSchedulesView({
           venues={venues}
           onClose={() => setCreateModalOpen(false)}
           onSubmit={handleCreateSchedule}
+        />
+      ) : null}
+
+      {gameToEdit ? (
+        <EditScheduleModal
+          divisions={divisions}
+          game={gameToEdit}
+          organizationId={organization.id}
+          seasons={seasons}
+          teams={teams}
+          venues={venues}
+          onClose={() => setGameToEdit(null)}
+        />
+      ) : null}
+
+      {gameToDelete ? (
+        <DeleteScheduleModal
+          game={gameToDelete}
+          organizationId={organization.id}
+          onClose={() => setGameToDelete(null)}
         />
       ) : null}
     </SidebarProvider>
