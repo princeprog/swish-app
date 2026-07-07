@@ -11,6 +11,7 @@ import {
   type UpcomingGame,
 } from "@/components/organizations/workspace/organization-workspace-data"
 import { cx, statusClasses } from "@/components/organizations/workspace/organization-workspace-utils"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -19,6 +20,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Table,
   TableBody,
@@ -97,14 +99,17 @@ function DivisionOverviewCard({ divisions }: { divisions: Division[] }) {
           </Button>
         </CardAction>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-muted/40">
             <TableRow className="border-border/60 hover:bg-transparent">
-              <TableHead>Division</TableHead>
-              <TableHead>Teams</TableHead>
-              <TableHead>Games</TableHead>
-              <TableHead>Standings</TableHead>
+              <TableHead className="w-12 px-4">
+                <Checkbox aria-label="Select all divisions" />
+              </TableHead>
+              <TableHead className="h-12 text-muted-foreground">Division</TableHead>
+              <TableHead className="text-muted-foreground">Teams</TableHead>
+              <TableHead className="text-muted-foreground">Games</TableHead>
+              <TableHead className="text-muted-foreground">Standings</TableHead>
               <TableHead className="text-right">Action</TableHead>
             </TableRow>
           </TableHeader>
@@ -112,8 +117,11 @@ function DivisionOverviewCard({ divisions }: { divisions: Division[] }) {
             {divisions.map((division) => (
               <TableRow
                 key={division.name}
-                className="border-border/50 hover:bg-background/50"
+                className="h-16 border-border/60 hover:bg-muted/30"
               >
+                <TableCell className="px-4">
+                  <Checkbox aria-label={`Select ${division.name}`} />
+                </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <span
@@ -128,14 +136,9 @@ function DivisionOverviewCard({ divisions }: { divisions: Division[] }) {
                 <TableCell>{division.teams}</TableCell>
                 <TableCell>{division.games}</TableCell>
                 <TableCell>
-                  <span
-                    className={cx(
-                      "rounded-full border px-2 py-1 text-xs font-medium",
-                      statusClasses(division.tone),
-                    )}
-                  >
+                  <Badge className={statusClasses(division.tone)} variant="outline">
                     {division.standingsStatus}
-                  </span>
+                  </Badge>
                 </TableCell>
                 <TableCell className="text-right">
                   <Button size="sm" variant="ghost">
@@ -199,38 +202,46 @@ function UpcomingGamesCard({ games }: { games: UpcomingGame[] }) {
           </Button>
         </CardAction>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-muted/40">
             <TableRow className="border-border/60 hover:bg-transparent">
-              <TableHead>Date & time</TableHead>
-              <TableHead>Matchup</TableHead>
-              <TableHead>Venue</TableHead>
-              <TableHead>Division</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead className="w-12 px-4">
+                <Checkbox aria-label="Select all upcoming games" />
+              </TableHead>
+              <TableHead className="h-12 text-muted-foreground">Date & time</TableHead>
+              <TableHead className="text-muted-foreground">Matchup</TableHead>
+              <TableHead className="text-muted-foreground">Venue</TableHead>
+              <TableHead className="text-muted-foreground">Division</TableHead>
+              <TableHead className="text-muted-foreground">Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {games.map((game) => (
               <TableRow
                 key={`${game.date}-${game.home}-${game.away}`}
-                className="border-border/50 hover:bg-background/50"
+                className="h-16 border-border/60 hover:bg-muted/30"
               >
+                <TableCell className="px-4">
+                  <Checkbox aria-label={`Select ${game.home} vs ${game.away}`} />
+                </TableCell>
                 <TableCell className="whitespace-normal">
-                  <div className="space-y-0.5">
+                  <div className="flex flex-col gap-1">
                     <div className="font-medium">{game.date}</div>
                   </div>
                 </TableCell>
                 <TableCell className="whitespace-normal">
-                  <div className="font-medium">{game.home}</div>
-                  <div className="text-muted-foreground">vs {game.away}</div>
+                  <div className="flex flex-col gap-1">
+                    <div className="font-medium">{game.home}</div>
+                    <div className="text-muted-foreground">vs {game.away}</div>
+                  </div>
                 </TableCell>
                 <TableCell>{game.venue}</TableCell>
                 <TableCell>{game.division}</TableCell>
                 <TableCell>
-                  <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-1 text-xs font-medium text-blue-300">
+                  <Badge className="border-blue-500/20 bg-blue-500/10 text-blue-300" variant="outline">
                     {game.status}
-                  </span>
+                  </Badge>
                 </TableCell>
               </TableRow>
             ))}

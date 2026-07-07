@@ -22,6 +22,8 @@ import { toast } from "sonner"
 
 import { AppSidebar } from "@/components/app-sidebar"
 import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -31,6 +33,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Empty,
   EmptyDescription,
@@ -591,17 +594,20 @@ function TeamsTable({
           <div className="text-sm text-muted-foreground">{teams.length} total</div>
         </CardAction>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-muted/40">
             <TableRow className="border-border/60 hover:bg-transparent">
-              <TableHead>Team</TableHead>
-              <TableHead>Division</TableHead>
-              <TableHead>Slug</TableHead>
-              <TableHead>Color</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Roster</TableHead>
-              <TableHead>Updated</TableHead>
+              <TableHead className="w-12 px-4">
+                <Checkbox aria-label="Select all teams" />
+              </TableHead>
+              <TableHead className="h-12 text-muted-foreground">Team</TableHead>
+              <TableHead className="text-muted-foreground">Division</TableHead>
+              <TableHead className="text-muted-foreground">Slug</TableHead>
+              <TableHead className="text-muted-foreground">Color</TableHead>
+              <TableHead className="text-muted-foreground">Status</TableHead>
+              <TableHead className="text-muted-foreground">Roster</TableHead>
+              <TableHead className="text-muted-foreground">Updated</TableHead>
               <TableHead className="w-14 text-right"> </TableHead>
             </TableRow>
           </TableHeader>
@@ -616,21 +622,26 @@ function TeamsTable({
               return (
                 <TableRow
                   key={team.id}
-                  className="border-border/50 hover:bg-background/40"
+                  className="h-18 border-border/60 hover:bg-muted/30"
                 >
+                  <TableCell className="px-4">
+                    <Checkbox aria-label={`Select ${team.name}`} />
+                  </TableCell>
                   <TableCell className="whitespace-normal">
                     <div className="flex items-center gap-3">
-                      <div
-                        className="flex size-11 shrink-0 items-center justify-center rounded-md border border-border/70 bg-background/60 text-[11px] font-semibold text-foreground"
-                        style={{
-                          boxShadow: team.color
-                            ? `inset 0 0 0 1px ${team.color}33`
-                            : undefined,
-                        }}
-                      >
-                        {getTeamInitials(team.name)}
-                      </div>
-                      <div className="space-y-1">
+                      <Avatar size="lg" className="rounded-md">
+                        <AvatarFallback
+                          className="rounded-md text-[11px] font-semibold"
+                          style={{
+                            boxShadow: team.color
+                              ? `inset 0 0 0 1px ${team.color}33`
+                              : undefined,
+                          }}
+                        >
+                          {getTeamInitials(team.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col gap-1">
                         <div className="font-medium">{team.name}</div>
                         <div className="text-xs text-muted-foreground">
                           {team.id.slice(0, 8).toUpperCase()}
@@ -639,7 +650,7 @@ function TeamsTable({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="space-y-1">
+                    <div className="flex flex-col gap-1">
                       <div className="font-medium">{division?.name ?? "Unknown division"}</div>
                       <div className="text-xs text-muted-foreground">
                         {division?.status ?? "Unavailable"}
@@ -647,32 +658,30 @@ function TeamsTable({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="inline-flex rounded-md border border-border/70 bg-background/60 px-2 py-1 font-mono text-xs text-muted-foreground">
+                    <Badge variant="outline" className="font-mono font-normal text-muted-foreground">
                       {team.slug}
-                    </div>
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     {team.color ? (
-                      <div className="inline-flex items-center gap-2 rounded-md border border-border/70 bg-background/60 px-2 py-1 text-xs text-muted-foreground">
+                      <Badge variant="outline" className="gap-2 font-normal text-muted-foreground">
                         <span
                           className="size-3 rounded-full border border-white/10"
                           style={{ backgroundColor: team.color }}
                         />
                         {team.color}
-                      </div>
+                      </Badge>
                     ) : (
                       <span className="text-sm text-muted-foreground">Not set</span>
                     )}
                   </TableCell>
                   <TableCell>
-                    <span
-                      className={`rounded-full border px-2 py-1 text-xs font-medium ${statusTone(team.status)}`}
-                    >
+                    <Badge className={statusTone(team.status)} variant="outline">
                       {team.status}
-                    </span>
+                    </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="space-y-1">
+                    <div className="flex flex-col gap-1">
                       <div className="font-medium">
                         {rosterPlayers.length} {rosterPlayers.length === 1 ? "player" : "players"}
                       </div>
@@ -682,7 +691,7 @@ function TeamsTable({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="space-y-1">
+                    <div className="flex flex-col gap-1">
                       <div>{new Date(team.updated_at).toLocaleDateString()}</div>
                       <div className="text-xs text-muted-foreground">
                         {new Date(team.updated_at).toLocaleTimeString([], {

@@ -21,6 +21,8 @@ import { toast } from "sonner"
 
 import { AppSidebar } from "@/components/app-sidebar"
 import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -30,6 +32,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Empty,
   EmptyDescription,
@@ -517,17 +520,20 @@ function PlayersTable({
           <div className="text-sm text-muted-foreground">{players.length} total</div>
         </CardAction>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-muted/40">
             <TableRow className="border-border/60 hover:bg-transparent">
-              <TableHead>Player</TableHead>
-              <TableHead>Team</TableHead>
-              <TableHead>Division</TableHead>
-              <TableHead>Jersey no.</TableHead>
-              <TableHead>Position</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Updated</TableHead>
+              <TableHead className="w-12 px-4">
+                <Checkbox aria-label="Select all players" />
+              </TableHead>
+              <TableHead className="h-12 text-muted-foreground">Player</TableHead>
+              <TableHead className="text-muted-foreground">Team</TableHead>
+              <TableHead className="text-muted-foreground">Division</TableHead>
+              <TableHead className="text-muted-foreground">Jersey no.</TableHead>
+              <TableHead className="text-muted-foreground">Position</TableHead>
+              <TableHead className="text-muted-foreground">Status</TableHead>
+              <TableHead className="text-muted-foreground">Updated</TableHead>
               <TableHead className="w-14 text-right"> </TableHead>
             </TableRow>
           </TableHeader>
@@ -539,14 +545,19 @@ function PlayersTable({
               return (
                 <TableRow
                   key={player.id}
-                  className="border-border/50 hover:bg-background/40"
+                  className="h-18 border-border/60 hover:bg-muted/30"
                 >
+                  <TableCell className="px-4">
+                    <Checkbox aria-label={`Select ${player.name}`} />
+                  </TableCell>
                   <TableCell className="whitespace-normal">
                     <div className="flex items-center gap-3">
-                      <div className="flex size-11 shrink-0 items-center justify-center rounded-full border border-border/70 bg-background/60 text-[11px] font-semibold text-foreground">
-                        {getInitials(player.name)}
-                      </div>
-                      <div className="space-y-1">
+                      <Avatar size="lg">
+                        <AvatarFallback className="text-[11px] font-semibold">
+                          {getInitials(player.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col gap-1">
                         <div className="font-medium">{player.name}</div>
                         <div className="text-xs text-muted-foreground">
                           {player.id.slice(0, 8).toUpperCase()}
@@ -558,7 +569,7 @@ function PlayersTable({
                     <div className="font-medium">{team?.name ?? "Unknown team"}</div>
                   </TableCell>
                   <TableCell>
-                    <div className="space-y-1">
+                    <div className="flex flex-col gap-1">
                       <div className="font-medium">{division?.name ?? "Unknown division"}</div>
                       <div className="text-xs text-muted-foreground">
                         {team?.name ?? "No team context"}
@@ -566,22 +577,20 @@ function PlayersTable({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="inline-flex rounded-full border border-border/70 px-2 py-1 text-xs font-medium">
+                    <Badge variant="outline">
                       #{player.jersey_number}
-                    </span>
+                    </Badge>
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm text-muted-foreground">Pending</span>
+                    <Badge variant="secondary">Pending</Badge>
                   </TableCell>
                   <TableCell>
-                    <span
-                      className={`rounded-full border px-2 py-1 text-xs font-medium ${statusTone(player.status)}`}
-                    >
+                    <Badge className={statusTone(player.status)} variant="outline">
                       {player.status}
-                    </span>
+                    </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="space-y-1">
+                    <div className="flex flex-col gap-1">
                       <div>{new Date(player.updated_at).toLocaleDateString()}</div>
                       <div className="text-xs text-muted-foreground">
                         {new Date(player.updated_at).toLocaleTimeString([], {

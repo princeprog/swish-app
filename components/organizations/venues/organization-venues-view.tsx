@@ -15,6 +15,7 @@ import { toast } from "sonner"
 
 import { AppSidebar } from "@/components/app-sidebar"
 import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -24,6 +25,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Empty,
   EmptyDescription,
@@ -480,15 +482,18 @@ function VenuesTable({
           <div className="text-sm text-muted-foreground">{venues.length} total</div>
         </CardAction>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-muted/40">
             <TableRow className="border-border/60 hover:bg-transparent">
-              <TableHead>Venue</TableHead>
-              <TableHead>Season</TableHead>
-              <TableHead>Slug</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Updated</TableHead>
+              <TableHead className="w-12 px-4">
+                <Checkbox aria-label="Select all venues" />
+              </TableHead>
+              <TableHead className="h-12 text-muted-foreground">Venue</TableHead>
+              <TableHead className="text-muted-foreground">Season</TableHead>
+              <TableHead className="text-muted-foreground">Slug</TableHead>
+              <TableHead className="text-muted-foreground">Status</TableHead>
+              <TableHead className="text-muted-foreground">Updated</TableHead>
               <TableHead className="w-14 text-right"> </TableHead>
             </TableRow>
           </TableHeader>
@@ -497,9 +502,12 @@ function VenuesTable({
               const season = seasonsById.get(venue.league_season_id)
 
               return (
-                <TableRow key={venue.id} className="border-border/50 hover:bg-background/40">
+                <TableRow key={venue.id} className="h-18 border-border/60 hover:bg-muted/30">
+                  <TableCell className="px-4">
+                    <Checkbox aria-label={`Select ${venue.name}`} />
+                  </TableCell>
                   <TableCell className="whitespace-normal">
-                    <div className="space-y-1">
+                    <div className="flex flex-col gap-1">
                       <div className="font-medium">{venue.name}</div>
                       <div className="text-xs text-muted-foreground">
                         Venue ID: {venue.id}
@@ -507,7 +515,7 @@ function VenuesTable({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="space-y-1">
+                    <div className="flex flex-col gap-1">
                       <div className="font-medium">{season?.name ?? "Unknown season"}</div>
                       <div className="text-xs text-muted-foreground">
                         {season?.status ?? "Unavailable"}
@@ -515,19 +523,17 @@ function VenuesTable({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="inline-flex rounded-md border border-border/70 bg-background/60 px-2 py-1 font-mono text-xs text-muted-foreground">
+                    <Badge variant="outline" className="font-mono font-normal text-muted-foreground">
                       {venue.slug}
-                    </div>
+                    </Badge>
                   </TableCell>
                   <TableCell>
-                    <span
-                      className={`rounded-full border px-2 py-1 text-xs font-medium ${statusTone(venue.status)}`}
-                    >
+                    <Badge className={statusTone(venue.status)} variant="outline">
                       {venue.status}
-                    </span>
+                    </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="space-y-1">
+                    <div className="flex flex-col gap-1">
                       <div>{new Date(venue.updated_at).toLocaleDateString()}</div>
                       <div className="text-xs text-muted-foreground">
                         {new Date(venue.updated_at).toLocaleTimeString([], {
