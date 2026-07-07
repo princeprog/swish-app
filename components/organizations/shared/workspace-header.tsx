@@ -16,9 +16,13 @@ import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
 export function WorkspaceHeader({
+  onCreateSeason,
   organizationName,
+  organizationSlug,
 }: {
+  onCreateSeason?: () => void
   organizationName: string
+  organizationSlug: string
 }) {
   return (
     <header className="sticky top-0 z-20 border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -45,10 +49,19 @@ export function WorkspaceHeader({
         </div>
 
         <div className="hidden items-center gap-2 md:flex">
-          <Button size="sm">
-            <Plus className="size-4" />
-            New season
-          </Button>
+          {onCreateSeason ? (
+            <Button size="sm" onClick={onCreateSeason}>
+              <Plus className="size-4" />
+              New season
+            </Button>
+          ) : (
+            <Button size="sm" asChild>
+              <Link href={`/organizations/${organizationSlug}/seasons`}>
+                <Plus className="size-4" />
+                New season
+              </Link>
+            </Button>
+          )}
           <Button size="sm" variant="outline">
             <UserPlus className="size-4" />
             Invite staff

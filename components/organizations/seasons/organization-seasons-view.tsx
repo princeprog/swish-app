@@ -57,6 +57,7 @@ import {
 } from "@/components/ui/table"
 import { getApiErrorMessage } from "@/hooks/use-auth"
 import {
+  useCreateLeagueSeasonMutation,
   useDeleteLeagueSeasonMutation,
   useUpdateLeagueSeasonMutation,
 } from "@/hooks/use-league-season"
@@ -82,6 +83,175 @@ function statusTone(status: string) {
   }
 
   return "border-amber-500/20 bg-amber-500/10 text-amber-300"
+}
+
+function SeasonCreateModal({
+  onClose,
+  organization,
+}: {
+  onClose: () => void
+  organization: Organization
+}) {
+  const createLeagueSeasonMutation = useCreateLeagueSeasonMutation(organization.id)
+  const [name, setName] = React.useState("")
+  const [slug, setSlug] = React.useState("")
+  const [status, setStatus] = React.useState<"draft" | "active" | "inactive">("draft")
+  const [publicEnabled, setPublicEnabled] = React.useState(false)
+  const [validationError, setValidationError] = React.useState<string | null>(null)
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!name.trim()) {
+      setValidationError("Season name is required.")
+      return
+    }
+
+    if (!slug.trim()) {
+      setValidationError("Season slug is required.")
+      return
+    }
+
+    setValidationError(null)
+
+    try {
+      const season = await createLeagueSeasonMutation.mutateAsync({
+        name: name.trim(),
+        organizationId: organization.id,
+        publicEnabled,
+        slug: slug.trim(),
+        status,
+      })
+
+      toast.success(`Created ${season.name}`)
+      onClose()
+    } catch (error) {
+      toast.error(getApiErrorMessage(error))
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4 py-8 backdrop-blur-sm">
+      <Card className="w-full max-w-2xl border border-border/70 bg-card shadow-2xl">
+        <CardHeader className="gap-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <CardTitle className="text-xl">Create season</CardTitle>
+              <CardDescription>
+                Add a new league season for {organization.name}.
+              </CardDescription>
+            </div>
+            <Button
+              aria-label="Close create season modal"
+              size="icon-sm"
+              variant="ghost"
+              onClick={onClose}
+            >
+              <X className="size-4" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <form className="space-y-5" onSubmit={handleSubmit}>
+            <Field>
+              <FieldLabel htmlFor="new-season-name">Season name</FieldLabel>
+              <FieldContent>
+                <Input
+                  id="new-season-name"
+                  placeholder="2026 Summer League"
+                  value={name}
+                  onChange={(event) => {
+                    const nextName = event.target.value
+                    setName(nextName)
+
+                    if (!slug.trim() || slug === slugifyName(name)) {
+                      setSlug(slugifyName(nextName))
+                    }
+                  }}
+                />
+              </FieldContent>
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="new-season-slug">Season slug</FieldLabel>
+              <FieldContent>
+                <Input
+                  id="new-season-slug"
+                  placeholder="2026-summer-league"
+                  value={slug}
+                  onChange={(event) => setSlug(slugifyName(event.target.value))}
+                />
+                <FieldDescription>
+                  Lowercase letters, numbers, and hyphens only.
+                </FieldDescription>
+              </FieldContent>
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="new-season-status">Status</FieldLabel>
+              <FieldContent>
+                <NativeSelect
+                  id="new-season-status"
+                  value={status}
+                  onChange={(event) =>
+                    setStatus(event.target.value as "draft" | "active" | "inactive")
+                  }
+                >
+                  <NativeSelectOption value="draft">Draft</NativeSelectOption>
+                  <NativeSelectOption value="active">Active</NativeSelectOption>
+                  <NativeSelectOption value="inactive">Inactive</NativeSelectOption>
+                </NativeSelect>
+              </FieldContent>
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="new-season-public">Public page visibility</FieldLabel>
+              <FieldContent>
+                <label
+                  htmlFor="new-season-public"
+                  className="flex items-center gap-3 rounded-md border border-border/70 bg-background/60 px-3 py-2 text-sm"
+                >
+                  <input
+                    id="new-season-public"
+                    checked={publicEnabled}
+                    className="size-4 accent-primary"
+                    type="checkbox"
+                    onChange={(event) => setPublicEnabled(event.target.checked)}
+                  />
+                  <span>Enable public season pages</span>
+                </label>
+              </FieldContent>
+            </Field>
+
+            {validationError || createLeagueSeasonMutation.isError ? (
+              <FieldError>
+                {validationError ?? getApiErrorMessage(createLeagueSeasonMutation.error)}
+              </FieldError>
+            ) : null}
+
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createLeagueSeasonMutation.isPending}>
+                {createLeagueSeasonMutation.isPending ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" />
+                    Creating
+                  </>
+                ) : (
+                  <>
+                    <CalendarDays className="size-4" />
+                    Create season
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  )
 }
 
 function SeasonEditModal({
@@ -565,6 +735,7 @@ export function OrganizationSeasonsView({
   organization: Organization
   seasons: LeagueSeason[]
 }) {
+  const [createModalOpen, setCreateModalOpen] = React.useState(false)
   const [seasonToDelete, setSeasonToDelete] = React.useState<LeagueSeason | null>(null)
   const [seasonToEdit, setSeasonToEdit] = React.useState<LeagueSeason | null>(null)
 
@@ -578,7 +749,11 @@ export function OrganizationSeasonsView({
         }}
       />
       <SidebarInset>
-        <WorkspaceHeader organizationName={organization.name} />
+        <WorkspaceHeader
+          organizationName={organization.name}
+          organizationSlug={organization.slug}
+          onCreateSeason={() => setCreateModalOpen(true)}
+        />
 
         <main className="flex flex-1 flex-col gap-6 bg-background px-4 py-4 lg:px-6 lg:py-5">
           <section className="flex flex-wrap items-start justify-between gap-4">
@@ -603,6 +778,13 @@ export function OrganizationSeasonsView({
           </section>
         </main>
       </SidebarInset>
+
+      {createModalOpen ? (
+        <SeasonCreateModal
+          organization={organization}
+          onClose={() => setCreateModalOpen(false)}
+        />
+      ) : null}
 
       {seasonToEdit ? (
         <SeasonEditModal

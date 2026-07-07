@@ -1003,7 +1003,10 @@ export function OrganizationTeamsView({
         }}
       />
       <SidebarInset>
-        <WorkspaceHeader organizationName={organization.name} />
+        <WorkspaceHeader
+          organizationName={organization.name}
+          organizationSlug={organization.slug}
+        />
 
         <main className="flex flex-1 flex-col gap-6 bg-background px-4 py-4 lg:px-6 lg:py-5">
           <section className="flex flex-wrap items-start justify-between gap-4">
