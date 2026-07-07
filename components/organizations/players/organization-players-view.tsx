@@ -1007,13 +1007,6 @@ export function OrganizationPlayersView({
                       Register players and keep roster eligibility current.
                     </CardDescription>
                   </div>
-                  <Button
-                    onClick={() => setCreateModalOpen(true)}
-                    disabled={teams.length === 0}
-                  >
-                    <Plus className="size-4" />
-                    New player
-                  </Button>
                 </CardHeader>
               </Card>
 

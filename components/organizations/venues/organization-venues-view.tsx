@@ -656,13 +656,6 @@ export function OrganizationVenuesView({
               </p>
             </div>
 
-            <Button
-              onClick={() => setCreateModalOpen(true)}
-              disabled={seasons.length === 0}
-            >
-              <Plus className="size-4" />
-              New venue
-            </Button>
           </section>
 
           {seasons.length === 0 ? (

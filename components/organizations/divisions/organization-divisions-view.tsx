@@ -792,13 +792,6 @@ export function OrganizationDivisionsView({
               </p>
             </div>
 
-            <Button
-              onClick={() => setCreateModalOpen(true)}
-              disabled={seasons.length === 0}
-            >
-              <Plus className="size-4" />
-              New division
-            </Button>
           </section>
 
           {seasons.length === 0 ? (

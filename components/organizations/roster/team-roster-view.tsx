@@ -1013,10 +1013,6 @@ export function TeamRosterView({
                 </div>
               </div>
 
-              <Button onClick={() => setCreateModalOpen(true)}>
-                <Plus className="size-4" />
-                New player
-              </Button>
             </div>
           </section>
 
@@ -1050,10 +1046,6 @@ export function TeamRosterView({
                       Add, update, and maintain the official roster for this team.
                     </CardDescription>
                   </div>
-                  <Button onClick={() => setCreateModalOpen(true)}>
-                    <Plus className="size-4" />
-                    New player
-                  </Button>
                 </CardHeader>
               </Card>
 

@@ -1116,13 +1116,6 @@ export function OrganizationTeamsView({
                       Create and organize the active field of competition.
                     </CardDescription>
                   </div>
-                  <Button
-                    onClick={() => setCreateModalOpen(true)}
-                    disabled={divisions.length === 0}
-                  >
-                    <Plus className="size-4" />
-                    New team
-                  </Button>
                 </CardHeader>
               </Card>
 

@@ -1372,10 +1372,6 @@ export function OrganizationSchedulesView({
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Button disabled={!canCreateSchedule} onClick={() => setCreateModalOpen(true)}>
-                <Plus className="size-4" />
-                New game
-              </Button>
               <Button variant="outline">
                 <CalendarDays className="size-4" />
                 Import schedule
