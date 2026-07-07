@@ -1341,6 +1341,11 @@ export function OrganizationSchedulesView({
           organizationName={organization.name}
           organizationSlug={organization.slug}
           pageTitle="Schedules"
+          primaryAction={{
+            disabled: !canCreateSchedule,
+            label: "New game",
+            onClick: () => setCreateModalOpen(true),
+          }}
         />
 
         <main className="flex flex-1 flex-col gap-6 bg-background px-4 py-4 lg:px-6 lg:py-5">

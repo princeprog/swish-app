@@ -637,6 +637,11 @@ export function OrganizationVenuesView({
           organizationName={organization.name}
           organizationSlug={organization.slug}
           pageTitle="Venues"
+          primaryAction={{
+            disabled: seasons.length === 0,
+            label: "New venue",
+            onClick: () => setCreateModalOpen(true),
+          }}
         />
 
         <main className="flex flex-1 flex-col gap-6 bg-background px-4 py-4 lg:px-6 lg:py-5">

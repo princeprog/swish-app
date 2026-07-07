@@ -753,7 +753,10 @@ export function OrganizationSeasonsView({
           organizationName={organization.name}
           organizationSlug={organization.slug}
           pageTitle="Seasons"
-          onCreateSeason={() => setCreateModalOpen(true)}
+          primaryAction={{
+            label: "New season",
+            onClick: () => setCreateModalOpen(true),
+          }}
         />
 
         <main className="flex flex-1 flex-col gap-6 bg-background px-4 py-4 lg:px-6 lg:py-5">

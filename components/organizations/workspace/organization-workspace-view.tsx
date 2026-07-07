@@ -36,6 +36,10 @@ export function OrganizationWorkspaceView({
           organizationName={organization.name}
           organizationSlug={organization.slug}
           pageTitle="Dashboard"
+          primaryAction={{
+            href: `/organizations/${organization.slug}/seasons`,
+            label: "New season",
+          }}
         />
 
         <main className="flex flex-1 flex-col gap-4 bg-background px-4 py-4 lg:px-6 lg:py-5">
