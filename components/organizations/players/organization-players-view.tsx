@@ -79,6 +79,23 @@ type PlayerTableFilters = {
   teamFilter: string
 }
 
+const playerPositionOptions = [
+  { label: "Point Guard", value: "point_guard" },
+  { label: "Shooting Guard", value: "shooting_guard" },
+  { label: "Small Forward", value: "small_forward" },
+  { label: "Power Forward", value: "power_forward" },
+  { label: "Center", value: "center" },
+  { label: "Guard", value: "guard" },
+  { label: "Forward", value: "forward" },
+] as const
+
+function formatPlayerPosition(position: string) {
+  return (
+    playerPositionOptions.find((option) => option.value === position)?.label ??
+    "Unspecified"
+  )
+}
+
 function statusTone(status: string) {
   if (status === "active") {
     return "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
@@ -220,6 +237,7 @@ function PlayerFormModal({
   onSubmit: (payload: {
     jerseyNumber: string
     name: string
+    position: string
     status: "active" | "inactive"
     teamId: string
   }) => Promise<void>
@@ -230,12 +248,14 @@ function PlayerFormModal({
   const [name, setName] = React.useState(player?.name ?? "")
   const [teamId, setTeamId] = React.useState(player?.team_id ?? teams[0]?.id ?? "")
   const [jerseyNumber, setJerseyNumber] = React.useState(player?.jersey_number ?? "")
+  const [position, setPosition] = React.useState(player?.position ?? "")
   const [status, setStatus] = React.useState<"active" | "inactive">(
     (player?.status as "active" | "inactive") ?? "active",
   )
   const [validationError, setValidationError] = React.useState<string | null>(null)
   const previewName = name.trim() || "Player name"
   const previewTeam = teams.find((team) => team.id === teamId)?.name ?? "Team"
+  const previewPosition = position ? formatPlayerPosition(position) : "Position"
   const previewInitials = getInitials(previewName)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -252,10 +272,15 @@ function PlayerFormModal({
       setValidationError("Jersey number is required.")
       return
     }
+    if (!position) {
+      setValidationError("Position is required.")
+      return
+    }
     setValidationError(null)
     await onSubmit({
       jerseyNumber: jerseyNumber.trim(),
       name: name.trim(),
+      position,
       status,
       teamId,
     })
@@ -335,6 +360,27 @@ function PlayerFormModal({
                 </Field>
 
                 <Field>
+                  <FieldLabel htmlFor="player-position">Position</FieldLabel>
+                  <FieldContent>
+                    <NativeSelect
+                      id="player-position"
+                      value={position}
+                      onChange={(event) => setPosition(event.target.value)}
+                    >
+                      <NativeSelectOption value="">Select a position</NativeSelectOption>
+                      {playerPositionOptions.map((option) => (
+                        <NativeSelectOption key={option.value} value={option.value}>
+                          {option.label}
+                        </NativeSelectOption>
+                      ))}
+                    </NativeSelect>
+                    <FieldDescription>
+                      Choose the player&apos;s primary basketball position.
+                    </FieldDescription>
+                  </FieldContent>
+                </Field>
+
+                <Field>
                   <FieldLabel>Status</FieldLabel>
                   <FieldContent>
                     <div className="grid grid-cols-2 gap-2">
@@ -400,6 +446,7 @@ function PlayerFormModal({
                         <span className="rounded-full border border-border/70 px-2 py-1">
                           #{jerseyNumber.trim() || "--"}
                         </span>
+                        <span>{previewPosition}</span>
                         <span>{status}</span>
                       </div>
                     </div>
@@ -591,7 +638,9 @@ function PlayersTable({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary">Pending</Badge>
+                    <Badge variant="secondary">
+                      {formatPlayerPosition(player.position)}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     <Badge className={statusTone(player.status)} variant="outline">
@@ -757,6 +806,7 @@ function PlayersRecentActivityCard({
                 <div className="min-w-0 space-y-1">
                   <div className="truncate text-sm font-medium">{player.name}</div>
                   <div className="text-xs text-muted-foreground">
+                    {formatPlayerPosition(player.position)} •{" "}
                     {team?.name ?? "Team unassigned"}
                   </div>
                   <div className="text-xs text-muted-foreground">
@@ -830,6 +880,7 @@ export function OrganizationPlayersView({
   async function handleCreatePlayer(payload: {
     jerseyNumber: string
     name: string
+    position: string
     status: "active" | "inactive"
     teamId: string
   }) {
@@ -845,6 +896,7 @@ export function OrganizationPlayersView({
   async function handleUpdatePlayer(payload: {
     jerseyNumber: string
     name: string
+    position: string
     status: "active" | "inactive"
     teamId: string
   }) {

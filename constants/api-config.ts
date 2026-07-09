@@ -66,4 +66,8 @@ export const API_ENDPOINTS = {
     list: (organizationId: string) =>
       `/organizations/${organizationId}/games`,
   },
+  standings: {
+    list: (organizationId: string) =>
+      `/organizations/${organizationId}/standings`,
+  },
 } as const

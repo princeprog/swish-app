@@ -7,6 +7,7 @@ export type Player = {
   id: string
   jersey_number: string
   name: string
+  position: string
   status: string
   team_id: string
   updated_at: string
@@ -15,6 +16,7 @@ export type Player = {
 export type CreatePlayerPayload = {
   jerseyNumber: string
   name: string
+  position: string
   status?: "active" | "inactive"
   teamId: string
 }

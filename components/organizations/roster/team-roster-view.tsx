@@ -49,6 +49,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import {
   Table,
@@ -70,6 +71,23 @@ import type { Organization } from "@/services/organization.service"
 import type { PageSizeOption, PaginationMeta } from "@/services/pagination"
 import type { Player } from "@/services/player.service"
 import type { Team } from "@/services/team.service"
+
+const playerPositionOptions = [
+  { label: "Point Guard", value: "point_guard" },
+  { label: "Shooting Guard", value: "shooting_guard" },
+  { label: "Small Forward", value: "small_forward" },
+  { label: "Power Forward", value: "power_forward" },
+  { label: "Center", value: "center" },
+  { label: "Guard", value: "guard" },
+  { label: "Forward", value: "forward" },
+] as const
+
+function formatPlayerPosition(position: string) {
+  return (
+    playerPositionOptions.find((option) => option.value === position)?.label ??
+    "Unspecified"
+  )
+}
 
 function getInitials(name: string) {
   return name
@@ -337,6 +355,12 @@ function PlayerDetailsSheet({
               </div>
               <div className="space-y-1">
                 <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                  Position
+                </div>
+                <div className="font-medium">{formatPlayerPosition(player.position)}</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
                   Status
                 </div>
                 <div className="font-medium">{player.status}</div>
@@ -403,6 +427,7 @@ function RosterPlayerFormModal({
   onSubmit: (payload: {
     jerseyNumber: string
     name: string
+    position: string
     status: "active" | "inactive"
   }) => Promise<void>
   pending: boolean
@@ -411,11 +436,13 @@ function RosterPlayerFormModal({
 }) {
   const [name, setName] = React.useState(player?.name ?? "")
   const [jerseyNumber, setJerseyNumber] = React.useState(player?.jersey_number ?? "")
+  const [position, setPosition] = React.useState(player?.position ?? "")
   const [status, setStatus] = React.useState<"active" | "inactive">(
     (player?.status as "active" | "inactive") ?? "active",
   )
   const [validationError, setValidationError] = React.useState<string | null>(null)
   const previewName = name.trim() || "Player name"
+  const previewPosition = position ? formatPlayerPosition(position) : "Position"
   const previewInitials = getInitials(previewName)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -431,11 +458,17 @@ function RosterPlayerFormModal({
       return
     }
 
+    if (!position) {
+      setValidationError("Position is required.")
+      return
+    }
+
     setValidationError(null)
 
     await onSubmit({
       jerseyNumber: jerseyNumber.trim(),
       name: name.trim(),
+      position,
       status,
     })
   }
@@ -500,6 +533,27 @@ function RosterPlayerFormModal({
                     />
                     <FieldDescription>
                       Jersey numbers should stay unique within this team.
+                    </FieldDescription>
+                  </FieldContent>
+                </Field>
+
+                <Field>
+                  <FieldLabel htmlFor="roster-player-position">Position</FieldLabel>
+                  <FieldContent>
+                    <NativeSelect
+                      id="roster-player-position"
+                      value={position}
+                      onChange={(event) => setPosition(event.target.value)}
+                    >
+                      <NativeSelectOption value="">Select a position</NativeSelectOption>
+                      {playerPositionOptions.map((option) => (
+                        <NativeSelectOption key={option.value} value={option.value}>
+                          {option.label}
+                        </NativeSelectOption>
+                      ))}
+                    </NativeSelect>
+                    <FieldDescription>
+                      Choose the player&apos;s primary basketball position.
                     </FieldDescription>
                   </FieldContent>
                 </Field>
@@ -571,6 +625,7 @@ function RosterPlayerFormModal({
                         <span className="rounded-full border border-border/70 px-2 py-1">
                           #{jerseyNumber.trim() || "--"}
                         </span>
+                        <span>{previewPosition}</span>
                         <span>{status}</span>
                       </div>
                     </div>
@@ -774,6 +829,7 @@ function TeamRosterTable({
               </TableHead>
               <TableHead className="h-12 text-muted-foreground">Player</TableHead>
               <TableHead className="text-muted-foreground">Jersey no.</TableHead>
+              <TableHead className="text-muted-foreground">Position</TableHead>
               <TableHead className="text-muted-foreground">Status</TableHead>
               <TableHead className="text-muted-foreground">Updated</TableHead>
               <TableHead className="w-14 text-right"> </TableHead>
@@ -810,6 +866,11 @@ function TeamRosterTable({
                 <TableCell>
                   <Badge variant="outline">
                     #{player.jersey_number}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="secondary">
+                    {formatPlayerPosition(player.position)}
                   </Badge>
                 </TableCell>
                 <TableCell>
@@ -936,6 +997,7 @@ export function TeamRosterView({
   async function handleCreatePlayer(payload: {
     jerseyNumber: string
     name: string
+    position: string
     status: "active" | "inactive"
   }) {
     try {
@@ -953,6 +1015,7 @@ export function TeamRosterView({
   async function handleUpdatePlayer(payload: {
     jerseyNumber: string
     name: string
+    position: string
     status: "active" | "inactive"
   }) {
     if (!playerToEdit) return

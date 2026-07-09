@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  CircleDashed,
   CopyCheck,
   Ellipsis,
   Filter,
@@ -519,6 +518,11 @@ function ScheduleBoard({
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{game.home_team_name}</span>
+                          {game.home_score !== null && game.away_score !== null ? (
+                            <Badge variant="outline">
+                              {game.home_score} - {game.away_score}
+                            </Badge>
+                          ) : null}
                           <Badge variant="secondary">vs</Badge>
                           <span className="font-medium">{game.away_team_name}</span>
                         </div>
@@ -527,10 +531,6 @@ function ScheduleBoard({
 
                       <div className="space-y-1 text-sm">
                         <div>{game.division_name}</div>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <CircleDashed className="size-3" />
-                          {game.home_team_slug} / {game.away_team_slug}
-                        </div>
                       </div>
 
                       <div className="space-y-1 text-sm">
@@ -538,7 +538,6 @@ function ScheduleBoard({
                           <MapPin className="size-3.5 text-muted-foreground" />
                           {game.venue_name}
                         </div>
-                        <div className="text-xs text-muted-foreground">{game.venue_slug}</div>
                       </div>
 
                       <div className="flex items-start md:justify-end">
@@ -603,6 +602,12 @@ function EditScheduleModal({
   const [venueId, setVenueId] = React.useState(game.venue_id)
   const [startsAt, setStartsAt] = React.useState(toLocalDateTimeInputValue(game.starts_at))
   const [status, setStatus] = React.useState<ScheduleStatus>(game.status as ScheduleStatus)
+  const [homeScore, setHomeScore] = React.useState(
+    game.home_score === null ? "" : String(game.home_score),
+  )
+  const [awayScore, setAwayScore] = React.useState(
+    game.away_score === null ? "" : String(game.away_score),
+  )
   const [validationError, setValidationError] = React.useState<string | null>(null)
 
   React.useEffect(() => {
@@ -649,14 +654,21 @@ function EditScheduleModal({
       return
     }
 
+    if (status === "final" && (!homeScore || !awayScore)) {
+      setValidationError("Final games need both home and away scores.")
+      return
+    }
+
     setValidationError(null)
 
     try {
       const updatedGame = await updateScheduleMutation.mutateAsync({
         payload: {
           awayTeamId,
+          awayScore: awayScore ? Number(awayScore) : undefined,
           divisionId,
           homeTeamId,
+          homeScore: homeScore ? Number(homeScore) : undefined,
           leagueSeasonId,
           startsAt: new Date(startsAt).toISOString(),
           status,
@@ -813,6 +825,35 @@ function EditScheduleModal({
               </FieldContent>
             </Field>
 
+            {status === "final" ? (
+              <div className="grid gap-5 md:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor="edit-schedule-home-score">Home score</FieldLabel>
+                  <FieldContent>
+                    <Input
+                      id="edit-schedule-home-score"
+                      min={0}
+                      type="number"
+                      value={homeScore}
+                      onChange={(event) => setHomeScore(event.target.value)}
+                    />
+                  </FieldContent>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="edit-schedule-away-score">Away score</FieldLabel>
+                  <FieldContent>
+                    <Input
+                      id="edit-schedule-away-score"
+                      min={0}
+                      type="number"
+                      value={awayScore}
+                      onChange={(event) => setAwayScore(event.target.value)}
+                    />
+                  </FieldContent>
+                </Field>
+              </div>
+            ) : null}
+
             {validationError || updateScheduleMutation.isError ? (
               <FieldError>{validationError ?? getApiErrorMessage(updateScheduleMutation.error)}</FieldError>
             ) : null}
@@ -925,8 +966,10 @@ function CreateScheduleModal({
   onClose: () => void
   onSubmit: (payload: {
     awayTeamId: string
+    awayScore?: number
     divisionId: string
     homeTeamId: string
+    homeScore?: number
     leagueSeasonId: string
     startsAt: string
     status: ScheduleStatus
@@ -958,6 +1001,8 @@ function CreateScheduleModal({
     toLocalDateTimeInputValue(new Date().toISOString()),
   )
   const [status, setStatus] = React.useState<ScheduleStatus>("scheduled")
+  const [homeScore, setHomeScore] = React.useState("")
+  const [awayScore, setAwayScore] = React.useState("")
   const [validationError, setValidationError] = React.useState<string | null>(null)
 
   React.useEffect(() => {
@@ -1008,12 +1053,19 @@ function CreateScheduleModal({
       return
     }
 
+    if (status === "final" && (!homeScore || !awayScore)) {
+      setValidationError("Final games need both home and away scores.")
+      return
+    }
+
     setValidationError(null)
 
     await onSubmit({
       awayTeamId,
+      awayScore: awayScore ? Number(awayScore) : undefined,
       divisionId,
       homeTeamId,
+      homeScore: homeScore ? Number(homeScore) : undefined,
       leagueSeasonId,
       startsAt: new Date(startsAt).toISOString(),
       status,
@@ -1183,6 +1235,35 @@ function CreateScheduleModal({
                   </FieldContent>
                 </Field>
 
+                {status === "final" ? (
+                  <div className="grid gap-5 md:grid-cols-2">
+                    <Field>
+                      <FieldLabel htmlFor="schedule-home-score">Home score</FieldLabel>
+                      <FieldContent>
+                        <Input
+                          id="schedule-home-score"
+                          min={0}
+                          type="number"
+                          value={homeScore}
+                          onChange={(event) => setHomeScore(event.target.value)}
+                        />
+                      </FieldContent>
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="schedule-away-score">Away score</FieldLabel>
+                      <FieldContent>
+                        <Input
+                          id="schedule-away-score"
+                          min={0}
+                          type="number"
+                          value={awayScore}
+                          onChange={(event) => setAwayScore(event.target.value)}
+                        />
+                      </FieldContent>
+                    </Field>
+                  </div>
+                ) : null}
+
                 {validationError || errorMessage ? (
                   <FieldError>{validationError ?? errorMessage}</FieldError>
                 ) : null}
@@ -1201,7 +1282,11 @@ function CreateScheduleModal({
                     <div className="space-y-1">
                       <div className="text-sm text-muted-foreground">{previewSeason}</div>
                       <div className="text-2xl font-semibold tracking-tight">
-                        {previewHomeTeam} vs {previewAwayTeam}
+                        {previewHomeTeam}
+                        {status === "final" && homeScore && awayScore
+                          ? ` ${homeScore}-${awayScore} `
+                          : " vs "}
+                        {previewAwayTeam}
                       </div>
                     </div>
                     <div className="space-y-2 text-sm text-muted-foreground">

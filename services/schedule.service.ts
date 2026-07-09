@@ -2,6 +2,7 @@ import { API_ENDPOINTS } from "@/constants/api-config"
 import { apiService } from "@/services/api.service"
 
 export type Schedule = {
+  away_score: number | null
   away_team_color: string | null
   away_team_id: string
   away_team_name: string
@@ -10,6 +11,8 @@ export type Schedule = {
   division_id: string
   division_name: string
   division_slug: string
+  finalized_at: string | null
+  home_score: number | null
   home_team_color: string | null
   home_team_id: string
   home_team_name: string
@@ -30,8 +33,10 @@ export type Schedule = {
 
 export type CreateSchedulePayload = {
   awayTeamId: string
+  awayScore?: number
   divisionId: string
   homeTeamId: string
+  homeScore?: number
   leagueSeasonId: string
   startsAt: string
   status?: "draft" | "scheduled" | "live" | "final" | "reopened" | "postponed" | "cancelled"
