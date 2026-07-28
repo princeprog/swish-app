@@ -44,6 +44,14 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   Empty,
   EmptyDescription,
   EmptyHeader,
@@ -987,265 +995,214 @@ function CreateScheduleModal({
     })
   }
 
-  const previewHomeTeam =
-    availableTeams.find((team) => team.id === homeTeamId)?.name ?? "Home team"
-  const previewAwayTeam =
-    availableTeams.find((team) => team.id === awayTeamId)?.name ?? "Away team"
-  const previewDivision =
-    availableDivisions.find((division) => division.id === divisionId)?.name ?? "Division"
-  const previewSeason =
-    seasons.find((season) => season.id === leagueSeasonId)?.name ?? "Season"
-  const previewVenue =
-    availableVenues.find((venue) => venue.id === venueId)?.name ?? "Venue"
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4 py-8 backdrop-blur-sm">
-      <Card className="w-full max-w-6xl border border-border/70 bg-card shadow-2xl">
-        <CardHeader className="gap-4 border-b border-border/60 pb-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-1">
-              <CardTitle className="text-xl">Create game</CardTitle>
-              <CardDescription>
-                Create an official schedule record for this organization.
-              </CardDescription>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-h-[calc(100vh-2rem)] gap-0 overflow-y-auto p-0 sm:max-w-2xl">
+        <DialogHeader className="gap-1.5 border-b border-border/60 px-6 py-5 pr-14">
+          <DialogTitle className="text-lg">Create game</DialogTitle>
+          <DialogDescription>
+            Schedule an official game for this organization.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-5 px-6 py-5">
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field>
+                <FieldLabel htmlFor="schedule-season">Season</FieldLabel>
+                <FieldContent>
+                  <NativeSelect
+                    className="w-full"
+                    id="schedule-season"
+                    value={leagueSeasonId}
+                    onChange={(event) => setLeagueSeasonId(event.target.value)}
+                  >
+                    <NativeSelectOption value="">Select a season</NativeSelectOption>
+                    {seasons.map((season) => (
+                      <NativeSelectOption key={season.id} value={season.id}>
+                        {season.name}
+                      </NativeSelectOption>
+                    ))}
+                  </NativeSelect>
+                </FieldContent>
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="schedule-division">Division</FieldLabel>
+                <FieldContent>
+                  <NativeSelect
+                    className="w-full"
+                    id="schedule-division"
+                    value={divisionId}
+                    onChange={(event) => setDivisionId(event.target.value)}
+                  >
+                    <NativeSelectOption value="">Select a division</NativeSelectOption>
+                    {availableDivisions.map((division) => (
+                      <NativeSelectOption key={division.id} value={division.id}>
+                        {division.name}
+                      </NativeSelectOption>
+                    ))}
+                  </NativeSelect>
+                </FieldContent>
+              </Field>
             </div>
-            <Button aria-label="Close create game modal" size="icon-sm" variant="ghost" onClick={onClose}>
-              <X className="size-4" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <form onSubmit={handleSubmit}>
-            <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_340px]">
-              <div className="space-y-5 p-6">
-                <div className="grid gap-5 md:grid-cols-2">
-                  <Field>
-                    <FieldLabel htmlFor="schedule-season">Season</FieldLabel>
-                    <FieldContent>
-                      <NativeSelect
-                        id="schedule-season"
-                        value={leagueSeasonId}
-                        onChange={(event) => setLeagueSeasonId(event.target.value)}
-                      >
-                        <NativeSelectOption value="">Select a season</NativeSelectOption>
-                        {seasons.map((season) => (
-                          <NativeSelectOption key={season.id} value={season.id}>
-                            {season.name}
-                          </NativeSelectOption>
-                        ))}
-                      </NativeSelect>
-                    </FieldContent>
-                  </Field>
 
-                  <Field>
-                    <FieldLabel htmlFor="schedule-division">Division</FieldLabel>
-                    <FieldContent>
-                      <NativeSelect
-                        id="schedule-division"
-                        value={divisionId}
-                        onChange={(event) => setDivisionId(event.target.value)}
-                      >
-                        <NativeSelectOption value="">Select a division</NativeSelectOption>
-                        {availableDivisions.map((division) => (
-                          <NativeSelectOption key={division.id} value={division.id}>
-                            {division.name}
-                          </NativeSelectOption>
-                        ))}
-                      </NativeSelect>
-                    </FieldContent>
-                  </Field>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field>
+                <FieldLabel htmlFor="schedule-home-team">Home team</FieldLabel>
+                <FieldContent>
+                  <NativeSelect
+                    className="w-full"
+                    id="schedule-home-team"
+                    value={homeTeamId}
+                    onChange={(event) => setHomeTeamId(event.target.value)}
+                  >
+                    <NativeSelectOption value="">Select a home team</NativeSelectOption>
+                    {availableTeams.map((team) => (
+                      <NativeSelectOption key={team.id} value={team.id}>
+                        {team.name}
+                      </NativeSelectOption>
+                    ))}
+                  </NativeSelect>
+                </FieldContent>
+              </Field>
 
-                  <Field>
-                    <FieldLabel htmlFor="schedule-home-team">Home team</FieldLabel>
-                    <FieldContent>
-                      <NativeSelect
-                        id="schedule-home-team"
-                        value={homeTeamId}
-                        onChange={(event) => setHomeTeamId(event.target.value)}
-                      >
-                        <NativeSelectOption value="">Select a home team</NativeSelectOption>
-                        {availableTeams.map((team) => (
-                          <NativeSelectOption key={team.id} value={team.id}>
-                            {team.name}
-                          </NativeSelectOption>
-                        ))}
-                      </NativeSelect>
-                    </FieldContent>
-                  </Field>
+              <Field>
+                <FieldLabel htmlFor="schedule-away-team">Away team</FieldLabel>
+                <FieldContent>
+                  <NativeSelect
+                    className="w-full"
+                    id="schedule-away-team"
+                    value={awayTeamId}
+                    onChange={(event) => setAwayTeamId(event.target.value)}
+                  >
+                    <NativeSelectOption value="">Select an away team</NativeSelectOption>
+                    {availableTeams
+                      .filter((team) => team.id !== homeTeamId)
+                      .map((team) => (
+                        <NativeSelectOption key={team.id} value={team.id}>
+                          {team.name}
+                        </NativeSelectOption>
+                      ))}
+                  </NativeSelect>
+                </FieldContent>
+              </Field>
+            </div>
 
-                  <Field>
-                    <FieldLabel htmlFor="schedule-away-team">Away team</FieldLabel>
-                    <FieldContent>
-                      <NativeSelect
-                        id="schedule-away-team"
-                        value={awayTeamId}
-                        onChange={(event) => setAwayTeamId(event.target.value)}
-                      >
-                        <NativeSelectOption value="">Select an away team</NativeSelectOption>
-                        {availableTeams
-                          .filter((team) => team.id !== homeTeamId)
-                          .map((team) => (
-                            <NativeSelectOption key={team.id} value={team.id}>
-                              {team.name}
-                            </NativeSelectOption>
-                          ))}
-                      </NativeSelect>
-                    </FieldContent>
-                  </Field>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field>
+                <FieldLabel htmlFor="schedule-venue">Venue</FieldLabel>
+                <FieldContent>
+                  <NativeSelect
+                    className="w-full"
+                    id="schedule-venue"
+                    value={venueId}
+                    onChange={(event) => setVenueId(event.target.value)}
+                  >
+                    <NativeSelectOption value="">Select a venue</NativeSelectOption>
+                    {availableVenues.map((venue) => (
+                      <NativeSelectOption key={venue.id} value={venue.id}>
+                        {venue.name}
+                      </NativeSelectOption>
+                    ))}
+                  </NativeSelect>
+                </FieldContent>
+              </Field>
 
-                  <Field>
-                    <FieldLabel htmlFor="schedule-venue">Venue</FieldLabel>
-                    <FieldContent>
-                      <NativeSelect
-                        id="schedule-venue"
-                        value={venueId}
-                        onChange={(event) => setVenueId(event.target.value)}
-                      >
-                        <NativeSelectOption value="">Select a venue</NativeSelectOption>
-                        {availableVenues.map((venue) => (
-                          <NativeSelectOption key={venue.id} value={venue.id}>
-                            {venue.name}
-                          </NativeSelectOption>
-                        ))}
-                      </NativeSelect>
-                    </FieldContent>
-                  </Field>
+              <Field>
+                <FieldLabel htmlFor="schedule-status">Status</FieldLabel>
+                <FieldContent>
+                  <NativeSelect
+                    className="w-full"
+                    id="schedule-status"
+                    value={status}
+                    onChange={(event) => setStatus(event.target.value as ScheduleStatus)}
+                  >
+                    {[
+                      "draft",
+                      "scheduled",
+                      "live",
+                      "final",
+                      "reopened",
+                      "postponed",
+                      "cancelled",
+                    ].map((value) => (
+                      <NativeSelectOption key={value} value={value}>
+                        {toTitleCase(value)}
+                      </NativeSelectOption>
+                    ))}
+                  </NativeSelect>
+                </FieldContent>
+              </Field>
+            </div>
 
-                  <Field>
-                    <FieldLabel htmlFor="schedule-status">Status</FieldLabel>
-                    <FieldContent>
-                      <NativeSelect
-                        id="schedule-status"
-                        value={status}
-                        onChange={(event) => setStatus(event.target.value as ScheduleStatus)}
-                      >
-                        {[
-                          "draft",
-                          "scheduled",
-                          "live",
-                          "final",
-                          "reopened",
-                          "postponed",
-                          "cancelled",
-                        ].map((value) => (
-                          <NativeSelectOption key={value} value={value}>
-                            {value}
-                          </NativeSelectOption>
-                        ))}
-                      </NativeSelect>
-                    </FieldContent>
-                  </Field>
-                </div>
+            <Field>
+              <FieldLabel htmlFor="schedule-starts-at">Game date and time</FieldLabel>
+              <FieldContent>
+                <Input
+                  id="schedule-starts-at"
+                  type="datetime-local"
+                  value={startsAt}
+                  onChange={(event) => setStartsAt(event.target.value)}
+                />
+              </FieldContent>
+            </Field>
 
+            {status === "final" ? (
+              <div className="grid gap-5 sm:grid-cols-2">
                 <Field>
-                  <FieldLabel htmlFor="schedule-starts-at">Game date and time</FieldLabel>
+                  <FieldLabel htmlFor="schedule-home-score">Home score</FieldLabel>
                   <FieldContent>
                     <Input
-                      id="schedule-starts-at"
-                      type="datetime-local"
-                      value={startsAt}
-                      onChange={(event) => setStartsAt(event.target.value)}
+                      id="schedule-home-score"
+                      min={0}
+                      type="number"
+                      value={homeScore}
+                      onChange={(event) => setHomeScore(event.target.value)}
                     />
                   </FieldContent>
                 </Field>
-
-                {status === "final" ? (
-                  <div className="grid gap-5 md:grid-cols-2">
-                    <Field>
-                      <FieldLabel htmlFor="schedule-home-score">Home score</FieldLabel>
-                      <FieldContent>
-                        <Input
-                          id="schedule-home-score"
-                          min={0}
-                          type="number"
-                          value={homeScore}
-                          onChange={(event) => setHomeScore(event.target.value)}
-                        />
-                      </FieldContent>
-                    </Field>
-                    <Field>
-                      <FieldLabel htmlFor="schedule-away-score">Away score</FieldLabel>
-                      <FieldContent>
-                        <Input
-                          id="schedule-away-score"
-                          min={0}
-                          type="number"
-                          value={awayScore}
-                          onChange={(event) => setAwayScore(event.target.value)}
-                        />
-                      </FieldContent>
-                    </Field>
-                  </div>
-                ) : null}
-
-                {validationError || errorMessage ? (
-                  <FieldError>{validationError ?? errorMessage}</FieldError>
-                ) : null}
+                <Field>
+                  <FieldLabel htmlFor="schedule-away-score">Away score</FieldLabel>
+                  <FieldContent>
+                    <Input
+                      id="schedule-away-score"
+                      min={0}
+                      type="number"
+                      value={awayScore}
+                      onChange={(event) => setAwayScore(event.target.value)}
+                    />
+                  </FieldContent>
+                </Field>
               </div>
+            ) : null}
 
-              <div className="border-t border-border/60 p-6 lg:border-t-0 lg:border-l">
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold">Game preview</h3>
-                  <p className="text-sm text-muted-foreground">
-                    This is how the schedule entry will read in the workspace.
-                  </p>
-                </div>
+            {validationError || errorMessage ? (
+              <FieldError>{validationError ?? errorMessage}</FieldError>
+            ) : null}
+          </div>
 
-                <div className="mt-5 rounded-xl border border-border/70 bg-background/60 p-6">
-                  <div className="space-y-5 rounded-xl border border-border/60 bg-gradient-to-b from-background to-card p-6">
-                    <div className="space-y-1">
-                      <div className="text-sm text-muted-foreground">{previewSeason}</div>
-                      <div className="text-2xl font-semibold tracking-tight">
-                        {previewHomeTeam}
-                        {status === "final" && homeScore && awayScore
-                          ? ` ${homeScore}-${awayScore} `
-                          : " vs "}
-                        {previewAwayTeam}
-                      </div>
-                    </div>
-                    <div className="space-y-2 text-sm text-muted-foreground">
-                      <div>{previewDivision}</div>
-                      <div>{previewVenue}</div>
-                      <div>
-                        {startsAt
-                          ? new Date(startsAt).toLocaleString()
-                          : "Select game date and time"}
-                      </div>
-                    </div>
-                    <div>
-                      <span
-                        className={`rounded-full border px-2 py-1 text-xs font-medium ${scheduleStatusTone(status)}`}
-                      >
-                        {status}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col-reverse gap-3 border-t border-border/60 px-6 py-5 sm:flex-row sm:justify-end">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={pending}>
-                {pending ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" />
-                    Creating
-                  </>
-                ) : (
-                  <>
-                    <Plus className="size-4" />
-                    Create game
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+          <DialogFooter className="border-t border-border/60 px-6 py-4">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={pending}>
+              {pending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Creating
+                </>
+              ) : (
+                <>
+                  <Plus className="size-4" />
+                  Create game
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
 
