@@ -996,13 +996,10 @@ function CreateScheduleModal({
   onClose: () => void
   onSubmit: (payload: {
     awayTeamId: string
-    awayScore?: number
     divisionId: string
     homeTeamId: string
-    homeScore?: number
     leagueSeasonId: string
     startsAt: string
-    status: ScheduleStatus
     venueId: string
   }) => Promise<void>
   pending: boolean
@@ -1030,9 +1027,6 @@ function CreateScheduleModal({
   const [startsAt, setStartsAt] = React.useState(
     toLocalDateTimeInputValue(new Date().toISOString()),
   )
-  const [status, setStatus] = React.useState<ScheduleStatus>("scheduled")
-  const [homeScore, setHomeScore] = React.useState("")
-  const [awayScore, setAwayScore] = React.useState("")
   const [validationError, setValidationError] = React.useState<string | null>(null)
 
   React.useEffect(() => {
@@ -1083,22 +1077,14 @@ function CreateScheduleModal({
       return
     }
 
-    if (status === "final" && (!homeScore || !awayScore)) {
-      setValidationError("Final games need both home and away scores.")
-      return
-    }
-
     setValidationError(null)
 
     await onSubmit({
       awayTeamId,
-      awayScore: awayScore ? Number(awayScore) : undefined,
       divisionId,
       homeTeamId,
-      homeScore: homeScore ? Number(homeScore) : undefined,
       leagueSeasonId,
       startsAt: new Date(startsAt).toISOString(),
-      status,
       venueId,
     })
   }
@@ -1218,71 +1204,16 @@ function CreateScheduleModal({
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="schedule-status">Status</FieldLabel>
+                <FieldLabel htmlFor="schedule-starts-at">Game date and time</FieldLabel>
                 <FieldContent>
-                  <NativeSelect
-                    className="w-full"
-                    id="schedule-status"
-                    value={status}
-                    onChange={(event) => setStatus(event.target.value as ScheduleStatus)}
-                  >
-                    {[
-                      "draft",
-                      "scheduled",
-                      "live",
-                      "final",
-                      "reopened",
-                      "postponed",
-                      "cancelled",
-                    ].map((value) => (
-                      <NativeSelectOption key={value} value={value}>
-                        {toTitleCase(value)}
-                      </NativeSelectOption>
-                    ))}
-                  </NativeSelect>
+                  <ScheduleDateTimePicker
+                    id="schedule-starts-at"
+                    value={startsAt}
+                    onChange={setStartsAt}
+                  />
                 </FieldContent>
               </Field>
             </div>
-
-            <Field>
-              <FieldLabel htmlFor="schedule-starts-at">Game date and time</FieldLabel>
-              <FieldContent>
-                <ScheduleDateTimePicker
-                  id="schedule-starts-at"
-                  value={startsAt}
-                  onChange={setStartsAt}
-                />
-              </FieldContent>
-            </Field>
-
-            {status === "final" ? (
-              <div className="grid gap-5 sm:grid-cols-2">
-                <Field>
-                  <FieldLabel htmlFor="schedule-home-score">Home score</FieldLabel>
-                  <FieldContent>
-                    <Input
-                      id="schedule-home-score"
-                      min={0}
-                      type="number"
-                      value={homeScore}
-                      onChange={(event) => setHomeScore(event.target.value)}
-                    />
-                  </FieldContent>
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="schedule-away-score">Away score</FieldLabel>
-                  <FieldContent>
-                    <Input
-                      id="schedule-away-score"
-                      min={0}
-                      type="number"
-                      value={awayScore}
-                      onChange={(event) => setAwayScore(event.target.value)}
-                    />
-                  </FieldContent>
-                </Field>
-              </div>
-            ) : null}
 
             {validationError || errorMessage ? (
               <FieldError>{validationError ?? errorMessage}</FieldError>
@@ -1373,11 +1304,13 @@ export function OrganizationSchedulesView({
     homeTeamId: string
     leagueSeasonId: string
     startsAt: string
-    status: ScheduleStatus
     venueId: string
   }) {
     try {
-      const game = await createScheduleMutation.mutateAsync(payload)
+      const game = await createScheduleMutation.mutateAsync({
+        ...payload,
+        status: "scheduled",
+      })
       toast.success(
         `Created ${game.home_team_name} vs ${game.away_team_name}`,
       )
