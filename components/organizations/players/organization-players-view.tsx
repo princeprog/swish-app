@@ -745,87 +745,6 @@ function PlayersSummaryCards({
   )
 }
 
-function PlayerSetupNotesCard() {
-  const notes = [
-    "Assign each player to the correct team.",
-    "Keep jersey numbers unique within each team.",
-    "Use active status only for eligible rostered players.",
-    "Inactive players should not appear in competition rosters.",
-  ]
-
-  return (
-    <Card className="border border-border/60 bg-card/95 shadow-none">
-      <CardHeader>
-        <CardTitle className="text-base">Player setup notes</CardTitle>
-        <CardDescription>
-          Keep player records accurate and roster-ready.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <ul className="space-y-3">
-          {notes.map((note) => (
-            <li key={note} className="flex items-start gap-3 text-sm text-muted-foreground">
-              <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-400" />
-              <span>{note}</span>
-            </li>
-          ))}
-        </ul>
-      </CardContent>
-    </Card>
-  )
-}
-
-function PlayersRecentActivityCard({
-  players,
-  teamsById,
-}: {
-  players: Player[]
-  teamsById: Map<string, Team>
-}) {
-  const recentPlayers = [...players]
-    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-    .slice(0, 5)
-
-  return (
-    <Card className="border border-border/60 bg-card/95 shadow-none">
-      <CardHeader>
-        <CardTitle className="text-base">Recent activity</CardTitle>
-        <CardDescription>Latest player record updates.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {recentPlayers.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No player activity yet.</p>
-        ) : (
-          recentPlayers.map((player) => {
-            const team = teamsById.get(player.team_id)
-            return (
-              <div key={player.id} className="flex items-start gap-3">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-full border border-border/70 bg-background/70 text-[10px] font-semibold">
-                  {getInitials(player.name)}
-                </div>
-                <div className="min-w-0 space-y-1">
-                  <div className="truncate text-sm font-medium">{player.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {formatPlayerPosition(player.position)} •{" "}
-                    {team?.name ?? "Team unassigned"}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Updated {new Date(player.updated_at).toLocaleDateString()}{" "}
-                    {new Date(player.updated_at).toLocaleTimeString([], {
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })}
-                  </div>
-                </div>
-              </div>
-            )
-          })
-        )}
-      </CardContent>
-    </Card>
-  )
-}
-
 export function OrganizationPlayersView({
   divisions,
   filters,
@@ -976,7 +895,7 @@ export function OrganizationPlayersView({
             </Card>
           ) : null}
 
-          <section className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_320px]">
+          <section className="space-y-6">
             <div className="space-y-6">
               <Card className="border border-border/60 bg-card/95 shadow-none">
                 <CardContent className="space-y-4 p-4">
@@ -1064,22 +983,6 @@ export function OrganizationPlayersView({
                 players={players}
                 teamsById={teamsById}
               />
-            </div>
-
-            <div className="space-y-6">
-              <Card className="border border-border/60 bg-card/95 shadow-none">
-                <CardHeader className="flex-row items-start justify-between gap-4 space-y-0">
-                  <div className="space-y-1">
-                    <CardTitle className="text-base">Player operations</CardTitle>
-                    <CardDescription>
-                      Register players and keep roster eligibility current.
-                    </CardDescription>
-                  </div>
-                </CardHeader>
-              </Card>
-
-              <PlayerSetupNotesCard />
-              <PlayersRecentActivityCard players={players} teamsById={teamsById} />
             </div>
           </section>
         </main>
