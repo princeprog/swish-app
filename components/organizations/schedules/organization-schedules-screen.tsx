@@ -18,7 +18,6 @@ import { getApiErrorMessage } from "@/hooks/use-auth"
 import { useDivisionsQuery } from "@/hooks/use-division"
 import { useLeagueSeasonsQuery } from "@/hooks/use-league-season"
 import { useOrganizationsQuery } from "@/hooks/use-organization"
-import { useSchedulesQuery } from "@/hooks/use-schedule"
 import { useTeamsQuery } from "@/hooks/use-team"
 import { useVenuesQuery } from "@/hooks/use-venue"
 
@@ -71,14 +70,15 @@ export function OrganizationSchedulesScreen({
   slug,
 }: OrganizationSchedulesScreenProps) {
   const organizationsQuery = useOrganizationsQuery()
-  const organization = organizationsQuery.data?.find((item) => item.slug === slug)
+  const organization = organizationsQuery.data?.find(
+    (item) => item.slug === slug,
+  )
   const leagueSeasonsQuery = useLeagueSeasonsQuery(organization?.id, {
     pageSize: 50,
   })
   const divisionsQuery = useDivisionsQuery(organization?.id, { pageSize: 50 })
   const teamsQuery = useTeamsQuery(organization?.id, { pageSize: 50 })
   const venuesQuery = useVenuesQuery(organization?.id, { pageSize: 50 })
-  const schedulesQuery = useSchedulesQuery(organization?.id)
 
   if (
     organizationsQuery.isLoading ||
@@ -86,8 +86,7 @@ export function OrganizationSchedulesScreen({
       (leagueSeasonsQuery.isLoading ||
         divisionsQuery.isLoading ||
         teamsQuery.isLoading ||
-        venuesQuery.isLoading ||
-        schedulesQuery.isLoading))
+        venuesQuery.isLoading))
   ) {
     return <SchedulesLoadingState />
   }
@@ -146,20 +145,10 @@ export function OrganizationSchedulesScreen({
     )
   }
 
-  if (schedulesQuery.isError) {
-    return (
-      <SchedulesEmptyShell
-        title="We couldn't load schedules"
-        description={getApiErrorMessage(schedulesQuery.error)}
-      />
-    )
-  }
-
   return (
     <OrganizationSchedulesView
       divisions={divisionsQuery.data?.data ?? []}
       organization={organization}
-      schedules={schedulesQuery.data ?? []}
       seasons={leagueSeasonsQuery.data?.data ?? []}
       teams={teamsQuery.data?.data ?? []}
       venues={venuesQuery.data?.data ?? []}

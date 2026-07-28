@@ -39,11 +39,25 @@ export type CreateSchedulePayload = {
   homeScore?: number
   leagueSeasonId: string
   startsAt: string
-  status?: "draft" | "scheduled" | "live" | "final" | "reopened" | "postponed" | "cancelled"
+  status?:
+    | "draft"
+    | "scheduled"
+    | "live"
+    | "final"
+    | "reopened"
+    | "postponed"
+    | "cancelled"
   venueId: string
 }
 
 export type UpdateSchedulePayload = Partial<CreateSchedulePayload>
+
+export type ScheduleListQuery = {
+  divisionId?: string
+  search?: string
+  sortBy?: "date" | "division" | "venue"
+  status?: CreateSchedulePayload["status"]
+}
 
 export const scheduleService = {
   create: (organizationId: string, data: CreateSchedulePayload) =>
@@ -52,9 +66,10 @@ export const scheduleService = {
       data,
       { credentials: "include" },
     ),
-  list: (organizationId: string) =>
+  list: (organizationId: string, query?: ScheduleListQuery) =>
     apiService.get<Schedule[]>(API_ENDPOINTS.schedules.list(organizationId), {
       credentials: "include",
+      query,
     }),
   remove: (organizationId: string, scheduleId: string) =>
     apiService.delete<void>(
@@ -63,7 +78,11 @@ export const scheduleService = {
         credentials: "include",
       },
     ),
-  update: (organizationId: string, scheduleId: string, data: UpdateSchedulePayload) =>
+  update: (
+    organizationId: string,
+    scheduleId: string,
+    data: UpdateSchedulePayload,
+  ) =>
     apiService.patch<Schedule, UpdateSchedulePayload>(
       `${API_ENDPOINTS.schedules.list(organizationId)}/${scheduleId}`,
       data,

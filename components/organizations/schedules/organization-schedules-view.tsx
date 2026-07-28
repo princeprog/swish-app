@@ -10,7 +10,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Ellipsis,
-  Filter,
   Globe,
   MapPin,
   Loader2,
@@ -58,22 +57,32 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
-import { Field, FieldContent, FieldError, FieldLabel } from "@/components/ui/field"
+import {
+  Field,
+  FieldContent,
+  FieldError,
+  FieldLabel,
+} from "@/components/ui/field"
 import { Calendar } from "@/components/ui/calendar"
 import { Input } from "@/components/ui/input"
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { getApiErrorMessage } from "@/hooks/use-auth"
 import {
   useCreateScheduleMutation,
   useDeleteScheduleMutation,
+  useSchedulesQuery,
   useUpdateScheduleMutation,
 } from "@/hooks/use-schedule"
 import type { Division } from "@/services/division.service"
 import type { LeagueSeason } from "@/services/league-season.service"
 import type { Organization } from "@/services/organization.service"
-import type { Schedule } from "@/services/schedule.service"
+import type { Schedule, ScheduleListQuery } from "@/services/schedule.service"
 import type { Team } from "@/services/team.service"
 import type { Venue } from "@/services/venue.service"
 
@@ -215,8 +224,14 @@ function ScheduleDateTimePicker({
             id={`${id}-time`}
             type="time"
             value={getDateTimePickerTime(value)}
-            onInput={(event) => onChange(updateDateTimePickerTime(value, event.currentTarget.value))}
-            onChange={(event) => onChange(updateDateTimePickerTime(value, event.target.value))}
+            onInput={(event) =>
+              onChange(
+                updateDateTimePickerTime(value, event.currentTarget.value),
+              )
+            }
+            onChange={(event) =>
+              onChange(updateDateTimePickerTime(value, event.target.value))
+            }
           />
         </div>
       </PopoverContent>
@@ -226,8 +241,12 @@ function ScheduleDateTimePicker({
 
 function ScheduleSummaryCards({ schedules }: { schedules: Schedule[] }) {
   const now = Date.now()
-  const upcomingGames = schedules.filter((game) => new Date(game.starts_at).getTime() >= now).length
-  const completedGames = schedules.filter((game) => game.status === "final").length
+  const upcomingGames = schedules.filter(
+    (game) => new Date(game.starts_at).getTime() >= now,
+  ).length
+  const completedGames = schedules.filter(
+    (game) => game.status === "final",
+  ).length
   const venuesInUse = new Set(schedules.map((game) => game.venue_id)).size
 
   const cards = [
@@ -358,7 +377,10 @@ function ScheduleActionsPopover({
   }, [game.id, open])
 
   return (
-    <div className="relative inline-flex justify-end" data-schedule-actions={game.id}>
+    <div
+      className="relative inline-flex justify-end"
+      data-schedule-actions={game.id}
+    >
       <Button
         aria-expanded={open}
         aria-haspopup="menu"
@@ -431,7 +453,9 @@ function groupSchedulesByDay(games: Schedule[]) {
   return Array.from(groups.entries()).map(([dateKey, items]) => ({
     dateKey,
     games: items.sort(
-      (left, right) => new Date(left.starts_at).getTime() - new Date(right.starts_at).getTime(),
+      (left, right) =>
+        new Date(left.starts_at).getTime() -
+        new Date(right.starts_at).getTime(),
     ),
   }))
 }
@@ -454,7 +478,8 @@ function ScheduleBoard({
           </EmptyMedia>
           <EmptyTitle>No scheduled games yet</EmptyTitle>
           <EmptyDescription>
-            Create the first official game once seasons, divisions, teams, and venues are ready.
+            Create the first official game once seasons, divisions, teams, and
+            venues are ready.
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
@@ -469,10 +494,16 @@ function ScheduleBoard({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="space-y-1">
             <CardTitle>Schedule board</CardTitle>
-            <CardDescription>Grouped by play date across all visible divisions and venues.</CardDescription>
+            <CardDescription>
+              Grouped by play date across all visible divisions and venues.
+            </CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            <Button aria-label="Previous dates" size="icon-sm" variant="outline">
+            <Button
+              aria-label="Previous dates"
+              size="icon-sm"
+              variant="outline"
+            >
               <ChevronLeft className="size-4" />
             </Button>
             <Button aria-label="Next dates" size="icon-sm" variant="outline">
@@ -481,7 +512,9 @@ function ScheduleBoard({
           </div>
         </div>
         <CardAction>
-          <div className="text-sm text-muted-foreground">{games.length} total</div>
+          <div className="text-sm text-muted-foreground">
+            {games.length} total
+          </div>
         </CardAction>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -497,9 +530,15 @@ function ScheduleBoard({
                 type="button"
               >
                 <span className="text-xs text-muted-foreground">
-                  {date.toLocaleDateString([], { weekday: "short" }).toUpperCase()}
+                  {date
+                    .toLocaleDateString([], { weekday: "short" })
+                    .toUpperCase()}
                 </span>
-                <span className={isFirst ? "font-semibold text-foreground" : "font-medium"}>
+                <span
+                  className={
+                    isFirst ? "font-semibold text-foreground" : "font-medium"
+                  }
+                >
                   {date.toLocaleDateString([], { day: "numeric" })}
                 </span>
               </button>
@@ -532,7 +571,9 @@ function ScheduleBoard({
                       className={[
                         "grid gap-3 bg-card px-4 py-4",
                         "md:grid-cols-[130px_minmax(0,1.2fr)_180px_190px_120px_44px]",
-                        index !== group.games.length - 1 ? "border-b border-border/60" : "",
+                        index !== group.games.length - 1
+                          ? "border-b border-border/60"
+                          : "",
                       ].join(" ")}
                     >
                       <div className="space-y-1">
@@ -542,21 +583,30 @@ function ScheduleBoard({
                             minute: "2-digit",
                           })}
                         </div>
-                        <div className="text-xs text-muted-foreground">Game #{index + 1}</div>
+                        <div className="text-xs text-muted-foreground">
+                          Game #{index + 1}
+                        </div>
                       </div>
 
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium">{game.home_team_name}</span>
-                          {game.home_score !== null && game.away_score !== null ? (
+                          <span className="font-medium">
+                            {game.home_team_name}
+                          </span>
+                          {game.home_score !== null &&
+                          game.away_score !== null ? (
                             <Badge variant="outline">
                               {game.home_score} - {game.away_score}
                             </Badge>
                           ) : null}
                           <Badge variant="secondary">vs</Badge>
-                          <span className="font-medium">{game.away_team_name}</span>
+                          <span className="font-medium">
+                            {game.away_team_name}
+                          </span>
                         </div>
-                        <div className="text-xs text-muted-foreground">{game.league_season_name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {game.league_season_name}
+                        </div>
                       </div>
 
                       <div className="space-y-1 text-sm">
@@ -571,7 +621,10 @@ function ScheduleBoard({
                       </div>
 
                       <div className="flex items-start md:justify-end">
-                        <Badge className={scheduleStatusTone(game.status)} variant="outline">
+                        <Badge
+                          className={scheduleStatusTone(game.status)}
+                          variant="outline"
+                        >
                           {toTitleCase(game.status)}
                         </Badge>
                       </div>
@@ -613,9 +666,14 @@ function EditScheduleModal({
   venues: Venue[]
 }) {
   const updateScheduleMutation = useUpdateScheduleMutation(organizationId)
-  const [leagueSeasonId, setLeagueSeasonId] = React.useState(game.league_season_id)
+  const [leagueSeasonId, setLeagueSeasonId] = React.useState(
+    game.league_season_id,
+  )
   const availableDivisions = React.useMemo(
-    () => divisions.filter((division) => division.league_season_id === leagueSeasonId),
+    () =>
+      divisions.filter(
+        (division) => division.league_season_id === leagueSeasonId,
+      ),
     [divisions, leagueSeasonId],
   )
   const [divisionId, setDivisionId] = React.useState(game.division_id)
@@ -630,15 +688,21 @@ function EditScheduleModal({
   const [homeTeamId, setHomeTeamId] = React.useState(game.home_team_id)
   const [awayTeamId, setAwayTeamId] = React.useState(game.away_team_id)
   const [venueId, setVenueId] = React.useState(game.venue_id)
-  const [startsAt, setStartsAt] = React.useState(toLocalDateTimeInputValue(game.starts_at))
-  const [status, setStatus] = React.useState<ScheduleStatus>(game.status as ScheduleStatus)
+  const [startsAt, setStartsAt] = React.useState(
+    toLocalDateTimeInputValue(game.starts_at),
+  )
+  const [status, setStatus] = React.useState<ScheduleStatus>(
+    game.status as ScheduleStatus,
+  )
   const [homeScore, setHomeScore] = React.useState(
     game.home_score === null ? "" : String(game.home_score),
   )
   const [awayScore, setAwayScore] = React.useState(
     game.away_score === null ? "" : String(game.away_score),
   )
-  const [validationError, setValidationError] = React.useState<string | null>(null)
+  const [validationError, setValidationError] = React.useState<string | null>(
+    null,
+  )
 
   React.useEffect(() => {
     const nextDivisionId =
@@ -650,15 +714,21 @@ function EditScheduleModal({
 
   React.useEffect(() => {
     const nextVenueId =
-      availableVenues.find((venue) => venue.id === venueId)?.id ?? availableVenues[0]?.id ?? ""
+      availableVenues.find((venue) => venue.id === venueId)?.id ??
+      availableVenues[0]?.id ??
+      ""
     setVenueId(nextVenueId)
   }, [availableVenues, venueId])
 
   React.useEffect(() => {
     const nextHomeTeamId =
-      availableTeams.find((team) => team.id === homeTeamId)?.id ?? availableTeams[0]?.id ?? ""
+      availableTeams.find((team) => team.id === homeTeamId)?.id ??
+      availableTeams[0]?.id ??
+      ""
     const nextAwayTeamId =
-      availableTeams.find((team) => team.id === awayTeamId && team.id !== nextHomeTeamId)?.id ??
+      availableTeams.find(
+        (team) => team.id === awayTeamId && team.id !== nextHomeTeamId,
+      )?.id ??
       availableTeams.find((team) => team.id !== nextHomeTeamId)?.id ??
       ""
 
@@ -669,8 +739,16 @@ function EditScheduleModal({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!leagueSeasonId || !divisionId || !venueId || !homeTeamId || !awayTeamId) {
-      setValidationError("Season, division, venue, and both teams are required.")
+    if (
+      !leagueSeasonId ||
+      !divisionId ||
+      !venueId ||
+      !homeTeamId ||
+      !awayTeamId
+    ) {
+      setValidationError(
+        "Season, division, venue, and both teams are required.",
+      )
       return
     }
 
@@ -707,7 +785,9 @@ function EditScheduleModal({
         scheduleId: game.id,
       })
 
-      toast.success(`Updated ${updatedGame.home_team_name} vs ${updatedGame.away_team_name}`)
+      toast.success(
+        `Updated ${updatedGame.home_team_name} vs ${updatedGame.away_team_name}`,
+      )
       onClose()
     } catch (error) {
       toast.error(getApiErrorMessage(error))
@@ -721,9 +801,16 @@ function EditScheduleModal({
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
               <CardTitle className="text-xl">Edit game</CardTitle>
-              <CardDescription>Update the official schedule record for this matchup.</CardDescription>
+              <CardDescription>
+                Update the official schedule record for this matchup.
+              </CardDescription>
             </div>
-            <Button aria-label="Close edit game modal" size="icon-sm" variant="ghost" onClick={onClose}>
+            <Button
+              aria-label="Close edit game modal"
+              size="icon-sm"
+              variant="ghost"
+              onClick={onClose}
+            >
               <X className="size-4" />
             </Button>
           </div>
@@ -739,7 +826,9 @@ function EditScheduleModal({
                     value={leagueSeasonId}
                     onChange={(event) => setLeagueSeasonId(event.target.value)}
                   >
-                    <NativeSelectOption value="">Select a season</NativeSelectOption>
+                    <NativeSelectOption value="">
+                      Select a season
+                    </NativeSelectOption>
                     {seasons.map((season) => (
                       <NativeSelectOption key={season.id} value={season.id}>
                         {season.name}
@@ -750,14 +839,18 @@ function EditScheduleModal({
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="edit-schedule-division">Division</FieldLabel>
+                <FieldLabel htmlFor="edit-schedule-division">
+                  Division
+                </FieldLabel>
                 <FieldContent>
                   <NativeSelect
                     id="edit-schedule-division"
                     value={divisionId}
                     onChange={(event) => setDivisionId(event.target.value)}
                   >
-                    <NativeSelectOption value="">Select a division</NativeSelectOption>
+                    <NativeSelectOption value="">
+                      Select a division
+                    </NativeSelectOption>
                     {availableDivisions.map((division) => (
                       <NativeSelectOption key={division.id} value={division.id}>
                         {division.name}
@@ -768,14 +861,18 @@ function EditScheduleModal({
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="edit-schedule-home-team">Home team</FieldLabel>
+                <FieldLabel htmlFor="edit-schedule-home-team">
+                  Home team
+                </FieldLabel>
                 <FieldContent>
                   <NativeSelect
                     id="edit-schedule-home-team"
                     value={homeTeamId}
                     onChange={(event) => setHomeTeamId(event.target.value)}
                   >
-                    <NativeSelectOption value="">Select a home team</NativeSelectOption>
+                    <NativeSelectOption value="">
+                      Select a home team
+                    </NativeSelectOption>
                     {availableTeams.map((team) => (
                       <NativeSelectOption key={team.id} value={team.id}>
                         {team.name}
@@ -786,14 +883,18 @@ function EditScheduleModal({
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="edit-schedule-away-team">Away team</FieldLabel>
+                <FieldLabel htmlFor="edit-schedule-away-team">
+                  Away team
+                </FieldLabel>
                 <FieldContent>
                   <NativeSelect
                     id="edit-schedule-away-team"
                     value={awayTeamId}
                     onChange={(event) => setAwayTeamId(event.target.value)}
                   >
-                    <NativeSelectOption value="">Select an away team</NativeSelectOption>
+                    <NativeSelectOption value="">
+                      Select an away team
+                    </NativeSelectOption>
                     {availableTeams
                       .filter((team) => team.id !== homeTeamId)
                       .map((team) => (
@@ -813,7 +914,9 @@ function EditScheduleModal({
                     value={venueId}
                     onChange={(event) => setVenueId(event.target.value)}
                   >
-                    <NativeSelectOption value="">Select a venue</NativeSelectOption>
+                    <NativeSelectOption value="">
+                      Select a venue
+                    </NativeSelectOption>
                     {availableVenues.map((venue) => (
                       <NativeSelectOption key={venue.id} value={venue.id}>
                         {venue.name}
@@ -829,22 +932,32 @@ function EditScheduleModal({
                   <NativeSelect
                     id="edit-schedule-status"
                     value={status}
-                    onChange={(event) => setStatus(event.target.value as ScheduleStatus)}
+                    onChange={(event) =>
+                      setStatus(event.target.value as ScheduleStatus)
+                    }
                   >
-                    {["draft", "scheduled", "live", "final", "reopened", "postponed", "cancelled"].map(
-                      (value) => (
-                        <NativeSelectOption key={value} value={value}>
-                          {toTitleCase(value)}
-                        </NativeSelectOption>
-                      ),
-                    )}
+                    {[
+                      "draft",
+                      "scheduled",
+                      "live",
+                      "final",
+                      "reopened",
+                      "postponed",
+                      "cancelled",
+                    ].map((value) => (
+                      <NativeSelectOption key={value} value={value}>
+                        {toTitleCase(value)}
+                      </NativeSelectOption>
+                    ))}
                   </NativeSelect>
                 </FieldContent>
               </Field>
             </div>
 
             <Field>
-              <FieldLabel htmlFor="edit-schedule-starts-at">Game date and time</FieldLabel>
+              <FieldLabel htmlFor="edit-schedule-starts-at">
+                Game date and time
+              </FieldLabel>
               <FieldContent>
                 <Input
                   id="edit-schedule-starts-at"
@@ -858,7 +971,9 @@ function EditScheduleModal({
             {status === "final" ? (
               <div className="grid gap-5 md:grid-cols-2">
                 <Field>
-                  <FieldLabel htmlFor="edit-schedule-home-score">Home score</FieldLabel>
+                  <FieldLabel htmlFor="edit-schedule-home-score">
+                    Home score
+                  </FieldLabel>
                   <FieldContent>
                     <Input
                       id="edit-schedule-home-score"
@@ -870,7 +985,9 @@ function EditScheduleModal({
                   </FieldContent>
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="edit-schedule-away-score">Away score</FieldLabel>
+                  <FieldLabel htmlFor="edit-schedule-away-score">
+                    Away score
+                  </FieldLabel>
                   <FieldContent>
                     <Input
                       id="edit-schedule-away-score"
@@ -885,7 +1002,10 @@ function EditScheduleModal({
             ) : null}
 
             {validationError || updateScheduleMutation.isError ? (
-              <FieldError>{validationError ?? getApiErrorMessage(updateScheduleMutation.error)}</FieldError>
+              <FieldError>
+                {validationError ??
+                  getApiErrorMessage(updateScheduleMutation.error)}
+              </FieldError>
             ) : null}
 
             <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
@@ -949,7 +1069,9 @@ function DeleteScheduleModal({
         </CardHeader>
         <CardContent className="space-y-5">
           {deleteScheduleMutation.isError ? (
-            <FieldError>{getApiErrorMessage(deleteScheduleMutation.error)}</FieldError>
+            <FieldError>
+              {getApiErrorMessage(deleteScheduleMutation.error)}
+            </FieldError>
           ) : null}
 
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
@@ -1007,12 +1129,19 @@ function CreateScheduleModal({
   teams: Team[]
   venues: Venue[]
 }) {
-  const [leagueSeasonId, setLeagueSeasonId] = React.useState(seasons[0]?.id ?? "")
+  const [leagueSeasonId, setLeagueSeasonId] = React.useState(
+    seasons[0]?.id ?? "",
+  )
   const availableDivisions = React.useMemo(
-    () => divisions.filter((division) => division.league_season_id === leagueSeasonId),
+    () =>
+      divisions.filter(
+        (division) => division.league_season_id === leagueSeasonId,
+      ),
     [divisions, leagueSeasonId],
   )
-  const [divisionId, setDivisionId] = React.useState(availableDivisions[0]?.id ?? "")
+  const [divisionId, setDivisionId] = React.useState(
+    availableDivisions[0]?.id ?? "",
+  )
   const availableTeams = React.useMemo(
     () => teams.filter((team) => team.division_id === divisionId),
     [divisionId, teams],
@@ -1027,7 +1156,9 @@ function CreateScheduleModal({
   const [startsAt, setStartsAt] = React.useState(
     toLocalDateTimeInputValue(new Date().toISOString()),
   )
-  const [validationError, setValidationError] = React.useState<string | null>(null)
+  const [validationError, setValidationError] = React.useState<string | null>(
+    null,
+  )
 
   React.useEffect(() => {
     const nextDivisionId =
@@ -1051,7 +1182,9 @@ function CreateScheduleModal({
       availableTeams[0]?.id ??
       ""
     const nextAwayTeamId =
-      availableTeams.find((team) => team.id === awayTeamId && team.id !== nextHomeTeamId)?.id ??
+      availableTeams.find(
+        (team) => team.id === awayTeamId && team.id !== nextHomeTeamId,
+      )?.id ??
       availableTeams.find((team) => team.id !== nextHomeTeamId)?.id ??
       ""
 
@@ -1062,8 +1195,16 @@ function CreateScheduleModal({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!leagueSeasonId || !divisionId || !venueId || !homeTeamId || !awayTeamId) {
-      setValidationError("Season, division, venue, and both teams are required.")
+    if (
+      !leagueSeasonId ||
+      !divisionId ||
+      !venueId ||
+      !homeTeamId ||
+      !awayTeamId
+    ) {
+      setValidationError(
+        "Season, division, venue, and both teams are required.",
+      )
       return
     }
 
@@ -1111,7 +1252,9 @@ function CreateScheduleModal({
                     value={leagueSeasonId}
                     onChange={(event) => setLeagueSeasonId(event.target.value)}
                   >
-                    <NativeSelectOption value="">Select a season</NativeSelectOption>
+                    <NativeSelectOption value="">
+                      Select a season
+                    </NativeSelectOption>
                     {seasons.map((season) => (
                       <NativeSelectOption key={season.id} value={season.id}>
                         {season.name}
@@ -1130,7 +1273,9 @@ function CreateScheduleModal({
                     value={divisionId}
                     onChange={(event) => setDivisionId(event.target.value)}
                   >
-                    <NativeSelectOption value="">Select a division</NativeSelectOption>
+                    <NativeSelectOption value="">
+                      Select a division
+                    </NativeSelectOption>
                     {availableDivisions.map((division) => (
                       <NativeSelectOption key={division.id} value={division.id}>
                         {division.name}
@@ -1151,7 +1296,9 @@ function CreateScheduleModal({
                     value={homeTeamId}
                     onChange={(event) => setHomeTeamId(event.target.value)}
                   >
-                    <NativeSelectOption value="">Select a home team</NativeSelectOption>
+                    <NativeSelectOption value="">
+                      Select a home team
+                    </NativeSelectOption>
                     {availableTeams.map((team) => (
                       <NativeSelectOption key={team.id} value={team.id}>
                         {team.name}
@@ -1170,7 +1317,9 @@ function CreateScheduleModal({
                     value={awayTeamId}
                     onChange={(event) => setAwayTeamId(event.target.value)}
                   >
-                    <NativeSelectOption value="">Select an away team</NativeSelectOption>
+                    <NativeSelectOption value="">
+                      Select an away team
+                    </NativeSelectOption>
                     {availableTeams
                       .filter((team) => team.id !== homeTeamId)
                       .map((team) => (
@@ -1193,7 +1342,9 @@ function CreateScheduleModal({
                     value={venueId}
                     onChange={(event) => setVenueId(event.target.value)}
                   >
-                    <NativeSelectOption value="">Select a venue</NativeSelectOption>
+                    <NativeSelectOption value="">
+                      Select a venue
+                    </NativeSelectOption>
                     {availableVenues.map((venue) => (
                       <NativeSelectOption key={venue.id} value={venue.id}>
                         {venue.name}
@@ -1204,7 +1355,9 @@ function CreateScheduleModal({
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="schedule-starts-at">Game date and time</FieldLabel>
+                <FieldLabel htmlFor="schedule-starts-at">
+                  Game date and time
+                </FieldLabel>
                 <FieldContent>
                   <ScheduleDateTimePicker
                     id="schedule-starts-at"
@@ -1247,14 +1400,12 @@ function CreateScheduleModal({
 export function OrganizationSchedulesView({
   divisions,
   organization,
-  schedules,
   seasons,
   teams,
   venues,
 }: {
   divisions: Division[]
   organization: Organization
-  schedules: Schedule[]
   seasons: LeagueSeason[]
   teams: Team[]
   venues: Venue[]
@@ -1266,37 +1417,26 @@ export function OrganizationSchedulesView({
   const [search, setSearch] = React.useState("")
   const [divisionFilter, setDivisionFilter] = React.useState("all")
   const [statusFilter, setStatusFilter] = React.useState("all")
-  const [sortBy, setSortBy] = React.useState("recent")
-
-  const filteredGames = React.useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase()
-    const nextGames = schedules.filter((game) => {
-      const matchesSearch =
-        !normalizedSearch ||
-        game.home_team_name.toLowerCase().includes(normalizedSearch) ||
-        game.away_team_name.toLowerCase().includes(normalizedSearch) ||
-        game.venue_name.toLowerCase().includes(normalizedSearch)
-      const matchesDivision =
-        divisionFilter === "all" || game.division_id === divisionFilter
-      const matchesStatus = statusFilter === "all" || game.status === statusFilter
-
-      return matchesSearch && matchesDivision && matchesStatus
-    })
-
-    nextGames.sort((left, right) => {
-      if (sortBy === "division") {
-        return left.division_name.localeCompare(right.division_name)
-      }
-
-      if (sortBy === "venue") {
-        return left.venue_name.localeCompare(right.venue_name)
-      }
-
-      return new Date(left.starts_at).getTime() - new Date(right.starts_at).getTime()
-    })
-
-    return nextGames
-  }, [divisionFilter, schedules, search, sortBy, statusFilter])
+  const [sortBy, setSortBy] =
+    React.useState<NonNullable<ScheduleListQuery["sortBy"]>>("date")
+  const deferredSearch = React.useDeferredValue(search.trim())
+  const schedulesQueryParams = React.useMemo<ScheduleListQuery>(
+    () => ({
+      divisionId: divisionFilter === "all" ? undefined : divisionFilter,
+      search: deferredSearch || undefined,
+      sortBy,
+      status:
+        statusFilter === "all"
+          ? undefined
+          : (statusFilter as NonNullable<ScheduleListQuery["status"]>),
+    }),
+    [deferredSearch, divisionFilter, sortBy, statusFilter],
+  )
+  const schedulesQuery = useSchedulesQuery(
+    organization.id,
+    schedulesQueryParams,
+  )
+  const schedules = schedulesQuery.data ?? []
 
   async function handleCreateSchedule(payload: {
     awayTeamId: string
@@ -1311,9 +1451,7 @@ export function OrganizationSchedulesView({
         ...payload,
         status: "scheduled",
       })
-      toast.success(
-        `Created ${game.home_team_name} vs ${game.away_team_name}`,
-      )
+      toast.success(`Created ${game.home_team_name} vs ${game.away_team_name}`)
       setCreateModalOpen(false)
     } catch (error) {
       toast.error(getApiErrorMessage(error))
@@ -1321,7 +1459,10 @@ export function OrganizationSchedulesView({
   }
 
   const canCreateSchedule =
-    seasons.length > 0 && divisions.length > 0 && teams.length >= 2 && venues.length > 0
+    seasons.length > 0 &&
+    divisions.length > 0 &&
+    teams.length >= 2 &&
+    venues.length > 0
 
   return (
     <SidebarProvider>
@@ -1350,11 +1491,19 @@ export function OrganizationSchedulesView({
               <Breadcrumb>
                 <BreadcrumbList>
                   <BreadcrumbItem>
-                    <BreadcrumbLink href={`/organizations/${organization.slug}`}>Organizations</BreadcrumbLink>
+                    <BreadcrumbLink
+                      href={`/organizations/${organization.slug}`}
+                    >
+                      Organizations
+                    </BreadcrumbLink>
                   </BreadcrumbItem>
                   <BreadcrumbSeparator />
                   <BreadcrumbItem>
-                    <BreadcrumbLink href={`/organizations/${organization.slug}`}>{organization.name}</BreadcrumbLink>
+                    <BreadcrumbLink
+                      href={`/organizations/${organization.slug}`}
+                    >
+                      {organization.name}
+                    </BreadcrumbLink>
                   </BreadcrumbItem>
                   <BreadcrumbSeparator />
                   <BreadcrumbItem>
@@ -1362,9 +1511,12 @@ export function OrganizationSchedulesView({
                   </BreadcrumbItem>
                 </BreadcrumbList>
               </Breadcrumb>
-              <h1 className="text-3xl font-semibold tracking-tight">Schedules</h1>
+              <h1 className="text-3xl font-semibold tracking-tight">
+                Schedules
+              </h1>
               <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-                Manage the official game calendar for {organization.name} across all divisions and venues.
+                Manage the official game calendar for {organization.name} across
+                all divisions and venues.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -1386,7 +1538,8 @@ export function OrganizationSchedulesView({
               <CardHeader>
                 <CardTitle>Finish setup before adding games</CardTitle>
                 <CardDescription>
-                  Schedules need at least one season, division, venue, and two teams in the same division.
+                  Schedules need at least one season, division, venue, and two
+                  teams in the same division.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -1396,32 +1549,46 @@ export function OrganizationSchedulesView({
             <div className="space-y-6">
               <Card className="border border-border/60 bg-card/95 shadow-none">
                 <CardContent className="space-y-4 p-4">
-                  <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_170px_160px_190px_180px_120px]">
-                    <div className="relative">
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_minmax(160px,180px)_minmax(150px,170px)_minmax(190px,210px)]">
+                    <div className="relative md:col-span-2 xl:col-span-1">
                       <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
-                        className="pl-9"
+                        aria-label="Search games"
+                        className="h-10 w-full pl-9"
                         placeholder="Search games..."
                         value={search}
                         onChange={(event) => setSearch(event.target.value)}
                       />
                     </div>
                     <NativeSelect
+                      aria-label="Filter by division"
+                      className="h-10 w-full"
                       value={divisionFilter}
-                      onChange={(event) => setDivisionFilter(event.target.value)}
+                      onChange={(event) =>
+                        setDivisionFilter(event.target.value)
+                      }
                     >
-                      <NativeSelectOption value="all">All divisions</NativeSelectOption>
+                      <NativeSelectOption value="all">
+                        All divisions
+                      </NativeSelectOption>
                       {divisions.map((division) => (
-                        <NativeSelectOption key={division.id} value={division.id}>
+                        <NativeSelectOption
+                          key={division.id}
+                          value={division.id}
+                        >
                           {division.name}
                         </NativeSelectOption>
                       ))}
                     </NativeSelect>
                     <NativeSelect
+                      aria-label="Filter by status"
+                      className="h-10 w-full"
                       value={statusFilter}
                       onChange={(event) => setStatusFilter(event.target.value)}
                     >
-                      <NativeSelectOption value="all">All status</NativeSelectOption>
+                      <NativeSelectOption value="all">
+                        All status
+                      </NativeSelectOption>
                       {[
                         "draft",
                         "scheduled",
@@ -1437,31 +1604,38 @@ export function OrganizationSchedulesView({
                       ))}
                     </NativeSelect>
                     <NativeSelect
+                      aria-label="Sort schedule"
+                      className="h-10 w-full"
                       value={sortBy}
-                      onChange={(event) => setSortBy(event.target.value)}
+                      onChange={(event) =>
+                        setSortBy(
+                          event.target.value as NonNullable<
+                            ScheduleListQuery["sortBy"]
+                          >,
+                        )
+                      }
                     >
-                      <NativeSelectOption value="recent">Sort: Date (Earliest)</NativeSelectOption>
-                      <NativeSelectOption value="division">Sort: Division</NativeSelectOption>
-                      <NativeSelectOption value="venue">Sort: Venue</NativeSelectOption>
+                      <NativeSelectOption value="date">
+                        Sort: Date (Earliest)
+                      </NativeSelectOption>
+                      <NativeSelectOption value="division">
+                        Sort: Division
+                      </NativeSelectOption>
+                      <NativeSelectOption value="venue">
+                        Sort: Venue
+                      </NativeSelectOption>
                     </NativeSelect>
-                    <Button className="justify-start" variant="outline">
-                      <CalendarRange className="size-4" />
-                      {filteredGames.length > 0
-                        ? `${new Date(filteredGames[0].starts_at).toLocaleDateString()} - ${new Date(
-                            filteredGames[filteredGames.length - 1].starts_at,
-                          ).toLocaleDateString()}`
-                        : "Date range"}
-                    </Button>
-                    <Button className="flex-1" variant="outline">
-                      <Filter className="size-4" />
-                      Filters
-                    </Button>
                   </div>
+                  {schedulesQuery.isError ? (
+                    <FieldError>
+                      {getApiErrorMessage(schedulesQuery.error)}
+                    </FieldError>
+                  ) : null}
                 </CardContent>
               </Card>
 
               <ScheduleBoard
-                games={filteredGames}
+                games={schedules}
                 onDeleteGame={setGameToDelete}
                 onEditGame={setGameToEdit}
               />
