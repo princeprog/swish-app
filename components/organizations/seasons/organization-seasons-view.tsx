@@ -97,7 +97,6 @@ function SeasonCreateModal({
 }) {
   const createLeagueSeasonMutation = useCreateLeagueSeasonMutation(organization.id)
   const [name, setName] = React.useState("")
-  const [slug, setSlug] = React.useState("")
   const [status, setStatus] = React.useState<"draft" | "active" | "inactive">("draft")
   const [publicEnabled, setPublicEnabled] = React.useState(false)
   const [validationError, setValidationError] = React.useState<string | null>(null)
@@ -110,7 +109,9 @@ function SeasonCreateModal({
       return
     }
 
-    if (!slug.trim()) {
+    const slug = slugifyName(name)
+
+    if (!slug) {
       setValidationError("Season slug is required.")
       return
     }
@@ -122,7 +123,7 @@ function SeasonCreateModal({
         name: name.trim(),
         organizationId: organization.id,
         publicEnabled,
-        slug: slug.trim(),
+        slug,
         status,
       })
 
@@ -163,29 +164,10 @@ function SeasonCreateModal({
                   id="new-season-name"
                   placeholder="2026 Summer League"
                   value={name}
-                  onChange={(event) => {
-                    const nextName = event.target.value
-                    setName(nextName)
-
-                    if (!slug.trim() || slug === slugifyName(name)) {
-                      setSlug(slugifyName(nextName))
-                    }
-                  }}
-                />
-              </FieldContent>
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="new-season-slug">Season slug</FieldLabel>
-              <FieldContent>
-                <Input
-                  id="new-season-slug"
-                  placeholder="2026-summer-league"
-                  value={slug}
-                  onChange={(event) => setSlug(slugifyName(event.target.value))}
+                  onChange={(event) => setName(event.target.value)}
                 />
                 <FieldDescription>
-                  Lowercase letters, numbers, and hyphens only.
+                  The season slug will be generated automatically from this name.
                 </FieldDescription>
               </FieldContent>
             </Field>
