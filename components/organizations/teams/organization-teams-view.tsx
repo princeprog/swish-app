@@ -16,7 +16,6 @@ import {
   Shield,
   Trash2,
   Users2,
-  X,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -34,6 +33,14 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   Empty,
   EmptyDescription,
@@ -264,12 +271,7 @@ function TeamFormModal({
   )
   const [color, setColor] = React.useState(team?.color ?? "")
   const [validationError, setValidationError] = React.useState<string | null>(null)
-  const previewName = name.trim() || "Team name"
-  const previewSlug = slugifyName(name) || "team-slug"
   const previewColor = color.trim() || "#1d4ed8"
-  const previewDivision =
-    divisions.find((division) => division.id === divisionId)?.name ?? "Division"
-  const previewInitials = getTeamInitials(previewName)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -295,214 +297,162 @@ function TeamFormModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4 py-8 backdrop-blur-sm">
-      <Card className="w-full max-w-5xl border border-border/70 bg-card shadow-2xl">
-        <CardHeader className="gap-4 border-b border-border/60 pb-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-1">
-              <CardTitle className="text-xl">
-                {mode === "create" ? "Create team" : "Edit team"}
-              </CardTitle>
-              <CardDescription>
-                Teams belong to a division and will be used for schedules,
-                standings, and public league pages.
-              </CardDescription>
-            </div>
-            <Button
-              aria-label={`Close ${mode} team modal`}
-              size="icon-sm"
-              variant="ghost"
-              onClick={onClose}
-            >
-              <X className="size-4" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <form onSubmit={handleSubmit}>
-            <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_360px]">
-              <div className="space-y-5 p-6">
-                <Field>
-                  <FieldLabel htmlFor="team-division">Division</FieldLabel>
-                  <FieldContent>
-                    <NativeSelect
-                      id="team-division"
-                      value={divisionId}
-                      onChange={(event) => setDivisionId(event.target.value)}
-                    >
-                      <NativeSelectOption value="">Select a division</NativeSelectOption>
-                      {divisions.map((division) => (
-                        <NativeSelectOption key={division.id} value={division.id}>
-                          {division.name}
-                        </NativeSelectOption>
-                      ))}
-                    </NativeSelect>
-                  </FieldContent>
-                </Field>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-h-[calc(100vh-2rem)] gap-0 overflow-y-auto p-0 sm:max-w-2xl">
+        <DialogHeader className="gap-1.5 border-b border-border/60 px-6 py-5 pr-14">
+          <DialogTitle className="text-lg">
+            {mode === "create" ? "Create team" : "Edit team"}
+          </DialogTitle>
+          <DialogDescription>
+            Add a team to a division and configure how it appears across the
+            league.
+          </DialogDescription>
+        </DialogHeader>
 
-                <Field>
-                  <FieldLabel htmlFor="team-name">Team name</FieldLabel>
-                  <FieldContent>
-                    <Input
-                      id="team-name"
-                      placeholder="Central Ballers"
-                      value={name}
-                      onChange={(event) => setName(event.target.value)}
-                    />
-                    <FieldDescription>
-                      The team slug will be generated automatically from the team
-                      name.
-                    </FieldDescription>
-                  </FieldContent>
-                </Field>
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-5 px-6 py-5">
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field>
+                <FieldLabel htmlFor="team-name">Team name</FieldLabel>
+                <FieldContent>
+                  <Input
+                    id="team-name"
+                    placeholder="Central Ballers"
+                    required
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                  />
+                  <FieldDescription>
+                    Used in schedules, standings, and public pages.
+                  </FieldDescription>
+                </FieldContent>
+              </Field>
 
-                <Field>
-                  <FieldLabel htmlFor="team-color">Team color</FieldLabel>
-                  <FieldContent>
-                    <div className="flex gap-2">
-                      <div
-                        className="flex h-10 w-14 shrink-0 items-center justify-center rounded-md border border-border/70"
-                        style={{ backgroundColor: previewColor }}
-                      />
-                      <Input
-                        id="team-color"
-                        placeholder="#1d4ed8"
-                        value={color}
-                        onChange={(event) => setColor(event.target.value)}
-                      />
-                      <Input
-                        aria-label="Pick team color"
-                        className="h-10 w-12 cursor-pointer overflow-hidden p-1"
-                        type="color"
-                        value={previewColor}
-                        onChange={(event) => setColor(event.target.value)}
-                      />
-                    </div>
-                    <FieldDescription>
-                      This color will be used for branding and public pages.
-                    </FieldDescription>
-                  </FieldContent>
-                </Field>
-
-                <Field>
-                  <FieldLabel>Status</FieldLabel>
-                  <FieldContent>
-                    <div className="grid grid-cols-2 gap-2">
-                      {([
-                        ["active", "Active"],
-                        ["inactive", "Inactive"],
-                      ] as const).map(([value, label]) => {
-                        const selected = status === value
-
-                        return (
-                          <button
-                            key={value}
-                            className={cn(
-                              "flex h-11 items-center gap-2 rounded-md border px-3 text-sm transition-colors",
-                              selected
-                                ? "border-primary/40 bg-primary/10 text-foreground"
-                                : "border-border/70 bg-background/60 text-muted-foreground hover:bg-background",
-                            )}
-                            type="button"
-                            onClick={() => setStatus(value)}
-                          >
-                            <span
-                              className={cn(
-                                "size-2.5 rounded-full",
-                                value === "active" ? "bg-emerald-400" : "bg-zinc-400",
-                              )}
-                            />
-                            <span>{label}</span>
-                            {selected ? <Check className="ml-auto size-4" /> : null}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </FieldContent>
-                </Field>
-
-                {validationError || errorMessage ? (
-                  <FieldError>{validationError ?? errorMessage}</FieldError>
-                ) : null}
-              </div>
-
-              <div className="border-t border-border/60 p-6 lg:border-t-0 lg:border-l">
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold">Team preview</h3>
-                  <p className="text-sm text-muted-foreground">
-                    This is how your team will appear in the system.
-                  </p>
-                </div>
-
-                <div className="mt-5 rounded-xl border border-border/70 bg-background/60 p-6">
-                  <div
-                    className="rounded-xl border border-border/60 bg-gradient-to-b from-background to-card px-6 py-8 text-center"
-                    style={{ boxShadow: `inset 0 3px 0 0 ${previewColor}` }}
+              <Field>
+                <FieldLabel htmlFor="team-division">Division</FieldLabel>
+                <FieldContent>
+                  <NativeSelect
+                    className="w-full"
+                    id="team-division"
+                    required
+                    value={divisionId}
+                    onChange={(event) => setDivisionId(event.target.value)}
                   >
-                    <div
-                      className="mx-auto flex size-28 items-center justify-center rounded-2xl border text-2xl font-bold tracking-tight"
-                      style={{
-                        borderColor: `${previewColor}66`,
-                        boxShadow: `inset 0 0 0 2px ${previewColor}22`,
-                        color: previewColor,
-                      }}
-                    >
-                      {previewInitials}
-                    </div>
+                    <NativeSelectOption value="">Select a division</NativeSelectOption>
+                    {divisions.map((division) => (
+                      <NativeSelectOption key={division.id} value={division.id}>
+                        {division.name}
+                      </NativeSelectOption>
+                    ))}
+                  </NativeSelect>
+                  <FieldDescription>
+                    Determines where the team competes.
+                  </FieldDescription>
+                </FieldContent>
+              </Field>
+            </div>
 
-                    <div className="mt-6 space-y-3">
-                      <div className="text-3xl font-semibold tracking-tight">
-                        {previewName}
-                      </div>
-
-                      <div className="mx-auto inline-flex items-center gap-2 rounded-md border border-border/70 bg-background/70 px-3 py-2 text-sm text-muted-foreground">
-                        <Shield className="size-4" style={{ color: previewColor }} />
-                        <span>{previewDivision}</span>
-                      </div>
-
-                      <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-                        <span
-                          className="size-2.5 rounded-full"
-                          style={{ backgroundColor: previewColor }}
-                        />
-                        <span>{previewColor}</span>
-                      </div>
-
-                      <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground/80">
-                        {previewSlug}
-                      </div>
-                    </div>
-                  </div>
+            <Field>
+              <FieldLabel htmlFor="team-color">Team color</FieldLabel>
+              <FieldContent>
+                <div className="flex items-center gap-2">
+                  <div
+                    aria-hidden="true"
+                    className="size-10 shrink-0 rounded-md border border-border/70"
+                    style={{ backgroundColor: previewColor }}
+                  />
+                  <Input
+                    id="team-color"
+                    placeholder="#1d4ed8"
+                    value={color}
+                    onChange={(event) => setColor(event.target.value)}
+                  />
+                  <Input
+                    aria-label="Pick team color"
+                    className="size-10 shrink-0 cursor-pointer overflow-hidden p-1"
+                    type="color"
+                    value={previewColor}
+                    onChange={(event) => setColor(event.target.value)}
+                  />
                 </div>
-              </div>
-            </div>
+                <FieldDescription>
+                  Used as the team accent color across the league.
+                </FieldDescription>
+              </FieldContent>
+            </Field>
 
-            <div className="flex flex-col-reverse gap-3 border-t border-border/60 px-6 py-5 sm:flex-row sm:justify-end">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={pending}>
-                {pending ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" />
-                    {mode === "create" ? "Creating" : "Saving"}
-                  </>
-                ) : (
-                  <>
-                    {mode === "create" ? (
-                      <Plus className="size-4" />
-                    ) : (
-                      <PencilLine className="size-4" />
-                    )}
-                    {mode === "create" ? "Create team" : "Save changes"}
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+            <Field>
+              <FieldLabel>Status</FieldLabel>
+              <FieldContent>
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    ["active", "Active"],
+                    ["inactive", "Inactive"],
+                  ] as const).map(([value, label]) => {
+                    const selected = status === value
+
+                    return (
+                      <button
+                        key={value}
+                        aria-pressed={selected}
+                        className={cn(
+                          "flex h-10 items-center gap-2 rounded-md border px-3 text-sm transition-colors",
+                          selected
+                            ? "border-primary/40 bg-primary/10 text-foreground"
+                            : "border-border/70 bg-background text-muted-foreground hover:bg-muted/50",
+                        )}
+                        type="button"
+                        onClick={() => setStatus(value)}
+                      >
+                        <span
+                          aria-hidden="true"
+                          className={cn(
+                            "size-2.5 rounded-full",
+                            value === "active" ? "bg-emerald-500" : "bg-zinc-400",
+                          )}
+                        />
+                        <span>{label}</span>
+                        {selected ? <Check className="ml-auto size-4" /> : null}
+                      </button>
+                    )
+                  })}
+                </div>
+                <FieldDescription>
+                  Active teams can be added to schedules and standings.
+                </FieldDescription>
+              </FieldContent>
+            </Field>
+
+            {validationError || errorMessage ? (
+              <FieldError>{validationError ?? errorMessage}</FieldError>
+            ) : null}
+          </div>
+
+          <DialogFooter className="border-t border-border/60 px-6 py-4">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={pending}>
+              {pending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  {mode === "create" ? "Creating" : "Saving"}
+                </>
+              ) : (
+                <>
+                  {mode === "create" ? (
+                    <Plus className="size-4" />
+                  ) : (
+                    <PencilLine className="size-4" />
+                  )}
+                  {mode === "create" ? "Create team" : "Save changes"}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -606,10 +556,10 @@ function TeamsTable({
         <Table>
           <TableHeader className="bg-muted/40">
             <TableRow className="border-border/60 hover:bg-transparent">
-              <TableHead className="w-12 px-4">
+              <TableHead className="h-10 w-10 px-3">
                 <Checkbox aria-label="Select all teams" />
               </TableHead>
-              <TableHead className="h-12 text-muted-foreground">Team</TableHead>
+              <TableHead className="h-10 text-muted-foreground">Team</TableHead>
               <TableHead className="text-muted-foreground">Division</TableHead>
               <TableHead className="text-muted-foreground">Color</TableHead>
               <TableHead className="text-muted-foreground">Status</TableHead>
@@ -629,16 +579,16 @@ function TeamsTable({
               return (
                 <TableRow
                   key={team.id}
-                  className="h-18 border-border/60 hover:bg-muted/30"
+                  className="h-14 border-border/60 hover:bg-muted/30"
                 >
-                  <TableCell className="px-4">
+                  <TableCell className="px-3">
                     <Checkbox aria-label={`Select ${team.name}`} />
                   </TableCell>
                   <TableCell className="whitespace-normal">
-                    <div className="flex items-center gap-3">
-                      <Avatar size="lg" className="rounded-md">
+                    <div className="flex items-center gap-2">
+                      <Avatar className="rounded-md">
                         <AvatarFallback
-                          className="rounded-md text-[11px] font-semibold"
+                          className="rounded-md text-[10px] font-semibold"
                           style={{
                             boxShadow: team.color
                               ? `inset 0 0 0 1px ${team.color}33`
@@ -648,7 +598,7 @@ function TeamsTable({
                           {getTeamInitials(team.name)}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex flex-col gap-1">
+                      <div className="flex flex-col">
                         <div className="font-medium">{team.name}</div>
                         <div className="text-xs text-muted-foreground">
                           {team.id.slice(0, 8).toUpperCase()}
@@ -678,7 +628,7 @@ function TeamsTable({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col">
                       <div className="font-medium">
                         {rosterPlayers.length} {rosterPlayers.length === 1 ? "player" : "players"}
                       </div>
@@ -688,7 +638,7 @@ function TeamsTable({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col">
                       <div>{new Date(team.updated_at).toLocaleDateString()}</div>
                       <div className="text-xs text-muted-foreground">
                         {new Date(team.updated_at).toLocaleTimeString([], {
@@ -760,116 +710,38 @@ function TeamsSummaryCards({
   ]
 
   return (
-    <section className="grid gap-4 xl:grid-cols-4">
+    <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
       {cards.map((card) => {
         const Icon = card.icon
 
         return (
           <Card
             key={card.title}
-            className="border border-border/60 bg-card/95 shadow-none"
+            size="sm"
+            className="rounded-lg border border-border/60 bg-card/90 py-3 shadow-none"
           >
-            <CardHeader className="gap-4 pb-3">
-              <div className="flex items-center gap-3">
-                <div className="flex size-9 items-center justify-center rounded-lg border border-border/70 bg-background/70">
-                  <Icon className="size-4 text-muted-foreground" />
+            <CardHeader className="px-4 pb-2">
+              <div className="flex items-center gap-2.5">
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border/70 bg-background/70">
+                  <Icon className="size-3.5 text-muted-foreground" />
                 </div>
-                <CardDescription className="text-sm text-foreground/85">
+                <CardDescription className="text-sm font-medium leading-5 text-foreground/80">
                   {card.title}
                 </CardDescription>
               </div>
             </CardHeader>
-            <CardContent className="space-y-2 pt-0">
-              <div className="text-3xl font-semibold tracking-tight">{card.value}</div>
-              <p className="text-sm text-muted-foreground">{card.description}</p>
+            <CardContent className="space-y-1 px-4 pt-0">
+              <div className="text-2xl font-semibold leading-none tracking-tight">
+                {card.value}
+              </div>
+              <p className="text-xs leading-5 text-muted-foreground">
+                {card.description}
+              </p>
             </CardContent>
           </Card>
         )
       })}
     </section>
-  )
-}
-
-function TeamSetupNotesCard() {
-  const notes = [
-    "Assign teams to the correct division.",
-    "Add team colors to improve visual clarity.",
-    "Manage rosters to keep player counts accurate.",
-    "Inactive teams will not appear in schedules or standings.",
-  ]
-
-  return (
-    <Card className="border border-border/60 bg-card/95 shadow-none">
-      <CardHeader>
-        <CardTitle className="text-base">Team setup notes</CardTitle>
-        <CardDescription>
-          Keep your teams organized and up to date.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <ul className="space-y-3">
-          {notes.map((note) => (
-            <li key={note} className="flex items-start gap-3 text-sm text-muted-foreground">
-              <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-400" />
-              <span>{note}</span>
-            </li>
-          ))}
-        </ul>
-      </CardContent>
-    </Card>
-  )
-}
-
-function TeamsRecentActivityCard({
-  teams,
-}: {
-  teams: Team[]
-}) {
-  const recentTeams = [...teams]
-    .sort(
-      (a, b) =>
-        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
-    )
-    .slice(0, 4)
-
-  return (
-    <Card className="border border-border/60 bg-card/95 shadow-none">
-      <CardHeader>
-        <CardTitle className="text-base">Recent activity</CardTitle>
-        <CardDescription>Latest team record updates.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {recentTeams.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No team activity yet.</p>
-        ) : (
-          recentTeams.map((team) => (
-            <div key={team.id} className="flex items-start gap-3">
-              <div
-                className="flex size-10 shrink-0 items-center justify-center rounded-md border border-border/70 bg-background/70 text-[10px] font-semibold"
-                style={{
-                  boxShadow: team.color ? `inset 0 0 0 1px ${team.color}33` : undefined,
-                }}
-              >
-                {getTeamInitials(team.name)}
-              </div>
-              <div className="min-w-0 space-y-1">
-                <div className="truncate text-sm font-medium">{team.name}</div>
-                <div className="text-xs text-muted-foreground">
-                  Team record updated
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {new Date(team.updated_at).toLocaleDateString()}{" "}
-                  {new Date(team.updated_at).toLocaleTimeString([], {
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-      </CardContent>
-    </Card>
   )
 }
 
@@ -997,7 +869,7 @@ export function OrganizationTeamsView({
           }}
         />
 
-        <main className="flex flex-1 flex-col gap-6 bg-background px-4 py-4 lg:px-6 lg:py-5">
+        <main className="flex flex-1 flex-col gap-4 bg-background px-4 py-4 lg:px-6 lg:py-5">
           <section className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">People setup</p>
@@ -1019,9 +891,9 @@ export function OrganizationTeamsView({
 
           {divisions.length === 0 ? (
             <Card className="border border-dashed border-border/70 bg-card/70 shadow-none">
-              <CardHeader>
-                <CardTitle>Create a division first</CardTitle>
-                <CardDescription>
+              <CardHeader className="p-4">
+                <CardTitle className="text-base">Create a division first</CardTitle>
+                <CardDescription className="text-sm">
                   Teams belong to a division. Add a division before creating team
                   records for this organization.
                 </CardDescription>
@@ -1029,99 +901,81 @@ export function OrganizationTeamsView({
             </Card>
           ) : null}
 
-          <section className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_320px]">
-            <div className="space-y-6">
-              <Card className="border border-border/60 bg-card/95 shadow-none">
-                <CardContent className="space-y-4 p-4">
-                  <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px_140px_180px_130px]">
-                    <div className="relative">
-                      <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        className="pl-9"
-                        placeholder="Search teams..."
-                        value={filters.search}
-                        onChange={(event) =>
-                          onFiltersChange({ ...filters, search: event.target.value })
-                        }
-                      />
-                    </div>
-                    <NativeSelect
-                      value={filters.divisionFilter}
+          <section className="space-y-4">
+            <Card className="border border-border/60 bg-card/95 shadow-none">
+              <CardContent className="p-3">
+                <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px_140px_180px_130px]">
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      className="pl-9"
+                      placeholder="Search teams..."
+                      value={filters.search}
                       onChange={(event) =>
-                        onFiltersChange({
-                          ...filters,
-                          divisionFilter: event.target.value,
-                        })
+                        onFiltersChange({ ...filters, search: event.target.value })
                       }
-                    >
-                      <NativeSelectOption value="all">All divisions</NativeSelectOption>
-                      {divisions.map((division) => (
-                        <NativeSelectOption key={division.id} value={division.id}>
-                          {division.name}
-                        </NativeSelectOption>
-                      ))}
-                    </NativeSelect>
-                    <NativeSelect
-                      value={filters.statusFilter}
-                      onChange={(event) =>
-                        onFiltersChange({ ...filters, statusFilter: event.target.value })
-                      }
-                    >
-                      <NativeSelectOption value="all">All status</NativeSelectOption>
-                      <NativeSelectOption value="active">Active</NativeSelectOption>
-                      <NativeSelectOption value="inactive">Inactive</NativeSelectOption>
-                    </NativeSelect>
-                    <NativeSelect
-                      value={filters.sortBy}
-                      onChange={(event) =>
-                        onFiltersChange({
-                          ...filters,
-                          sortBy: event.target.value as TeamTableFilters["sortBy"],
-                        })
-                      }
-                    >
-                      <NativeSelectOption value="recent">Sort: Recently updated</NativeSelectOption>
-                      <NativeSelectOption value="name">Sort: Team name</NativeSelectOption>
-                      <NativeSelectOption value="division">Sort: Division</NativeSelectOption>
-                    </NativeSelect>
-                    <div className="flex gap-2">
-                      <Button className="flex-1" variant="outline">
-                        <Filter className="size-4" />
-                        View options
-                      </Button>
-                    </div>
+                    />
                   </div>
-                </CardContent>
-              </Card>
-
-              <TeamsTable
-                divisionsById={divisionsById}
-                onPageChange={onPageChange}
-                onPageSizeChange={onPageSizeChange}
-                organizationSlug={organization.slug}
-                onDeleteTeam={setTeamToDelete}
-                onEditTeam={setTeamToEdit}
-                pagination={pagination}
-                playersByTeamId={playersByTeamId}
-                teams={teams}
-              />
-            </div>
-
-            <div className="space-y-6">
-              <Card className="border border-border/60 bg-card/95 shadow-none">
-                <CardHeader className="flex-row items-start justify-between gap-4 space-y-0">
-                  <div className="space-y-1">
-                    <CardTitle className="text-base">Team operations</CardTitle>
-                    <CardDescription>
-                      Create and organize the active field of competition.
-                    </CardDescription>
+                  <NativeSelect
+                    value={filters.divisionFilter}
+                    onChange={(event) =>
+                      onFiltersChange({
+                        ...filters,
+                        divisionFilter: event.target.value,
+                      })
+                    }
+                  >
+                    <NativeSelectOption value="all">All divisions</NativeSelectOption>
+                    {divisions.map((division) => (
+                      <NativeSelectOption key={division.id} value={division.id}>
+                        {division.name}
+                      </NativeSelectOption>
+                    ))}
+                  </NativeSelect>
+                  <NativeSelect
+                    value={filters.statusFilter}
+                    onChange={(event) =>
+                      onFiltersChange({ ...filters, statusFilter: event.target.value })
+                    }
+                  >
+                    <NativeSelectOption value="all">All status</NativeSelectOption>
+                    <NativeSelectOption value="active">Active</NativeSelectOption>
+                    <NativeSelectOption value="inactive">Inactive</NativeSelectOption>
+                  </NativeSelect>
+                  <NativeSelect
+                    value={filters.sortBy}
+                    onChange={(event) =>
+                      onFiltersChange({
+                        ...filters,
+                        sortBy: event.target.value as TeamTableFilters["sortBy"],
+                      })
+                    }
+                  >
+                    <NativeSelectOption value="recent">Sort: Recently updated</NativeSelectOption>
+                    <NativeSelectOption value="name">Sort: Team name</NativeSelectOption>
+                    <NativeSelectOption value="division">Sort: Division</NativeSelectOption>
+                  </NativeSelect>
+                  <div className="flex gap-2">
+                    <Button className="flex-1" variant="outline">
+                      <Filter className="size-4" />
+                      View options
+                    </Button>
                   </div>
-                </CardHeader>
-              </Card>
+                </div>
+              </CardContent>
+            </Card>
 
-              <TeamSetupNotesCard />
-              <TeamsRecentActivityCard teams={teams} />
-            </div>
+            <TeamsTable
+              divisionsById={divisionsById}
+              onPageChange={onPageChange}
+              onPageSizeChange={onPageSizeChange}
+              organizationSlug={organization.slug}
+              onDeleteTeam={setTeamToDelete}
+              onEditTeam={setTeamToEdit}
+              pagination={pagination}
+              playersByTeamId={playersByTeamId}
+              teams={teams}
+            />
           </section>
         </main>
       </SidebarInset>

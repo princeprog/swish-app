@@ -758,25 +758,29 @@ function TeamRosterSummaryCards({
   ]
 
   return (
-    <section className="grid gap-4 xl:grid-cols-4">
+    <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
       {cards.map((card) => {
         const Icon = card.icon
 
         return (
-          <Card key={card.title} className="border border-border/60 bg-card/95 shadow-none">
-            <CardHeader className="gap-4 pb-3">
+          <Card
+            key={card.title}
+            size="sm"
+            className="rounded-lg border border-border/60 bg-card/90 py-3 shadow-none"
+          >
+            <CardHeader className="px-4 pb-2">
               <div className="flex items-center gap-3">
-                <div className="flex size-9 items-center justify-center rounded-lg border border-border/70 bg-background/70">
-                  <Icon className="size-4 text-muted-foreground" />
+                <div className="flex size-7 items-center justify-center rounded-md border border-border/70 bg-background/70">
+                  <Icon className="size-3.5 text-muted-foreground" />
                 </div>
-                <CardDescription className="text-sm text-foreground/85">
+                <CardDescription className="text-xs font-medium text-foreground/85">
                   {card.title}
                 </CardDescription>
               </div>
             </CardHeader>
-            <CardContent className="space-y-2 pt-0">
-              <div className="text-3xl font-semibold tracking-tight">{card.value}</div>
-              <p className="text-sm text-muted-foreground">{card.description}</p>
+            <CardContent className="space-y-1 px-4 pt-0">
+              <div className="text-2xl font-semibold tracking-tight">{card.value}</div>
+              <p className="text-xs leading-5 text-muted-foreground">{card.description}</p>
             </CardContent>
           </Card>
         )
@@ -1119,17 +1123,6 @@ export function TeamRosterView({
             </div>
 
             <div className="space-y-6">
-              <Card className="border border-border/60 bg-card/95 shadow-none">
-                <CardHeader className="flex-row items-start justify-between gap-4 space-y-0">
-                  <div className="space-y-1">
-                    <CardTitle className="text-base">Roster operations</CardTitle>
-                    <CardDescription>
-                      Add, update, and maintain the official roster for this team.
-                    </CardDescription>
-                  </div>
-                </CardHeader>
-              </Card>
-
               <TeamRosterNotesCard teamName={team.name} />
             </div>
           </section>
