@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Globe, Plus, UserPlus } from "lucide-react"
+import { Plus, UserPlus } from "lucide-react"
 
 import {
   Breadcrumb,
@@ -99,12 +99,6 @@ export function WorkspaceHeader({
           <Button size="sm" variant="outline">
             <UserPlus className="size-4" />
             Invite staff
-          </Button>
-          <Button size="sm" variant="outline" asChild>
-            <Link href="/docs">
-              <Globe className="size-4" />
-              Open public page
-            </Link>
           </Button>
         </div>
       </div>
