@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  CopyCheck,
   Ellipsis,
   Filter,
   Globe,
@@ -19,7 +18,6 @@ import {
   Plus,
   Search,
   Shield,
-  Sparkles,
   Trash2,
   X,
 } from "lucide-react"
@@ -166,100 +164,6 @@ function ScheduleSummaryCards({ schedules }: { schedules: Schedule[] }) {
         )
       })}
     </section>
-  )
-}
-
-function ScheduleSetupNotesCard() {
-  const notes = [
-    "Create all division schedules before publishing the league calendar.",
-    "Assign the correct venue and game time before game day.",
-    "Review conflicts and overlaps before publishing schedule changes.",
-    "Publish only when all public-facing games are ready to be visible.",
-  ]
-
-  return (
-    <Card className="border border-border/60 bg-card/95 shadow-none">
-      <CardHeader>
-        <CardTitle className="text-base">Schedule setup notes</CardTitle>
-        <CardDescription>Keep the competition calendar consistent and official.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <ul className="space-y-3">
-          {notes.map((note) => (
-            <li key={note} className="flex items-start gap-3 text-sm text-muted-foreground">
-              <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-400" />
-              <span>{note}</span>
-            </li>
-          ))}
-        </ul>
-      </CardContent>
-    </Card>
-  )
-}
-
-function ScheduleRecentActivityCard({ schedules }: { schedules: Schedule[] }) {
-  const recentGames = [...schedules]
-    .sort(
-      (left, right) =>
-        new Date(right.updated_at).getTime() - new Date(left.updated_at).getTime(),
-    )
-    .slice(0, 4)
-
-  return (
-    <Card className="border border-border/60 bg-card/95 shadow-none">
-      <CardHeader>
-        <CardTitle className="text-base">Recent schedule activity</CardTitle>
-        <CardDescription>Latest updates in this organization workspace.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {recentGames.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No schedule records yet. Create the first game to start the calendar.
-          </p>
-        ) : (
-          recentGames.map((game) => (
-            <div key={game.id} className="space-y-1">
-              <div className="text-sm font-medium">
-                {game.home_team_name} vs {game.away_team_name}
-              </div>
-              <div className="text-xs text-muted-foreground">{game.division_name} • {game.venue_name}</div>
-              <div className="text-xs text-muted-foreground">
-                Updated {new Date(game.updated_at).toLocaleString()}
-              </div>
-            </div>
-          ))
-        )}
-      </CardContent>
-    </Card>
-  )
-}
-
-function ScheduleOperationsCard({
-  canCreateSchedule,
-  onCreateSchedule,
-}: {
-  canCreateSchedule: boolean
-  onCreateSchedule: () => void
-}) {
-  return (
-    <Card className="border border-border/60 bg-card/95 shadow-none">
-      <CardHeader>
-        <CardTitle className="text-base">Schedule operations</CardTitle>
-        <CardDescription>
-          Create, edit, and publish official game schedules for your league.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <Button className="w-full justify-start" disabled={!canCreateSchedule} onClick={onCreateSchedule}>
-          <Globe className="size-4" />
-          Publish schedule
-        </Button>
-        <Button className="w-full justify-start" variant="outline">
-          <CopyCheck className="size-4" />
-          Generate printable schedule
-        </Button>
-      </CardContent>
-    </Card>
   )
 }
 
@@ -1481,7 +1385,7 @@ export function OrganizationSchedulesView({
             </Card>
           ) : null}
 
-          <section className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_320px]">
+          <section className="space-y-6">
             <div className="space-y-6">
               <Card className="border border-border/60 bg-card/95 shadow-none">
                 <CardContent className="space-y-4 p-4">
@@ -1554,45 +1458,6 @@ export function OrganizationSchedulesView({
                 onDeleteGame={setGameToDelete}
                 onEditGame={setGameToEdit}
               />
-            </div>
-
-            <div className="space-y-6">
-              <ScheduleOperationsCard
-                canCreateSchedule={canCreateSchedule}
-                onCreateSchedule={() => setCreateModalOpen(true)}
-              />
-              <ScheduleSetupNotesCard />
-              <ScheduleRecentActivityCard schedules={schedules} />
-              <Card className="border border-border/60 bg-card/95 shadow-none">
-                <CardHeader>
-                  <CardTitle className="text-base">Publishing status</CardTitle>
-                  <CardDescription>Public schedule pages depend on clean, verified game records.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Draft games pending review</span>
-                    <Badge variant="outline">
-                      {schedules.filter((game) => game.status === "draft").length}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Published-ready games</span>
-                    <Badge variant="outline">
-                      {schedules.filter((game) => ["scheduled", "live", "final"].includes(game.status)).length}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Needs follow-up</span>
-                    <Badge variant="outline">
-                      {schedules.filter((game) => ["postponed", "cancelled", "reopened"].includes(game.status)).length}
-                    </Badge>
-                  </div>
-                  <Button className="w-full justify-start" variant="outline">
-                    <Sparkles className="size-4" />
-                    Review publishing checklist
-                  </Button>
-                </CardContent>
-              </Card>
             </div>
           </section>
         </main>
