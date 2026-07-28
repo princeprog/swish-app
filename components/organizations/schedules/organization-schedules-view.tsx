@@ -59,8 +59,10 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 import { Field, FieldContent, FieldError, FieldLabel } from "@/components/ui/field"
+import { Calendar } from "@/components/ui/calendar"
 import { Input } from "@/components/ui/input"
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { getApiErrorMessage } from "@/hooks/use-auth"
 import {
@@ -90,6 +92,58 @@ function toLocalDateTimeInputValue(value: string) {
   return offsetDate.toISOString().slice(0, 16)
 }
 
+function getDateTimePickerDate(value: string) {
+  if (!value) {
+    return undefined
+  }
+
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? undefined : date
+}
+
+function formatDateTimePickerLabel(value: string) {
+  const date = getDateTimePickerDate(value)
+
+  if (!date) {
+    return "Select date and time"
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date)
+}
+
+function getDateTimePickerTime(value: string) {
+  const date = getDateTimePickerDate(value) ?? new Date()
+  const hours = String(date.getHours()).padStart(2, "0")
+  const minutes = String(date.getMinutes()).padStart(2, "0")
+
+  return `${hours}:${minutes}`
+}
+
+function updateDateTimePickerDate(value: string, nextDate: Date) {
+  const currentDate = getDateTimePickerDate(value) ?? new Date()
+  const combinedDate = new Date(nextDate)
+
+  combinedDate.setHours(currentDate.getHours(), currentDate.getMinutes(), 0, 0)
+
+  return toLocalDateTimeInputValue(combinedDate.toISOString())
+}
+
+function updateDateTimePickerTime(value: string, nextTime: string) {
+  const [hours, minutes] = nextTime.split(":").map(Number)
+
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+    return value
+  }
+
+  const combinedDate = getDateTimePickerDate(value) ?? new Date()
+  combinedDate.setHours(hours, minutes, 0, 0)
+
+  return toLocalDateTimeInputValue(combinedDate.toISOString())
+}
+
 function scheduleStatusTone(status: string) {
   switch (status) {
     case "scheduled":
@@ -114,6 +168,60 @@ function toTitleCase(value: string) {
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ")
+}
+
+function ScheduleDateTimePicker({
+  id,
+  value,
+  onChange,
+}: {
+  id: string
+  value: string
+  onChange: (value: string) => void
+}) {
+  const selectedDate = getDateTimePickerDate(value)
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          id={id}
+          type="button"
+          variant="outline"
+          className="h-10 w-full justify-start gap-2 px-3 text-left font-normal"
+        >
+          <CalendarClock className="size-4 text-muted-foreground" />
+          <span className="truncate">{formatDateTimePickerLabel(value)}</span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-auto gap-0 p-0">
+        <Calendar
+          mode="single"
+          selected={selectedDate}
+          onSelect={(nextDate) => {
+            if (nextDate) {
+              onChange(updateDateTimePickerDate(value, nextDate))
+            }
+          }}
+        />
+        <div className="border-t border-border/60 p-3">
+          <label
+            className="mb-2 block text-sm font-medium text-foreground"
+            htmlFor={`${id}-time`}
+          >
+            Time
+          </label>
+          <Input
+            id={`${id}-time`}
+            type="time"
+            value={getDateTimePickerTime(value)}
+            onInput={(event) => onChange(updateDateTimePickerTime(value, event.currentTarget.value))}
+            onChange={(event) => onChange(updateDateTimePickerTime(value, event.target.value))}
+          />
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
 }
 
 function ScheduleSummaryCards({ schedules }: { schedules: Schedule[] }) {
@@ -1139,11 +1247,10 @@ function CreateScheduleModal({
             <Field>
               <FieldLabel htmlFor="schedule-starts-at">Game date and time</FieldLabel>
               <FieldContent>
-                <Input
+                <ScheduleDateTimePicker
                   id="schedule-starts-at"
-                  type="datetime-local"
                   value={startsAt}
-                  onChange={(event) => setStartsAt(event.target.value)}
+                  onChange={setStartsAt}
                 />
               </FieldContent>
             </Field>
