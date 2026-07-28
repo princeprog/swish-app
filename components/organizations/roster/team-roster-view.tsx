@@ -35,6 +35,14 @@ import {
 } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   Empty,
   EmptyDescription,
   EmptyHeader,
@@ -441,9 +449,6 @@ function RosterPlayerFormModal({
     (player?.status as "active" | "inactive") ?? "active",
   )
   const [validationError, setValidationError] = React.useState<string | null>(null)
-  const previewName = name.trim() || "Player name"
-  const previewPosition = position ? formatPlayerPosition(position) : "Position"
-  const previewInitials = getInitials(previewName)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -474,192 +479,160 @@ function RosterPlayerFormModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4 py-8 backdrop-blur-sm">
-      <Card className="w-full max-w-5xl border border-border/70 bg-card shadow-2xl">
-        <CardHeader className="gap-4 border-b border-border/60 pb-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-1">
-              <CardTitle className="text-xl">
-                {mode === "create" ? "Add player to roster" : "Edit roster player"}
-              </CardTitle>
-              <CardDescription>
-                This player will stay scoped to {team.name}. Team reassignment is managed from the Players page.
-              </CardDescription>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-h-[calc(100vh-2rem)] gap-0 overflow-y-auto p-0 sm:max-w-2xl">
+        <DialogHeader className="gap-1.5 border-b border-border/60 px-6 py-5 pr-14">
+          <DialogTitle className="text-lg">
+            {mode === "create" ? "Add player to roster" : "Edit roster player"}
+          </DialogTitle>
+          <DialogDescription>
+            {mode === "create" ? "Enter player details" : "Update player details"} for{" "}
+            {team.name}. Team assignment stays locked to this roster.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-5 px-6 py-5">
+            <div className="flex items-center gap-3 rounded-md border border-border/60 bg-muted/30 px-3 py-2.5">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border/60 bg-background">
+                <Shield className="size-4 text-muted-foreground" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Roster assignment</p>
+                <p className="truncate text-sm font-medium">{team.name}</p>
+              </div>
             </div>
-            <Button
-              aria-label={`Close ${mode} roster player modal`}
-              size="icon-sm"
-              variant="ghost"
-              onClick={onClose}
-            >
-              <X className="size-4" />
-            </Button>
+
+            <Field>
+              <FieldLabel htmlFor="roster-player-name">Player name</FieldLabel>
+              <FieldContent>
+                <Input
+                  id="roster-player-name"
+                  placeholder="Marcus Dela Cruz"
+                  required
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                />
+                <FieldDescription>
+                  Use the player&apos;s official roster name.
+                </FieldDescription>
+              </FieldContent>
+            </Field>
+
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field>
+                <FieldLabel htmlFor="roster-player-jersey">Jersey number</FieldLabel>
+                <FieldContent>
+                  <Input
+                    id="roster-player-jersey"
+                    inputMode="numeric"
+                    placeholder="7"
+                    required
+                    value={jerseyNumber}
+                    onChange={(event) => setJerseyNumber(event.target.value)}
+                  />
+                  <FieldDescription>
+                    Must be unique within this team.
+                  </FieldDescription>
+                </FieldContent>
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="roster-player-position">Primary position</FieldLabel>
+                <FieldContent>
+                  <NativeSelect
+                    className="w-full"
+                    id="roster-player-position"
+                    required
+                    value={position}
+                    onChange={(event) => setPosition(event.target.value)}
+                  >
+                    <NativeSelectOption value="">Select a position</NativeSelectOption>
+                    {playerPositionOptions.map((option) => (
+                      <NativeSelectOption key={option.value} value={option.value}>
+                        {option.label}
+                      </NativeSelectOption>
+                    ))}
+                  </NativeSelect>
+                  <FieldDescription>
+                    Used in roster and lineup views.
+                  </FieldDescription>
+                </FieldContent>
+              </Field>
+            </div>
+
+            <Field>
+              <FieldLabel>Status</FieldLabel>
+              <FieldContent>
+                <div
+                  aria-label="Player status"
+                  className="grid grid-cols-2 gap-2"
+                  role="group"
+                >
+                  {([
+                    ["active", "Active"],
+                    ["inactive", "Inactive"],
+                  ] as const).map(([value, label]) => {
+                    const selected = status === value
+
+                    return (
+                      <button
+                        key={value}
+                        aria-pressed={selected}
+                        className={cn(
+                          "flex h-10 items-center gap-2 rounded-md border px-3 text-sm transition-colors",
+                          selected
+                            ? "border-primary/40 bg-primary/10 text-foreground"
+                            : "border-border/70 bg-background/60 text-muted-foreground hover:bg-muted/40",
+                        )}
+                        type="button"
+                        onClick={() => setStatus(value)}
+                      >
+                        <span
+                          className={cn(
+                            "size-2.5 rounded-full",
+                            value === "active" ? "bg-emerald-400" : "bg-zinc-400",
+                          )}
+                        />
+                        <span>{label}</span>
+                        {selected ? <Check className="ml-auto size-4" /> : null}
+                      </button>
+                    )
+                  })}
+                </div>
+              </FieldContent>
+            </Field>
+
+            {validationError || errorMessage ? (
+              <FieldError>{validationError ?? errorMessage}</FieldError>
+            ) : null}
           </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <form onSubmit={handleSubmit}>
-            <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_360px]">
-              <div className="space-y-5 p-6">
-                <Field>
-                  <FieldLabel htmlFor="roster-player-team">Team</FieldLabel>
-                  <FieldContent>
-                    <Input id="roster-player-team" value={team.name} readOnly disabled />
-                    <FieldDescription>
-                      Team assignment is locked in this workflow.
-                    </FieldDescription>
-                  </FieldContent>
-                </Field>
 
-                <Field>
-                  <FieldLabel htmlFor="roster-player-name">Player name</FieldLabel>
-                  <FieldContent>
-                    <Input
-                      id="roster-player-name"
-                      placeholder="Marcus Dela Cruz"
-                      value={name}
-                      onChange={(event) => setName(event.target.value)}
-                    />
-                  </FieldContent>
-                </Field>
-
-                <Field>
-                  <FieldLabel htmlFor="roster-player-jersey">Jersey number</FieldLabel>
-                  <FieldContent>
-                    <Input
-                      id="roster-player-jersey"
-                      placeholder="7"
-                      value={jerseyNumber}
-                      onChange={(event) => setJerseyNumber(event.target.value)}
-                    />
-                    <FieldDescription>
-                      Jersey numbers should stay unique within this team.
-                    </FieldDescription>
-                  </FieldContent>
-                </Field>
-
-                <Field>
-                  <FieldLabel htmlFor="roster-player-position">Position</FieldLabel>
-                  <FieldContent>
-                    <NativeSelect
-                      id="roster-player-position"
-                      value={position}
-                      onChange={(event) => setPosition(event.target.value)}
-                    >
-                      <NativeSelectOption value="">Select a position</NativeSelectOption>
-                      {playerPositionOptions.map((option) => (
-                        <NativeSelectOption key={option.value} value={option.value}>
-                          {option.label}
-                        </NativeSelectOption>
-                      ))}
-                    </NativeSelect>
-                    <FieldDescription>
-                      Choose the player&apos;s primary basketball position.
-                    </FieldDescription>
-                  </FieldContent>
-                </Field>
-
-                <Field>
-                  <FieldLabel>Status</FieldLabel>
-                  <FieldContent>
-                    <div className="grid grid-cols-2 gap-2">
-                      {([
-                        ["active", "Active"],
-                        ["inactive", "Inactive"],
-                      ] as const).map(([value, label]) => {
-                        const selected = status === value
-
-                        return (
-                          <button
-                            key={value}
-                            className={cn(
-                              "flex h-11 items-center gap-2 rounded-md border px-3 text-sm transition-colors",
-                              selected
-                                ? "border-primary/40 bg-primary/10 text-foreground"
-                                : "border-border/70 bg-background/60 text-muted-foreground hover:bg-background",
-                            )}
-                            type="button"
-                            onClick={() => setStatus(value)}
-                          >
-                            <span
-                              className={cn(
-                                "size-2.5 rounded-full",
-                                value === "active" ? "bg-emerald-400" : "bg-zinc-400",
-                              )}
-                            />
-                            <span>{label}</span>
-                            {selected ? <Check className="ml-auto size-4" /> : null}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </FieldContent>
-                </Field>
-
-                {validationError || errorMessage ? (
-                  <FieldError>{validationError ?? errorMessage}</FieldError>
-                ) : null}
-              </div>
-
-              <div className="border-t border-border/60 p-6 lg:border-t-0 lg:border-l">
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold">Roster preview</h3>
-                  <p className="text-sm text-muted-foreground">
-                    This is how the player record will appear inside {team.name}.
-                  </p>
-                </div>
-
-                <div className="mt-5 rounded-xl border border-border/70 bg-background/60 p-6">
-                  <div className="rounded-xl border border-border/60 bg-gradient-to-b from-background to-card px-6 py-8 text-center">
-                    <div className="mx-auto flex size-24 items-center justify-center rounded-full border border-border/70 bg-background/70 text-xl font-semibold">
-                      {previewInitials}
-                    </div>
-                    <div className="mt-6 space-y-3">
-                      <div className="text-3xl font-semibold tracking-tight">
-                        {previewName}
-                      </div>
-                      <div className="mx-auto inline-flex items-center gap-2 rounded-md border border-border/70 bg-background/70 px-3 py-2 text-sm text-muted-foreground">
-                        <Shield className="size-4" />
-                        <span>{team.name}</span>
-                      </div>
-                      <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-                        <span className="rounded-full border border-border/70 px-2 py-1">
-                          #{jerseyNumber.trim() || "--"}
-                        </span>
-                        <span>{previewPosition}</span>
-                        <span>{status}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col-reverse gap-3 border-t border-border/60 px-6 py-5 sm:flex-row sm:justify-end">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={pending}>
-                {pending ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" />
-                    {mode === "create" ? "Adding" : "Saving"}
-                  </>
-                ) : (
-                  <>
-                    {mode === "create" ? (
-                      <Plus className="size-4" />
-                    ) : (
-                      <PencilLine className="size-4" />
-                    )}
-                    {mode === "create" ? "Add player" : "Save changes"}
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+          <DialogFooter className="border-t border-border/60 px-6 py-4">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={pending}>
+              {pending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  {mode === "create" ? "Adding" : "Saving"}
+                </>
+              ) : (
+                <>
+                  {mode === "create" ? (
+                    <Plus className="size-4" />
+                  ) : (
+                    <PencilLine className="size-4" />
+                  )}
+                  {mode === "create" ? "Add player" : "Save changes"}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
 
