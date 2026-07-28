@@ -643,7 +643,6 @@ function SeasonsTable({
                 <Checkbox aria-label="Select all seasons" />
               </TableHead>
               <TableHead className="h-12 text-muted-foreground">Season</TableHead>
-              <TableHead className="text-muted-foreground">Slug</TableHead>
               <TableHead className="text-muted-foreground">Status</TableHead>
               <TableHead className="text-muted-foreground">Public</TableHead>
               <TableHead className="text-muted-foreground">Updated</TableHead>
@@ -660,17 +659,7 @@ function SeasonsTable({
                   <Checkbox aria-label={`Select ${season.name}`} />
                 </TableCell>
                 <TableCell className="whitespace-normal">
-                  <div className="flex flex-col gap-1">
-                    <div className="font-medium">{season.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      Season ID: {season.id}
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="font-mono font-normal text-muted-foreground">
-                    {season.slug}
-                  </Badge>
+                  <div className="font-medium">{season.name}</div>
                 </TableCell>
                 <TableCell>
                   <Badge className={statusTone(season.status)} variant="outline">
