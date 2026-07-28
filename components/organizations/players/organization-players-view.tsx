@@ -723,20 +723,28 @@ function PlayersSummaryCards({
       {cards.map((card) => {
         const Icon = card.icon
         return (
-          <Card key={card.title} className="border border-border/60 bg-card/95 shadow-none">
-            <CardHeader className="gap-4 pb-3">
-              <div className="flex items-center gap-3">
-                <div className="flex size-9 items-center justify-center rounded-lg border border-border/70 bg-background/70">
-                  <Icon className="size-4 text-muted-foreground" />
+          <Card
+            key={card.title}
+            size="sm"
+            className="rounded-lg border border-border/60 bg-card/90 py-3 shadow-none"
+          >
+            <CardHeader className="px-4 pb-2">
+              <div className="flex items-center gap-2.5">
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border/70 bg-background/70">
+                  <Icon className="size-3.5 text-muted-foreground" />
                 </div>
-                <CardDescription className="text-sm text-foreground/85">
+                <CardDescription className="text-sm font-medium leading-5 text-foreground/80">
                   {card.title}
                 </CardDescription>
               </div>
             </CardHeader>
-            <CardContent className="space-y-2 pt-0">
-              <div className="text-3xl font-semibold tracking-tight">{card.value}</div>
-              <p className="text-sm text-muted-foreground">{card.description}</p>
+            <CardContent className="space-y-1 px-4 pt-0">
+              <div className="text-2xl font-semibold leading-none tracking-tight">
+                {card.value}
+              </div>
+              <p className="text-xs leading-5 text-muted-foreground">
+                {card.description}
+              </p>
             </CardContent>
           </Card>
         )
