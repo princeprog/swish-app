@@ -917,34 +917,6 @@ function TeamRosterTable({
   )
 }
 
-function TeamRosterNotesCard({ teamName }: { teamName: string }) {
-  const notes = [
-    "Use this page for players already assigned to this team.",
-    "Jersey numbers should stay unique within this roster.",
-    "Use active status only for eligible competition players.",
-    "Move players between teams from the organization-wide Players page, not here.",
-  ]
-
-  return (
-    <Card className="border border-border/60 bg-card/95 shadow-none">
-      <CardHeader>
-        <CardTitle className="text-base">Roster notes</CardTitle>
-        <CardDescription>Keep {teamName} ready for schedules and standings.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <ul className="space-y-3">
-          {notes.map((note) => (
-            <li key={note} className="flex items-start gap-3 text-sm text-muted-foreground">
-              <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-400" />
-              <span>{note}</span>
-            </li>
-          ))}
-        </ul>
-      </CardContent>
-    </Card>
-  )
-}
-
 export function TeamRosterView({
   divisions,
   onPageChange,
@@ -1105,26 +1077,20 @@ export function TeamRosterView({
             totalPlayers={rosterPlayers.length}
           />
 
-          <section className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_320px]">
-            <div className="space-y-6">
-              <TeamRosterTable
-                onPageChange={onPageChange}
-                onPageSizeChange={onPageSizeChange}
-                onDeletePlayer={setPlayerToDelete}
-                onEditPlayer={setPlayerToEdit}
-                onViewPlayer={(player) => {
-                  setPlayerToView(player)
-                  setMountedPlayerDetails(player)
-                  setPlayerDetailsOpen(true)
-                }}
-                pagination={pagination}
-                players={rosterPlayers}
-              />
-            </div>
-
-            <div className="space-y-6">
-              <TeamRosterNotesCard teamName={team.name} />
-            </div>
+          <section className="space-y-6">
+            <TeamRosterTable
+              onPageChange={onPageChange}
+              onPageSizeChange={onPageSizeChange}
+              onDeletePlayer={setPlayerToDelete}
+              onEditPlayer={setPlayerToEdit}
+              onViewPlayer={(player) => {
+                setPlayerToView(player)
+                setMountedPlayerDetails(player)
+                setPlayerDetailsOpen(true)
+              }}
+              pagination={pagination}
+              players={rosterPlayers}
+            />
           </section>
         </main>
       </SidebarInset>
