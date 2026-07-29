@@ -14,7 +14,15 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { Building2Icon, CalendarDaysIcon, MapPinIcon, Settings2Icon, ShieldCheckIcon, TrophyIcon, Users2Icon } from "lucide-react"
+import type { OrganizationAccess } from "@/services/organization.service"
+import {
+  Building2Icon,
+  CalendarDaysIcon,
+  Settings2Icon,
+  ShieldCheckIcon,
+  TrophyIcon,
+  Users2Icon,
+} from "lucide-react"
 
 const baseData = {
   user: {
@@ -26,6 +34,7 @@ const baseData = {
 
 type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
   organization?: {
+    access?: OrganizationAccess
     name: string
     slug: string
     status: string
@@ -58,6 +67,17 @@ export function AppSidebar({
         },
       ]
 
+  const permissions = organization?.access?.permissions ?? []
+  const canManageCompetition = permissions.includes("schedule.manage")
+  const canManagePeople =
+    permissions.includes("teams.read") ||
+    permissions.includes("teams.read.assigned")
+  const canViewSchedules = permissions.includes("games.read.assigned")
+  const canViewStandings =
+    permissions.includes("standings.read") ||
+    permissions.includes("standings.read.assigned_division")
+  const canManageAccess = permissions.includes("members.manage")
+
   const navMain = [
     {
       title: "Overview",
@@ -71,64 +91,86 @@ export function AppSidebar({
         },
       ],
     },
-    {
-      title: "Competition",
-      url: workspaceBasePath,
-      icon: <CalendarDaysIcon />,
-      items: [
-        {
-          title: "Seasons",
-          url: `${workspaceBasePath}/seasons`,
-        },
-        {
-          title: "Divisions",
-          url: `${workspaceBasePath}/divisions`,
-        },
-        {
-          title: "Schedules",
-          url: `${workspaceBasePath}/schedules`,
-        },
-        {
-          title: "Standings",
-          url: `${workspaceBasePath}/standings`,
-        },
-        {
-          title: "Venues",
-          url: `${workspaceBasePath}/venues`,
-        },
-      ],
-    },
-    {
-      title: "People",
-      url: workspaceBasePath,
-      icon: <Users2Icon />,
-      items: [
-        {
-          title: "Teams",
-          url: `${workspaceBasePath}/teams`,
-        },
-        {
-          title: "Players",
-          url: `${workspaceBasePath}/players`,
-        },
-      ],
-    },
-    {
-      title: "Access",
-      url: workspaceBasePath,
-      icon: <ShieldCheckIcon />,
-      items: [
-        {
-          title: "Roles",
+    canManageCompetition || canViewSchedules || canViewStandings
+      ? {
+          title: "Competition",
           url: workspaceBasePath,
-        },
-        {
-          title: "Settings",
+          icon: <CalendarDaysIcon />,
+          items: [
+            ...(canManageCompetition
+              ? [
+                  {
+                    title: "Seasons",
+                    url: `${workspaceBasePath}/seasons`,
+                  },
+                  {
+                    title: "Divisions",
+                    url: `${workspaceBasePath}/divisions`,
+                  },
+                ]
+              : []),
+            ...(canViewSchedules
+              ? [
+                  {
+                    title: "Schedules",
+                    url: `${workspaceBasePath}/schedules`,
+                  },
+                ]
+              : []),
+            ...(canViewStandings
+              ? [
+                  {
+                    title: "Standings",
+                    url: `${workspaceBasePath}/standings`,
+                  },
+                ]
+              : []),
+            ...(canManageCompetition
+              ? [
+                  {
+                    title: "Venues",
+                    url: `${workspaceBasePath}/venues`,
+                  },
+                ]
+              : []),
+          ],
+        }
+      : null,
+    canManagePeople
+      ? {
+          title: "People",
           url: workspaceBasePath,
-        },
-      ],
-    },
-  ]
+          icon: <Users2Icon />,
+          items: [
+            {
+              title: "Teams",
+              url: `${workspaceBasePath}/teams`,
+            },
+            {
+              title: "Players",
+              url: `${workspaceBasePath}/players`,
+            },
+          ],
+        }
+      : null,
+    canManageAccess
+      ? {
+          title: "Access",
+          url: workspaceBasePath,
+          icon: <ShieldCheckIcon />,
+          items: [
+            {
+              title: "Staff & access",
+              url: `${workspaceBasePath}/members`,
+            },
+            {
+              title: "Settings",
+              url: workspaceBasePath,
+            },
+          ],
+        }
+      : null,
+  ].filter((item) => item !== null)
 
   const quickLinks = organization
     ? [

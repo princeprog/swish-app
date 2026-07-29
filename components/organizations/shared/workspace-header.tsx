@@ -96,9 +96,11 @@ export function WorkspaceHeader({
               </Link>
             </Button>
           )}
-          <Button size="sm" variant="outline">
-            <UserPlus className="size-4" />
-            Invite staff
+          <Button size="sm" variant="outline" asChild>
+            <Link href={`/organizations/${organizationSlug}/members`}>
+              <UserPlus className="size-4" />
+              Invite staff
+            </Link>
           </Button>
         </div>
       </div>

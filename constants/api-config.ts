@@ -30,6 +30,32 @@ export const API_ENDPOINTS = {
     create: "/organizations",
     list: "/organizations",
   },
+  invitations: {
+    accept: "/invitations/accept",
+    preview: "/invitations/preview",
+  },
+  organizationInvitations: {
+    create: (organizationId: string) =>
+      `/organizations/${organizationId}/invitations`,
+    list: (organizationId: string) =>
+      `/organizations/${organizationId}/invitations`,
+    resend: (organizationId: string, invitationId: string) =>
+      `/organizations/${organizationId}/invitations/${invitationId}/resend`,
+    revoke: (organizationId: string, invitationId: string) =>
+      `/organizations/${organizationId}/invitations/${invitationId}`,
+  },
+  organizationMembers: {
+    gameAssignments: (organizationId: string, memberId: string) =>
+      `/organizations/${organizationId}/members/${memberId}/game-assignments`,
+    list: (organizationId: string) =>
+      `/organizations/${organizationId}/members`,
+    teamAssignments: (organizationId: string, memberId: string) =>
+      `/organizations/${organizationId}/members/${memberId}/team-assignments`,
+    transferOwnership: (organizationId: string) =>
+      `/organizations/${organizationId}/ownership/transfer`,
+    update: (organizationId: string, memberId: string) =>
+      `/organizations/${organizationId}/members/${memberId}`,
+  },
   leagueSeasons: {
     create: (organizationId: string) =>
       `/organizations/${organizationId}/league-seasons`,

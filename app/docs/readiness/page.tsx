@@ -18,6 +18,7 @@ import { DocsShell } from "@/app/docs/_components/docs-shell"
 import {
   apiBoundary,
   gameLifecycle,
+  invitationFlow,
   mvpUserStories,
   permissionMatrix,
   pilotDefinition,
@@ -75,9 +76,9 @@ export default function ReadinessPage() {
                 <TableHead>Capability</TableHead>
                 <TableHead>Owner</TableHead>
                 <TableHead>Admin</TableHead>
-                <TableHead>Scorer</TableHead>
-                <TableHead>Coach</TableHead>
-                <TableHead>Player</TableHead>
+                <TableHead>Scorekeeper</TableHead>
+                <TableHead>Team manager</TableHead>
+                <TableHead>Legacy player</TableHead>
                 <TableHead>Public</TableHead>
               </TableRow>
             </TableHeader>
@@ -97,6 +98,28 @@ export default function ReadinessPage() {
               ))}
             </TableBody>
           </Table>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Invitation And Staff Access Flow</CardTitle>
+          <CardDescription>
+            Organization access is owner-managed and enforced centrally by the
+            API.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ul className="grid gap-3">
+            {invitationFlow.map((item) => (
+              <li
+                key={item}
+                className="rounded-md border bg-card p-3 text-sm leading-6"
+              >
+                {item}
+              </li>
+            ))}
+          </ul>
         </CardContent>
       </Card>
 

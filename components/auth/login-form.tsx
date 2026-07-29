@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import * as React from "react"
 import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
@@ -14,7 +14,9 @@ import { getApiErrorMessage, useLoginMutation } from "@/hooks/use-auth"
 
 export function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const loginMutation = useLoginMutation()
+  const redirectTo = searchParams.get("redirect") ?? "/organizations"
   const [email, setEmail] = React.useState("")
   const [password, setPassword] = React.useState("")
 
@@ -27,7 +29,7 @@ export function LoginForm() {
         password,
       })
       toast.success("Signed in successfully")
-      router.push("/organizations")
+      router.push(redirectTo)
     } catch (error) {
       toast.error(getApiErrorMessage(error))
     }

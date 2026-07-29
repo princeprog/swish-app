@@ -21,9 +21,9 @@ export const mvpUserStories = [
       "Scheduled games appear in admin and public views with clear status labels.",
   },
   {
-    role: "Scorer",
+    role: "Scorekeeper",
     story:
-      "As a scorer, I can open an assigned game and record points, player fouls, team fouls, quarter changes, corrections, and finalization events.",
+      "As a scorekeeper, I can open an assigned game and record points, player fouls, team fouls, quarter changes, corrections, and finalization events.",
     acceptance:
       "Every action creates an append-only event and the current score can be derived from the event log.",
   },
@@ -45,7 +45,7 @@ export const mvpUserStories = [
 
 export const permissionMatrix = [
   {
-    capability: "Manage organization settings",
+    capability: "Manage organization settings and staff access",
     owner: "Full",
     admin: "No",
     scorer: "No",
@@ -58,26 +58,26 @@ export const permissionMatrix = [
     owner: "Full",
     admin: "Full",
     scorer: "No",
-    coach: "View",
-    player: "View",
+    coach: "No",
+    player: "No",
     publicViewer: "Public only",
   },
   {
     capability: "Manage teams and players",
     owner: "Full",
     admin: "Full",
-    scorer: "View",
-    coach: "View now, edit later",
-    player: "View",
+    scorer: "No",
+    coach: "Assigned team roster",
+    player: "No",
     publicViewer: "Public only",
   },
   {
     capability: "Create or edit schedule",
     owner: "Full",
     admin: "Full",
-    scorer: "View assigned",
-    coach: "View",
-    player: "View",
+    scorer: "Assigned games",
+    coach: "Games involving assigned teams",
+    player: "No",
     publicViewer: "Public only",
   },
   {
@@ -229,6 +229,14 @@ export const publicDataBoundary = [
     data:
       "Live scores may be public only if enabled, and must be marked unofficial until finalization.",
   },
+]
+
+export const invitationFlow = [
+  "Only the active organization owner can invite, resend, revoke, assign staff scopes, suspend members, or transfer ownership.",
+  "A user has one role per organization, but may hold a different role in another organization.",
+  "Invitations are sent for admin, team manager, or scorekeeper roles only; ownership moves through explicit transfer.",
+  "Invitation tokens are single-use, stored only as hashes, expire after seven days, and require the signed-in email to match.",
+  "Team managers are scoped to assigned teams and rosters. Scorekeepers are scoped to explicitly assigned games.",
 ]
 
 export const pilotDefinition = [

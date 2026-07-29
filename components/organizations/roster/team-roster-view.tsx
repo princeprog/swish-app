@@ -997,6 +997,7 @@ export function TeamRosterView({
     <SidebarProvider>
       <AppSidebar
         organization={{
+          access: organization.access,
           name: organization.name,
           slug: organization.slug,
           status: organization.status,
