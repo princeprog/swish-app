@@ -23,9 +23,9 @@ export const mvpUserStories = [
   {
     role: "Scorekeeper",
     story:
-      "As a scorekeeper, I can open an assigned game and record points, player fouls, team fouls, quarter changes, corrections, and finalization events.",
+      "As a scorekeeper, I can open an assigned game and record team points, team fouls, clocks, quarter changes, corrections, and finalization events.",
     acceptance:
-      "Every action creates an append-only event and the current score can be derived from the event log.",
+      "Every accepted scoring command creates an append-only event and updates a current-state projection; player attribution remains deferred.",
   },
   {
     role: "League Admin",
@@ -75,7 +75,7 @@ export const permissionMatrix = [
     capability: "Create or edit schedule",
     owner: "Full",
     admin: "Full",
-    scorer: "Assigned games",
+    scorer: "View assigned games",
     coach: "Games involving assigned teams",
     player: "No",
     publicViewer: "Public only",
@@ -84,7 +84,7 @@ export const permissionMatrix = [
     capability: "Score assigned game",
     owner: "Admin override",
     admin: "Admin override",
-    scorer: "Assigned games",
+    scorer: "Assigned games with active control",
     coach: "No",
     player: "No",
     publicViewer: "No",
@@ -170,39 +170,44 @@ export const gameLifecycle = [
 
 export const scoringEvents = [
   {
-    type: "POINTS_RECORDED",
-    payload: "gameId, teamId, playerId, points, quarter, createdByUserId",
-    rule: "Points must be 1, 2, or 3.",
+    type: "score.record",
+    payload: "gameId, teamId, points, period, clocks, actorMemberId",
+    rule: "Points must be 1, 2, or 3 and the team must belong to the scheduled game.",
   },
   {
-    type: "PERSONAL_FOUL_RECORDED",
-    payload: "gameId, teamId, playerId, quarter, createdByUserId",
-    rule: "Increments player fouls and may affect team fouls.",
+    type: "team_foul.record",
+    payload: "gameId, teamId, period, clocks, actorMemberId",
+    rule: "Increments current-period team fouls for the selected team.",
   },
   {
-    type: "TEAM_FOUL_ADJUSTED",
-    payload: "gameId, teamId, quarter, adjustment, reason, createdByUserId",
-    rule: "Used only for correction or scorer/admin adjustment.",
+    type: "clocks.start / clocks.pause",
+    payload: "gameId, period, gameClockRemainingMs, shotClockRemainingMs, actorMemberId",
+    rule: "Primary Start/Pause controls both game and shot clocks using server timestamp anchors.",
   },
   {
-    type: "QUARTER_CHANGED",
-    payload: "gameId, fromQuarter, toQuarter, createdByUserId",
-    rule: "Quarter changes must be ordered and visible in recent events.",
+    type: "shot_clock.reset / shot_clock.adjust",
+    payload: "gameId, resetTo or remainingMs, reason when adjusting, actorMemberId",
+    rule: "Shot clock can be reset independently; manual clock adjustments require a reason.",
   },
   {
-    type: "CORRECTION_RECORDED",
-    payload: "gameId, correctionOfEventId, reason, createdByUserId",
+    type: "event.reverse",
+    payload: "gameId, correctionOfEventId, reason when not immediate undo, actorMemberId",
     rule: "Corrections never delete the original event.",
   },
   {
-    type: "GAME_FINALIZED",
-    payload: "gameId, finalHomeScore, finalAwayScore, createdByUserId",
-    rule: "Locks scoring and marks the result official.",
+    type: "period.end / period.start",
+    payload: "gameId, fromPeriod, toPeriod, clocks, reason when manually ending early",
+    rule: "Starting the next period resets the game clock, shot clock, and current-period team fouls.",
   },
   {
-    type: "GAME_REOPENED",
-    payload: "gameId, reason, createdByUserId",
-    rule: "Admin-only event that records why the official result was reopened.",
+    type: "game.finalize",
+    payload: "gameId, finalHomeScore, finalAwayScore, actorMemberId",
+    rule: "Requires paused clocks, completed regulation or overtime, no queued commands, and a non-tied score.",
+  },
+  {
+    type: "game.reopen",
+    payload: "gameId, reason, actorMemberId",
+    rule: "Owner/admin override only; clears official finalization while retaining scoring history.",
   },
 ];
 
@@ -245,7 +250,11 @@ export const scorekeeperWorkspaceFlow = [
   "The scorekeeper shell has no sidebar, setup navigation, member controls, or schedule-management actions.",
   "The frontend loads only the signed-in user's organizations and assignment-scoped game endpoints.",
   "Assigned games are grouped by local browser time into needs-attention, today, upcoming, and completed sections.",
-  "Assigned game detail pages are read-only and call GET /organizations/:organizationId/games/:gameId.",
+  "Assigned game detail pages open the live console at /organizations/[slug]/scorekeeper/games/[gameId].",
+  "The live console uses the approved phone/tablet reference image in public/design-references/scorekeeper-console-reference.png as the hierarchy baseline.",
+  "One device controls a game at a time through claim, heartbeat, release, expiry, and takeover records.",
+  "Commands use idempotency keys and expected versions; short offline scoring queues locally for up to 90 seconds before the UI should block new mutations.",
+  "Finalization writes the official result to competition.games; standings continue to read only finalized results.",
   "The API remains authoritative: unassigned or cross-organization games return 404, and suspended access returns 403.",
 ];
 
