@@ -1,27 +1,28 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import * as React from "react"
-import { ArrowRight, Building2, Loader2, Plus, Trophy } from "lucide-react"
-import { toast } from "sonner"
+import Link from "next/link";
+import * as React from "react";
+import { ArrowRight, Building2, Loader2, Plus, Trophy } from "lucide-react";
+import { toast } from "sonner";
 
-import { getApiErrorMessage } from "@/hooks/use-auth"
+import { getApiErrorMessage } from "@/hooks/use-auth";
 import {
   useCreateOrganizationMutation,
   useOrganizationsQuery,
-} from "@/hooks/use-organization"
-import { cn } from "@/lib/utils"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+} from "@/hooks/use-organization";
+import { getOrganizationLandingPath } from "@/lib/organization-routing";
+import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 import {
   Empty,
   EmptyContent,
@@ -29,15 +30,15 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@/components/ui/empty"
+} from "@/components/ui/empty";
 import {
   Field,
   FieldContent,
   FieldError,
   FieldLabel,
-} from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
-import { Skeleton } from "@/components/ui/skeleton"
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function getOrganizationInitials(name: string): string {
   return name
@@ -45,7 +46,7 @@ function getOrganizationInitials(name: string): string {
     .filter(Boolean)
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("")
+    .join("");
 }
 
 function slugifyName(name: string): string {
@@ -54,7 +55,7 @@ function slugifyName(name: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
-    .replace(/-{2,}/g, "-")
+    .replace(/-{2,}/g, "-");
 }
 
 function OrganizationCardSkeleton() {
@@ -83,51 +84,51 @@ function OrganizationCardSkeleton() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 function CreateOrganizationFormCard({
   compact = false,
 }: {
-  compact?: boolean
+  compact?: boolean;
 }) {
-  const createOrganizationMutation = useCreateOrganizationMutation()
-  const [name, setName] = React.useState("")
-  const [slug, setSlug] = React.useState("")
+  const createOrganizationMutation = useCreateOrganizationMutation();
+  const [name, setName] = React.useState("");
+  const [slug, setSlug] = React.useState("");
   const [validationError, setValidationError] = React.useState<string | null>(
     null,
-  )
+  );
 
   function resetForm() {
-    setName("")
-    setSlug("")
-    setValidationError(null)
+    setName("");
+    setSlug("");
+    setValidationError(null);
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+    event.preventDefault();
 
     if (!name.trim()) {
-      setValidationError("Organization name is required.")
-      return
+      setValidationError("Organization name is required.");
+      return;
     }
 
     if (!slug.trim()) {
-      setValidationError("Organization slug is required.")
-      return
+      setValidationError("Organization slug is required.");
+      return;
     }
 
-    setValidationError(null)
+    setValidationError(null);
 
     try {
       const organization = await createOrganizationMutation.mutateAsync({
         name: name.trim(),
         slug: slug.trim(),
-      })
-      toast.success(`Created ${organization.name}`)
-      resetForm()
+      });
+      toast.success(`Created ${organization.name}`);
+      resetForm();
     } catch (error) {
-      toast.error(getApiErrorMessage(error))
+      toast.error(getApiErrorMessage(error));
     }
   }
 
@@ -144,8 +145,8 @@ function CreateOrganizationFormCard({
         </div>
         <CardTitle className="text-xl">Create a new organization</CardTitle>
         <CardDescription>
-          Start a new league shell for a school, barangay, company, or
-          community tournament.
+          Start a new league shell for a school, barangay, company, or community
+          tournament.
         </CardDescription>
       </CardHeader>
 
@@ -157,18 +158,20 @@ function CreateOrganizationFormCard({
 
         <form className="space-y-5" onSubmit={handleSubmit}>
           <Field>
-            <FieldLabel htmlFor="organization-name">Organization name</FieldLabel>
+            <FieldLabel htmlFor="organization-name">
+              Organization name
+            </FieldLabel>
             <FieldContent>
               <Input
                 id="organization-name"
                 placeholder="Barangay Central League"
                 value={name}
                 onChange={(event) => {
-                  const nextName = event.target.value
-                  setName(nextName)
+                  const nextName = event.target.value;
+                  setName(nextName);
 
                   if (!slug.trim() || slug === slugifyName(name)) {
-                    setSlug(slugifyName(nextName))
+                    setSlug(slugifyName(nextName));
                   }
                 }}
               />
@@ -176,7 +179,9 @@ function CreateOrganizationFormCard({
           </Field>
 
           <Field>
-            <FieldLabel htmlFor="organization-slug">Organization slug</FieldLabel>
+            <FieldLabel htmlFor="organization-slug">
+              Organization slug
+            </FieldLabel>
             <FieldContent>
               <Input
                 id="organization-slug"
@@ -214,12 +219,12 @@ function CreateOrganizationFormCard({
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 export function SelectOrganizationScreen() {
-  const organizationsQuery = useOrganizationsQuery()
-  const organizations = organizationsQuery.data ?? []
+  const organizationsQuery = useOrganizationsQuery();
+  const organizations = organizationsQuery.data ?? [];
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -237,8 +242,8 @@ export function SelectOrganizationScreen() {
                 Select an organization
               </h1>
               <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                Choose where you want to continue. Each organization keeps its own
-                seasons, rosters, venues, and competition setup.
+                Choose where you want to continue. Each organization keeps its
+                own seasons, rosters, venues, and competition setup.
               </p>
             </div>
           </div>
@@ -258,7 +263,9 @@ export function SelectOrganizationScreen() {
                 <EmptyMedia variant="icon">
                   <Building2 className="size-5" />
                 </EmptyMedia>
-                <EmptyTitle>We couldn&apos;t load your organizations</EmptyTitle>
+                <EmptyTitle>
+                  We couldn&apos;t load your organizations
+                </EmptyTitle>
                 <EmptyDescription>
                   {getApiErrorMessage(organizationsQuery.error)}
                 </EmptyDescription>
@@ -354,7 +361,7 @@ export function SelectOrganizationScreen() {
                     </div>
 
                     <Button asChild>
-                      <Link href={`/organizations/${organization.slug}`}>
+                      <Link href={getOrganizationLandingPath(organization)}>
                         Continue
                         <ArrowRight className="size-4" />
                       </Link>
@@ -369,5 +376,5 @@ export function SelectOrganizationScreen() {
         )}
       </div>
     </main>
-  )
+  );
 }

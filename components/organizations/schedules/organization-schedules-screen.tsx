@@ -1,11 +1,13 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { CalendarRange } from "lucide-react"
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import * as React from "react";
+import { CalendarRange } from "lucide-react";
 
-import { OrganizationSchedulesView } from "@/components/organizations/schedules/organization-schedules-view"
-import { canManageOrganizationSchedule } from "@/components/organizations/schedules/schedule-access"
-import { Button } from "@/components/ui/button"
+import { OrganizationSchedulesView } from "@/components/organizations/schedules/organization-schedules-view";
+import { canManageOrganizationSchedule } from "@/components/organizations/schedules/schedule-access";
+import { Button } from "@/components/ui/button";
 import {
   Empty,
   EmptyContent,
@@ -13,18 +15,19 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@/components/ui/empty"
-import { Skeleton } from "@/components/ui/skeleton"
-import { getApiErrorMessage } from "@/hooks/use-auth"
-import { useDivisionsQuery } from "@/hooks/use-division"
-import { useLeagueSeasonsQuery } from "@/hooks/use-league-season"
-import { useOrganizationsQuery } from "@/hooks/use-organization"
-import { useTeamsQuery } from "@/hooks/use-team"
-import { useVenuesQuery } from "@/hooks/use-venue"
+} from "@/components/ui/empty";
+import { Skeleton } from "@/components/ui/skeleton";
+import { getApiErrorMessage } from "@/hooks/use-auth";
+import { useDivisionsQuery } from "@/hooks/use-division";
+import { useLeagueSeasonsQuery } from "@/hooks/use-league-season";
+import { useOrganizationsQuery } from "@/hooks/use-organization";
+import { useTeamsQuery } from "@/hooks/use-team";
+import { useVenuesQuery } from "@/hooks/use-venue";
+import { getOrganizationLandingPath } from "@/lib/organization-routing";
 
 type OrganizationSchedulesScreenProps = {
-  slug: string
-}
+  slug: string;
+};
 
 function SchedulesLoadingState() {
   return (
@@ -35,15 +38,15 @@ function SchedulesLoadingState() {
         <Skeleton className="h-[420px] rounded-2xl" />
       </div>
     </main>
-  )
+  );
 }
 
 function SchedulesEmptyShell({
   description,
   title,
 }: {
-  description: string
-  title: string
+  description: string;
+  title: string;
 }) {
   return (
     <main className="min-h-screen bg-background p-6 text-foreground">
@@ -64,28 +67,39 @@ function SchedulesEmptyShell({
         </Empty>
       </div>
     </main>
-  )
+  );
 }
 
 export function OrganizationSchedulesScreen({
   slug,
 }: OrganizationSchedulesScreenProps) {
-  const organizationsQuery = useOrganizationsQuery()
+  const router = useRouter();
+  const organizationsQuery = useOrganizationsQuery();
   const organization = organizationsQuery.data?.find(
     (item) => item.slug === slug,
-  )
+  );
+  const isScorekeeper = organization?.access.role === "scorekeeper";
+  const scorekeeperLandingPath = organization
+    ? getOrganizationLandingPath(organization)
+    : undefined;
   const canManageSchedule = organization
     ? canManageOrganizationSchedule(organization)
-    : false
-  const setupOrganizationId = canManageSchedule ? organization?.id : undefined
+    : false;
+  const setupOrganizationId = canManageSchedule ? organization?.id : undefined;
   const leagueSeasonsQuery = useLeagueSeasonsQuery(setupOrganizationId, {
     pageSize: 50,
-  })
+  });
   const divisionsQuery = useDivisionsQuery(setupOrganizationId, {
     pageSize: 50,
-  })
-  const teamsQuery = useTeamsQuery(setupOrganizationId, { pageSize: 50 })
-  const venuesQuery = useVenuesQuery(setupOrganizationId, { pageSize: 50 })
+  });
+  const teamsQuery = useTeamsQuery(setupOrganizationId, { pageSize: 50 });
+  const venuesQuery = useVenuesQuery(setupOrganizationId, { pageSize: 50 });
+
+  React.useEffect(() => {
+    if (isScorekeeper && scorekeeperLandingPath) {
+      router.replace(scorekeeperLandingPath);
+    }
+  }, [isScorekeeper, router, scorekeeperLandingPath]);
 
   if (
     organizationsQuery.isLoading ||
@@ -96,7 +110,7 @@ export function OrganizationSchedulesScreen({
         teamsQuery.isLoading ||
         venuesQuery.isLoading))
   ) {
-    return <SchedulesLoadingState />
+    return <SchedulesLoadingState />;
   }
 
   if (organizationsQuery.isError) {
@@ -105,7 +119,7 @@ export function OrganizationSchedulesScreen({
         title="We couldn't load this organization"
         description={getApiErrorMessage(organizationsQuery.error)}
       />
-    )
+    );
   }
 
   if (!organization) {
@@ -114,7 +128,11 @@ export function OrganizationSchedulesScreen({
         title="Organization not found"
         description="This workspace does not exist or you do not have access to it."
       />
-    )
+    );
+  }
+
+  if (isScorekeeper) {
+    return <SchedulesLoadingState />;
   }
 
   if (canManageSchedule && leagueSeasonsQuery.isError) {
@@ -123,7 +141,7 @@ export function OrganizationSchedulesScreen({
         title="We couldn't load seasons"
         description={getApiErrorMessage(leagueSeasonsQuery.error)}
       />
-    )
+    );
   }
 
   if (canManageSchedule && divisionsQuery.isError) {
@@ -132,7 +150,7 @@ export function OrganizationSchedulesScreen({
         title="We couldn't load divisions"
         description={getApiErrorMessage(divisionsQuery.error)}
       />
-    )
+    );
   }
 
   if (canManageSchedule && teamsQuery.isError) {
@@ -141,7 +159,7 @@ export function OrganizationSchedulesScreen({
         title="We couldn't load teams"
         description={getApiErrorMessage(teamsQuery.error)}
       />
-    )
+    );
   }
 
   if (canManageSchedule && venuesQuery.isError) {
@@ -150,7 +168,7 @@ export function OrganizationSchedulesScreen({
         title="We couldn't load venues"
         description={getApiErrorMessage(venuesQuery.error)}
       />
-    )
+    );
   }
 
   return (
@@ -161,5 +179,5 @@ export function OrganizationSchedulesScreen({
       teams={teamsQuery.data?.data ?? []}
       venues={venuesQuery.data?.data ?? []}
     />
-  )
+  );
 }

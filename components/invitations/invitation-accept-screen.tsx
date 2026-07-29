@@ -1,58 +1,95 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
-import { useMutation, useQuery } from "@tanstack/react-query"
-import { CheckCircle2, Loader2, ShieldAlert } from "lucide-react"
-import { toast } from "sonner"
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { CheckCircle2, Loader2, ShieldAlert } from "lucide-react";
+import { toast } from "sonner";
 
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { getApiErrorMessage, isUnauthorizedApiError, useMeQuery } from "@/hooks/use-auth"
-import { accessService } from "@/services/access.service"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  getApiErrorMessage,
+  isUnauthorizedApiError,
+  useMeQuery,
+} from "@/hooks/use-auth";
+import { getOrganizationLandingPathForRole } from "@/lib/organization-routing";
+import { accessService } from "@/services/access.service";
 
 export function InvitationAcceptScreen() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const token = searchParams.get("token") ?? ""
-  const redirectPath = `/invitations/accept?token=${encodeURIComponent(token)}`
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token") ?? "";
+  const redirectPath = `/invitations/accept?token=${encodeURIComponent(token)}`;
   const previewQuery = useQuery({
     enabled: Boolean(token),
     queryFn: () => accessService.previewInvitation(token),
     queryKey: ["invitation-preview", token],
     retry: false,
-  })
-  const meQuery = useMeQuery(Boolean(token))
+  });
+  const meQuery = useMeQuery(Boolean(token));
   const acceptMutation = useMutation({
     mutationFn: () => accessService.acceptInvitation(token),
     onSuccess: () => {
-      const slug = previewQuery.data?.organization.slug
-      toast.success("Invitation accepted")
-      router.push(slug ? `/organizations/${slug}` : "/organizations")
+      const slug = previewQuery.data?.organization.slug;
+      const role = previewQuery.data?.role;
+      toast.success("Invitation accepted");
+      router.push(
+        slug && role
+          ? getOrganizationLandingPathForRole(slug, role)
+          : "/organizations",
+      );
     },
-  })
+  });
 
   if (!token) {
-    return <InvitationShell title="Invitation link is incomplete" description="Open the full invitation link from your email." />
+    return (
+      <InvitationShell
+        title="Invitation link is incomplete"
+        description="Open the full invitation link from your email."
+      />
+    );
   }
 
   if (previewQuery.isLoading) {
-    return <InvitationShell title="Checking invitation" description="One moment while we verify this link." loading />
+    return (
+      <InvitationShell
+        title="Checking invitation"
+        description="One moment while we verify this link."
+        loading
+      />
+    );
   }
 
   if (previewQuery.isError) {
-    return <InvitationShell title="Invitation not found" description={getApiErrorMessage(previewQuery.error)} />
+    return (
+      <InvitationShell
+        title="Invitation not found"
+        description={getApiErrorMessage(previewQuery.error)}
+      />
+    );
   }
 
-  const preview = previewQuery.data
+  const preview = previewQuery.data;
 
   if (!preview) {
-    return <InvitationShell title="Invitation not found" description="We couldn't load this invitation." />
+    return (
+      <InvitationShell
+        title="Invitation not found"
+        description="We couldn't load this invitation."
+      />
+    );
   }
 
-  const loginHref = `/login?redirect=${encodeURIComponent(redirectPath)}`
-  const signupHref = `/signup?redirect=${encodeURIComponent(redirectPath)}`
+  const loginHref = `/login?redirect=${encodeURIComponent(redirectPath)}`;
+  const signupHref = `/signup?redirect=${encodeURIComponent(redirectPath)}`;
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background p-6 text-foreground">
@@ -63,14 +100,17 @@ export function InvitationAcceptScreen() {
           </div>
           <CardTitle>Accept organization invitation</CardTitle>
           <CardDescription>
-            {preview.organization.name} invited {preview.email} as {preview.role.replace("_", " ")}.
+            {preview.organization.name} invited {preview.email} as{" "}
+            {preview.role.replace("_", " ")}.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {preview.status !== "pending" ? (
             <Alert variant="destructive">
               <AlertTitle>This invitation is {preview.status}</AlertTitle>
-              <AlertDescription>Ask the organization owner to send a fresh invitation.</AlertDescription>
+              <AlertDescription>
+                Ask the organization owner to send a fresh invitation.
+              </AlertDescription>
             </Alert>
           ) : null}
           {meQuery.isError && isUnauthorizedApiError(meQuery.error) ? (
@@ -84,21 +124,32 @@ export function InvitationAcceptScreen() {
             </div>
           ) : null}
           {meQuery.data ? (
-            <Button disabled={preview.status !== "pending" || acceptMutation.isPending} onClick={() => acceptMutation.mutate()}>
-              {acceptMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
+            <Button
+              disabled={
+                preview.status !== "pending" || acceptMutation.isPending
+              }
+              onClick={() => acceptMutation.mutate()}
+            >
+              {acceptMutation.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="size-4" />
+              )}
               Accept invitation
             </Button>
           ) : null}
           {acceptMutation.isError ? (
             <Alert variant="destructive">
               <AlertTitle>Unable to accept invitation</AlertTitle>
-              <AlertDescription>{getApiErrorMessage(acceptMutation.error)}</AlertDescription>
+              <AlertDescription>
+                {getApiErrorMessage(acceptMutation.error)}
+              </AlertDescription>
             </Alert>
           ) : null}
         </CardContent>
       </Card>
     </main>
-  )
+  );
 }
 
 function InvitationShell({
@@ -106,9 +157,9 @@ function InvitationShell({
   loading,
   title,
 }: {
-  description: string
-  loading?: boolean
-  title: string
+  description: string;
+  loading?: boolean;
+  title: string;
 }) {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background p-6 text-foreground">
@@ -122,5 +173,5 @@ function InvitationShell({
         </CardHeader>
       </Card>
     </main>
-  )
+  );
 }

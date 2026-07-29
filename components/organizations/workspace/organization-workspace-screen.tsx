@@ -1,10 +1,12 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { Building2 } from "lucide-react"
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import * as React from "react";
+import { Building2 } from "lucide-react";
 
-import { OrganizationWorkspaceView } from "@/components/organizations/workspace/organization-workspace-view"
-import { Button } from "@/components/ui/button"
+import { OrganizationWorkspaceView } from "@/components/organizations/workspace/organization-workspace-view";
+import { Button } from "@/components/ui/button";
 import {
   Empty,
   EmptyContent,
@@ -12,14 +14,15 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@/components/ui/empty"
-import { Skeleton } from "@/components/ui/skeleton"
-import { getApiErrorMessage } from "@/hooks/use-auth"
-import { useOrganizationsQuery } from "@/hooks/use-organization"
+} from "@/components/ui/empty";
+import { Skeleton } from "@/components/ui/skeleton";
+import { getApiErrorMessage } from "@/hooks/use-auth";
+import { useOrganizationsQuery } from "@/hooks/use-organization";
+import { getOrganizationLandingPath } from "@/lib/organization-routing";
 
 type OrganizationWorkspaceScreenProps = {
-  slug: string
-}
+  slug: string;
+};
 
 function WorkspaceLoadingState() {
   return (
@@ -41,15 +44,15 @@ function WorkspaceLoadingState() {
         </div>
       </div>
     </main>
-  )
+  );
 }
 
 function WorkspaceEmptyState({
   title,
   description,
 }: {
-  title: string
-  description: string
+  title: string;
+  description: string;
 }) {
   return (
     <main className="min-h-screen bg-background p-6 text-foreground">
@@ -70,17 +73,29 @@ function WorkspaceEmptyState({
         </Empty>
       </div>
     </main>
-  )
+  );
 }
 
 export function OrganizationWorkspaceScreen({
   slug,
 }: OrganizationWorkspaceScreenProps) {
-  const organizationsQuery = useOrganizationsQuery()
-  const organization = organizationsQuery.data?.find((item) => item.slug === slug)
+  const router = useRouter();
+  const organizationsQuery = useOrganizationsQuery();
+  const organization = organizationsQuery.data?.find(
+    (item) => item.slug === slug,
+  );
+  const landingPath = organization
+    ? getOrganizationLandingPath(organization)
+    : undefined;
+
+  React.useEffect(() => {
+    if (landingPath && landingPath !== `/organizations/${slug}`) {
+      router.replace(landingPath);
+    }
+  }, [landingPath, router, slug]);
 
   if (organizationsQuery.isLoading) {
-    return <WorkspaceLoadingState />
+    return <WorkspaceLoadingState />;
   }
 
   if (organizationsQuery.isError) {
@@ -89,7 +104,7 @@ export function OrganizationWorkspaceScreen({
         title="We couldn't load this organization"
         description={getApiErrorMessage(organizationsQuery.error)}
       />
-    )
+    );
   }
 
   if (!organization) {
@@ -98,8 +113,12 @@ export function OrganizationWorkspaceScreen({
         title="Organization not found"
         description="This workspace does not exist or you do not have access to it."
       />
-    )
+    );
   }
 
-  return <OrganizationWorkspaceView organization={organization} />
+  if (landingPath !== `/organizations/${slug}`) {
+    return <WorkspaceLoadingState />;
+  }
+
+  return <OrganizationWorkspaceView organization={organization} />;
 }
