@@ -23,6 +23,7 @@ import {
 import { toast } from "sonner"
 
 import { AppSidebar } from "@/components/app-sidebar"
+import { canManageOrganizationSchedule } from "@/components/organizations/schedules/schedule-access"
 import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -313,10 +314,12 @@ function ScheduleSummaryCards({ schedules }: { schedules: Schedule[] }) {
 }
 
 function ScheduleActionsPopover({
+  canManageSchedule,
   game,
   onDelete,
   onEdit,
 }: {
+  canManageSchedule: boolean
   game: Schedule
   onDelete: () => void
   onEdit: () => void
@@ -375,6 +378,10 @@ function ScheduleActionsPopover({
       window.removeEventListener("scroll", updatePosition, true)
     }
   }, [game.id, open])
+
+  if (!canManageSchedule) {
+    return null
+  }
 
   return (
     <div
@@ -461,10 +468,12 @@ function groupSchedulesByDay(games: Schedule[]) {
 }
 
 function ScheduleBoard({
+  canManageSchedule,
   games,
   onDeleteGame,
   onEditGame,
 }: {
+  canManageSchedule: boolean
   games: Schedule[]
   onDeleteGame: (game: Schedule) => void
   onEditGame: (game: Schedule) => void
@@ -630,8 +639,9 @@ function ScheduleBoard({
                       </div>
 
                       <div className="flex items-start justify-end">
-                        <ScheduleActionsPopover
-                          game={game}
+                    <ScheduleActionsPopover
+                      canManageSchedule={canManageSchedule}
+                      game={game}
                           onDelete={() => onDeleteGame(game)}
                           onEdit={() => onEditGame(game)}
                         />
@@ -1437,6 +1447,7 @@ export function OrganizationSchedulesView({
     schedulesQueryParams,
   )
   const schedules = schedulesQuery.data ?? []
+  const canManageSchedule = canManageOrganizationSchedule(organization)
 
   async function handleCreateSchedule(payload: {
     awayTeamId: string
@@ -1459,6 +1470,7 @@ export function OrganizationSchedulesView({
   }
 
   const canCreateSchedule =
+    canManageSchedule &&
     seasons.length > 0 &&
     divisions.length > 0 &&
     teams.length >= 2 &&
@@ -1476,6 +1488,8 @@ export function OrganizationSchedulesView({
       />
       <SidebarInset>
         <WorkspaceHeader
+          
+          organizationAccess={organization.access}
           organizationName={organization.name}
           organizationSlug={organization.slug}
           pageTitle="Schedules"
@@ -1520,7 +1534,8 @@ export function OrganizationSchedulesView({
                 all divisions and venues.
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            {canManageSchedule ? (
+              <div className="flex flex-wrap items-center gap-2">
               <Button variant="outline">
                 <CalendarDays className="size-4" />
                 Import schedule
@@ -1529,12 +1544,13 @@ export function OrganizationSchedulesView({
                 <Globe className="size-4" />
                 Publish schedule
               </Button>
-            </div>
+              </div>
+            ) : null}
           </section>
 
           <ScheduleSummaryCards schedules={schedules} />
 
-          {!canCreateSchedule ? (
+          {canManageSchedule && !canCreateSchedule ? (
             <Card className="border border-dashed border-border/70 bg-card/70 shadow-none">
               <CardHeader>
                 <CardTitle>Finish setup before adding games</CardTitle>
@@ -1636,6 +1652,7 @@ export function OrganizationSchedulesView({
               </Card>
 
               <ScheduleBoard
+                canManageSchedule={canManageSchedule}
                 games={schedules}
                 onDeleteGame={setGameToDelete}
                 onEditGame={setGameToEdit}

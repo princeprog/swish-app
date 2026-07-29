@@ -369,7 +369,9 @@ export function StaffAccessScreen({ slug }: { slug: string }) {
     <SidebarProvider>
       <AppSidebar organization={{ access: organization.access, name: organization.name, slug: organization.slug, status: organization.status }} />
       <SidebarInset>
-        <WorkspaceHeader organizationName={organization.name} organizationSlug={organization.slug} pageTitle="Staff & access" primaryAction={{ label: "Invite staff", onClick: () => setInviteOpen(true) }} />
+        <WorkspaceHeader 
+          organizationAccess={organization.access}
+          organizationName={organization.name} organizationSlug={organization.slug} pageTitle="Staff & access" primaryAction={{ label: "Invite staff", onClick: () => setInviteOpen(true) }} />
         <main className="flex flex-1 flex-col gap-4 bg-background px-4 py-4 lg:px-6 lg:py-5">
           <section className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-2">

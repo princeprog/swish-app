@@ -14,13 +14,16 @@ import {
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import type { OrganizationAccess } from "@/services/organization.service"
 
 export function WorkspaceHeader({
+  organizationAccess,
   primaryAction,
   organizationName,
   organizationSlug,
   pageTitle,
 }: {
+  organizationAccess?: OrganizationAccess
   organizationName: string
   organizationSlug: string
   pageTitle?: string
@@ -31,6 +34,8 @@ export function WorkspaceHeader({
     onClick?: () => void
   }
 }) {
+  const canManageStaff = organizationAccess?.permissions.includes("members.manage")
+
   return (
     <header className="sticky top-0 z-20 border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="flex h-14 items-center justify-between gap-4 px-4 lg:px-6">
@@ -96,12 +101,14 @@ export function WorkspaceHeader({
               </Link>
             </Button>
           )}
-          <Button size="sm" variant="outline" asChild>
-            <Link href={`/organizations/${organizationSlug}/members`}>
-              <UserPlus className="size-4" />
-              Invite staff
-            </Link>
-          </Button>
+          {canManageStaff ? (
+            <Button size="sm" variant="outline" asChild>
+              <Link href={`/organizations/${organizationSlug}/members`}>
+                <UserPlus className="size-4" />
+                Invite staff
+              </Link>
+            </Button>
+          ) : null}
         </div>
       </div>
     </header>

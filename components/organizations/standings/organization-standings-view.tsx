@@ -241,6 +241,8 @@ export function OrganizationStandingsView({
       />
       <SidebarInset>
         <WorkspaceHeader
+          
+          organizationAccess={organization.access}
           organizationName={organization.name}
           organizationSlug={organization.slug}
           pageTitle="Standings"

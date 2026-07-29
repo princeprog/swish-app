@@ -739,6 +739,8 @@ export function OrganizationSeasonsView({
       />
       <SidebarInset>
         <WorkspaceHeader
+          
+          organizationAccess={organization.access}
           organizationName={organization.name}
           organizationSlug={organization.slug}
           pageTitle="Seasons"

@@ -863,6 +863,8 @@ export function OrganizationPlayersView({
       />
       <SidebarInset>
         <WorkspaceHeader
+          
+          organizationAccess={organization.access}
           organizationName={organization.name}
           organizationSlug={organization.slug}
           pageTitle="Players"

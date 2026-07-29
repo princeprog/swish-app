@@ -34,6 +34,8 @@ export function OrganizationWorkspaceView({
       />
       <SidebarInset>
         <WorkspaceHeader
+          
+          organizationAccess={organization.access}
           organizationName={organization.name}
           organizationSlug={organization.slug}
           pageTitle="Dashboard"

@@ -4,6 +4,7 @@ import Link from "next/link"
 import { CalendarRange } from "lucide-react"
 
 import { OrganizationSchedulesView } from "@/components/organizations/schedules/organization-schedules-view"
+import { canManageOrganizationSchedule } from "@/components/organizations/schedules/schedule-access"
 import { Button } from "@/components/ui/button"
 import {
   Empty,
@@ -73,16 +74,23 @@ export function OrganizationSchedulesScreen({
   const organization = organizationsQuery.data?.find(
     (item) => item.slug === slug,
   )
-  const leagueSeasonsQuery = useLeagueSeasonsQuery(organization?.id, {
+  const canManageSchedule = organization
+    ? canManageOrganizationSchedule(organization)
+    : false
+  const setupOrganizationId = canManageSchedule ? organization?.id : undefined
+  const leagueSeasonsQuery = useLeagueSeasonsQuery(setupOrganizationId, {
     pageSize: 50,
   })
-  const divisionsQuery = useDivisionsQuery(organization?.id, { pageSize: 50 })
-  const teamsQuery = useTeamsQuery(organization?.id, { pageSize: 50 })
-  const venuesQuery = useVenuesQuery(organization?.id, { pageSize: 50 })
+  const divisionsQuery = useDivisionsQuery(setupOrganizationId, {
+    pageSize: 50,
+  })
+  const teamsQuery = useTeamsQuery(setupOrganizationId, { pageSize: 50 })
+  const venuesQuery = useVenuesQuery(setupOrganizationId, { pageSize: 50 })
 
   if (
     organizationsQuery.isLoading ||
     (organization &&
+      canManageSchedule &&
       (leagueSeasonsQuery.isLoading ||
         divisionsQuery.isLoading ||
         teamsQuery.isLoading ||
@@ -109,7 +117,7 @@ export function OrganizationSchedulesScreen({
     )
   }
 
-  if (leagueSeasonsQuery.isError) {
+  if (canManageSchedule && leagueSeasonsQuery.isError) {
     return (
       <SchedulesEmptyShell
         title="We couldn't load seasons"
@@ -118,7 +126,7 @@ export function OrganizationSchedulesScreen({
     )
   }
 
-  if (divisionsQuery.isError) {
+  if (canManageSchedule && divisionsQuery.isError) {
     return (
       <SchedulesEmptyShell
         title="We couldn't load divisions"
@@ -127,7 +135,7 @@ export function OrganizationSchedulesScreen({
     )
   }
 
-  if (teamsQuery.isError) {
+  if (canManageSchedule && teamsQuery.isError) {
     return (
       <SchedulesEmptyShell
         title="We couldn't load teams"
@@ -136,7 +144,7 @@ export function OrganizationSchedulesScreen({
     )
   }
 
-  if (venuesQuery.isError) {
+  if (canManageSchedule && venuesQuery.isError) {
     return (
       <SchedulesEmptyShell
         title="We couldn't load venues"
