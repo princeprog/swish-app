@@ -121,10 +121,10 @@ export async function apiRequest<TResponse = unknown, TData = unknown>(
 }
 
 export const apiService = {
-  delete: <TResponse = unknown>(
+  delete: <TResponse = unknown, TData = unknown>(
     endpoint: string,
-    options?: Omit<ApiRequestOptions, "method" | "data">,
-  ) => apiRequest<TResponse>(endpoint, { ...options, method: "DELETE" }),
+    options?: Omit<ApiRequestOptions<TData>, "method">,
+  ) => apiRequest<TResponse, TData>(endpoint, { ...options, method: "DELETE" }),
 
   get: <TResponse = unknown>(
     endpoint: string,
