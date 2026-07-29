@@ -41,7 +41,7 @@ export const mvpUserStories = [
     acceptance:
       "Public pages display official finalized data by default and mark live data as unofficial if live display is enabled.",
   },
-]
+];
 
 export const permissionMatrix = [
   {
@@ -125,7 +125,7 @@ export const permissionMatrix = [
     player: "Yes",
     publicViewer: "Yes when public",
   },
-]
+];
 
 export const gameLifecycle = [
   {
@@ -135,7 +135,8 @@ export const gameLifecycle = [
   },
   {
     status: "Scheduled",
-    meaning: "Game is published or ready to publish with teams, venue, and time.",
+    meaning:
+      "Game is published or ready to publish with teams, venue, and time.",
     allowedNext: "Live, Postponed, Cancelled",
   },
   {
@@ -150,7 +151,8 @@ export const gameLifecycle = [
   },
   {
     status: "Reopened",
-    meaning: "A finalized game was reopened for dispute correction with a reason.",
+    meaning:
+      "A finalized game was reopened for dispute correction with a reason.",
     allowedNext: "Live, Final",
   },
   {
@@ -160,10 +162,11 @@ export const gameLifecycle = [
   },
   {
     status: "Cancelled",
-    meaning: "Game will not be played and should not affect standings unless future forfeit rules say otherwise.",
+    meaning:
+      "Game will not be played and should not affect standings unless future forfeit rules say otherwise.",
     allowedNext: "Scheduled only by admin override",
   },
-]
+];
 
 export const scoringEvents = [
   {
@@ -201,7 +204,7 @@ export const scoringEvents = [
     payload: "gameId, reason, createdByUserId",
     rule: "Admin-only event that records why the official result was reopened.",
   },
-]
+];
 
 export const standingsRules = [
   "Only Final games affect official standings.",
@@ -211,25 +214,22 @@ export const standingsRules = [
   "Default tiebreaker order is win-loss record, head-to-head result, point differential, points scored, then manual admin decision.",
   "If a 3+ team head-to-head tie cannot be resolved clearly, the system must request a manual admin decision with a reason.",
   "Manual decisions must be visible to admins and summarized for public viewers without exposing private audit internals.",
-]
+];
 
 export const publicDataBoundary = [
   {
     category: "Public",
-    data:
-      "League name, organization name, divisions, team names, rosters, schedule, game statuses, finalized scores, standings, brackets, and basic leaders.",
+    data: "League name, organization name, divisions, team names, rosters, schedule, game statuses, finalized scores, standings, brackets, and basic leaders.",
   },
   {
     category: "Private",
-    data:
-      "Role invites, invite tokens, admin notes, scorer assignment internals, correction audit details, user contact details, and private dispute notes.",
+    data: "Role invites, invite tokens, admin notes, scorer assignment internals, correction audit details, user contact details, and private dispute notes.",
   },
   {
     category: "Conditional",
-    data:
-      "Live scores may be public only if enabled, and must be marked unofficial until finalization.",
+    data: "Live scores may be public only if enabled, and must be marked unofficial until finalization.",
   },
-]
+];
 
 export const invitationFlow = [
   "Only the active organization owner can invite, resend, revoke, assign staff scopes, suspend members, or transfer ownership.",
@@ -237,7 +237,17 @@ export const invitationFlow = [
   "Invitations are sent for admin, team manager, or scorekeeper roles only; ownership moves through explicit transfer.",
   "Invitation tokens are single-use, stored only as hashes, expire after seven days, and require the signed-in email to match.",
   "Team managers are scoped to assigned teams and rosters. Scorekeepers are scoped to explicitly assigned games.",
-]
+  "After invitation acceptance, users land in the workspace that matches their role for that organization.",
+];
+
+export const scorekeeperWorkspaceFlow = [
+  "Scorekeepers land at /organizations/[slug]/scorekeeper instead of the admin workspace.",
+  "The scorekeeper shell has no sidebar, setup navigation, member controls, or schedule-management actions.",
+  "The frontend loads only the signed-in user's organizations and assignment-scoped game endpoints.",
+  "Assigned games are grouped by local browser time into needs-attention, today, upcoming, and completed sections.",
+  "Assigned game detail pages are read-only and call GET /organizations/:organizationId/games/:gameId.",
+  "The API remains authoritative: unassigned or cross-organization games return 404, and suspended access returns 403.",
+];
 
 export const pilotDefinition = [
   "One league season with one organization and one primary division.",
@@ -248,14 +258,14 @@ export const pilotDefinition = [
   "At least 10 finalized games used to calculate standings.",
   "Top 4 single-elimination playoff bracket.",
   "Public page shared with coaches, players, and viewers.",
-]
+];
 
 export const apiBoundary = [
   {
     area: "Frontend",
     owner: "swish-app",
     boundary:
-      "Owns admin/public UI, docs, form state, route structure, and API client calls.",
+      "Owns admin/public UI, scorekeeper shell, docs, form state, route structure, and API client calls.",
   },
   {
     area: "Backend",
@@ -275,4 +285,4 @@ export const apiBoundary = [
     boundary:
       "Start with REST endpoints and explicit DTOs before introducing more complex transport patterns.",
   },
-]
+];

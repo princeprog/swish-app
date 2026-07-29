@@ -4,7 +4,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -12,9 +12,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { DocsShell } from "@/app/docs/_components/docs-shell"
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { DocsShell } from "@/app/docs/_components/docs-shell";
 import {
   apiBoundary,
   gameLifecycle,
@@ -23,9 +23,10 @@ import {
   permissionMatrix,
   pilotDefinition,
   publicDataBoundary,
+  scorekeeperWorkspaceFlow,
   scoringEvents,
   standingsRules,
-} from "@/lib/readiness-docs"
+} from "@/lib/readiness-docs";
 
 export default function ReadinessPage() {
   return (
@@ -112,6 +113,28 @@ export default function ReadinessPage() {
         <CardContent>
           <ul className="grid gap-3">
             {invitationFlow.map((item) => (
+              <li
+                key={item}
+                className="rounded-md border bg-card p-3 text-sm leading-6"
+              >
+                {item}
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Dedicated Scorekeeper Workspace</CardTitle>
+          <CardDescription>
+            Scorekeepers get an organization-scoped operational view that only
+            asks the API for assigned games.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ul className="grid gap-3">
+            {scorekeeperWorkspaceFlow.map((item) => (
               <li
                 key={item}
                 className="rounded-md border bg-card p-3 text-sm leading-6"
@@ -266,5 +289,5 @@ export default function ReadinessPage() {
         </Card>
       </div>
     </DocsShell>
-  )
+  );
 }
