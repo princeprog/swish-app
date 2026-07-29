@@ -22,6 +22,10 @@ import {
   ScorekeeperLoadingState,
 } from "@/components/organizations/scorekeeper/scorekeeper-states";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import {
   Sheet,
   SheetContent,
@@ -129,81 +133,75 @@ function TeamScorePanel({
   side: TeamSide;
 }) {
   return (
-    <section className="border-b border-black/10 bg-white px-4 py-4 last:border-b-0 md:flex md:min-h-[640px] md:flex-1 md:flex-col md:justify-center md:border-b-0 md:px-8 lg:px-12">
-      <div
-        className={cn(
-          "mb-3 flex items-start justify-between gap-4",
-          side === "away" && "md:flex-row-reverse md:text-right",
-        )}
-      >
+    <Card className="md:min-h-[640px] md:flex-1 md:justify-center">
+      <CardHeader>
         <div
           className={cn(
-            "flex min-w-0 gap-3",
-            side === "away" && "md:flex-row-reverse",
+            "flex items-start justify-between gap-4",
+            side === "away" && "md:flex-row-reverse md:text-right",
           )}
         >
-          <span
+          <div
             className={cn(
-              "mt-1 h-7 w-1.5 shrink-0 rounded-full md:h-28 md:w-2",
-              side === "home" ? "bg-orange-400" : "bg-slate-950",
+              "flex min-w-0 items-start gap-3",
+              side === "away" && "md:flex-row-reverse",
             )}
-          />
-          <div className="min-w-0">
-            <h2 className="truncate text-xl font-extrabold text-slate-950 md:text-4xl lg:text-5xl">
-              {name}
-            </h2>
-            <p className="text-sm text-slate-500 md:text-lg">
+          >
+            <Badge variant={side === "home" ? "default" : "secondary"}>
               {side === "home" ? "Home" : "Away"}
-            </p>
+            </Badge>
+            <div className="min-w-0">
+              <CardTitle className="truncate text-xl md:text-4xl lg:text-5xl">
+                {name}
+              </CardTitle>
+            </div>
+          </div>
+          <div className="font-mono text-4xl font-semibold tabular-nums md:hidden">
+            {score}
           </div>
         </div>
-        <div className="font-mono text-4xl font-black tabular-nums text-slate-950 md:hidden">
+      </CardHeader>
+
+      <CardContent>
+        <div className="hidden text-center font-mono text-[9rem] font-semibold leading-none tabular-nums md:block lg:text-[11rem]">
           {score}
         </div>
-      </div>
 
-      <div className="hidden text-center font-mono text-[9rem] font-black leading-none tabular-nums text-slate-950 md:block lg:text-[11rem]">
-        {score}
-      </div>
-
-      <div className="mt-3 grid grid-cols-[1fr_1.55fr_1fr] gap-2 md:mt-16 md:gap-4">
-        {[1, 2, 3].map((points) => (
-          <Button
-            key={points}
-            aria-label={`Add ${points} point${points === 1 ? "" : "s"} for ${name}`}
-            className={cn(
-              "h-16 rounded-md text-3xl font-black md:h-28 md:text-5xl",
-              points === 2
-                ? "bg-blue-700 text-white hover:bg-blue-800"
-                : "border border-slate-200 bg-white text-blue-700 hover:bg-blue-50",
-            )}
-            variant={points === 2 ? "default" : "outline"}
-            disabled={disabled}
-            onClick={() => onScore(points as 1 | 2 | 3)}
-          >
-            +{points}
-          </Button>
-        ))}
-      </div>
-
-      <div className="mt-3 border-t border-slate-200 pt-3 md:mt-7">
-        <div className="mb-3 flex items-center justify-between">
-          <span className="text-sm font-black uppercase text-slate-950 md:text-xl">
-            Team fouls
-          </span>
-          <span className="font-mono text-3xl font-black tabular-nums text-slate-950 md:text-4xl">
-            {fouls}
-          </span>
+        <div className="mt-3 grid grid-cols-[1fr_1.55fr_1fr] gap-2 md:mt-16 md:gap-4">
+          {[1, 2, 3].map((points) => (
+            <Button
+              key={points}
+              aria-label={`Add ${points} point${points === 1 ? "" : "s"} for ${name}`}
+              className="h-16 text-3xl font-semibold md:h-28 md:text-5xl"
+              variant={points === 2 ? "default" : "outline"}
+              disabled={disabled}
+              onClick={() => onScore(points as 1 | 2 | 3)}
+            >
+              +{points}
+            </Button>
+          ))}
         </div>
-        <Button
-          className="h-12 w-full rounded-md bg-blue-700 text-base font-bold text-white hover:bg-blue-800 md:h-16 md:text-2xl"
-          disabled={disabled}
-          onClick={onFoul}
-        >
-          Team foul
-        </Button>
-      </div>
-    </section>
+
+        <Separator className="my-4 md:my-7" />
+        <div>
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-sm font-medium uppercase text-muted-foreground md:text-base">
+              Team fouls
+            </span>
+            <span className="font-mono text-3xl font-semibold tabular-nums md:text-4xl">
+              {fouls}
+            </span>
+          </div>
+          <Button
+            className="h-12 w-full text-base md:h-16 md:text-2xl"
+            disabled={disabled}
+            onClick={onFoul}
+          >
+            Team foul
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -225,51 +223,58 @@ function ClockConsole({
   time: string;
 }) {
   return (
-    <section className="bg-slate-950 px-4 py-4 text-white md:flex md:w-[280px] md:shrink-0 md:flex-col md:items-stretch md:justify-center md:px-5">
-      <div className="grid grid-cols-[minmax(0,1fr)_112px] gap-4 md:block">
-        <div>
-          <p className="text-sm font-black md:text-center md:text-2xl">
-            {periodLabel}
-          </p>
-          <div className="mt-1 font-mono text-7xl font-black leading-none tabular-nums md:mt-5 md:text-center md:text-7xl lg:text-8xl">
-            {time}
+    <Card className="md:flex md:w-[280px] md:shrink-0 md:flex-col md:justify-center">
+      <CardContent>
+        <div className="grid grid-cols-[minmax(0,1fr)_112px] gap-4 md:block">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground md:text-center md:text-2xl">
+              {periodLabel}
+            </p>
+            <div className="mt-1 font-mono text-7xl font-semibold leading-none tabular-nums md:mt-5 md:text-center md:text-7xl lg:text-8xl">
+              {time}
+            </div>
+            <Button
+              className="mt-2 h-10 w-full text-base md:mt-5 md:h-16 md:text-2xl"
+              onClick={onClockToggle}
+              disabled={disabled}
+            >
+              {running ? (
+                <Pause className="size-5" />
+              ) : (
+                <Play className="size-5" />
+              )}
+              {running ? "Pause" : "Start"}
+            </Button>
           </div>
-          <Button
-            className="mt-2 h-10 w-full rounded-md bg-blue-700 text-base font-bold text-white hover:bg-blue-800 md:mt-5 md:h-16 md:text-2xl"
-            onClick={onClockToggle}
-            disabled={disabled}
-          >
-            {running ? <Pause className="size-5" /> : <Play className="size-5" />}
-            {running ? "Pause" : "Start"}
-          </Button>
-        </div>
 
-        <div className="border-l border-white/30 pl-3 md:mt-8 md:border-l-0 md:border-t md:pl-0 md:pt-6 md:text-center">
-          <p className="text-xs font-black uppercase tracking-wide text-white md:text-base">
-            Shot clock
-          </p>
-          <div className="font-mono text-5xl font-black tabular-nums md:mt-2 md:text-7xl">
-            {Math.ceil(shotClock / 1000)}
-          </div>
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            <Button
-              className="h-12 rounded-md bg-blue-700 text-xl font-black text-white hover:bg-blue-800 md:h-16 md:text-3xl"
-              onClick={() => onResetShotClock("full")}
-              disabled={disabled}
-            >
-              24
-            </Button>
-            <Button
-              className="h-12 rounded-md bg-blue-700 text-xl font-black text-white hover:bg-blue-800 md:h-16 md:text-3xl"
-              onClick={() => onResetShotClock("short")}
-              disabled={disabled}
-            >
-              14
-            </Button>
+          <div className="border-l pl-3 md:mt-8 md:border-l-0 md:border-t md:pl-0 md:pt-6 md:text-center">
+            <p className="text-xs font-medium uppercase text-muted-foreground md:text-base">
+              Shot clock
+            </p>
+            <div className="font-mono text-5xl font-semibold tabular-nums md:mt-2 md:text-7xl">
+              {Math.ceil(shotClock / 1000)}
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <Button
+                className="h-12 text-xl font-semibold md:h-16 md:text-3xl"
+                onClick={() => onResetShotClock("full")}
+                disabled={disabled}
+              >
+                24
+              </Button>
+              <Button
+                className="h-12 text-xl font-semibold md:h-16 md:text-3xl"
+                variant="secondary"
+                onClick={() => onResetShotClock("short")}
+                disabled={disabled}
+              >
+                14
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -287,7 +292,9 @@ function ConsoleMoreSheet({
   canFinalize: boolean;
   onClaim: () => void;
   onCommand: (
-    type: Parameters<ReturnType<typeof useLiveScoring>["sendCommand"]>[0]["type"],
+    type: Parameters<
+      ReturnType<typeof useLiveScoring>["sendCommand"]
+    >[0]["type"],
     payload?: Record<string, unknown>,
   ) => void;
   onFullscreen: () => void;
@@ -344,13 +351,15 @@ function ConsoleMoreSheet({
               Pregame clocks
             </h3>
             <div className="flex items-center gap-2">
-              <input
-                className="h-11 w-24 rounded-md border px-3"
+              <Input
+                className="w-24"
                 max={30}
                 min={1}
                 type="number"
                 value={periodMinutes}
-                onChange={(event) => setPeriodMinutes(Number(event.target.value))}
+                onChange={(event) =>
+                  setPeriodMinutes(Number(event.target.value))
+                }
               />
               <Button
                 onClick={() =>
@@ -382,7 +391,10 @@ function ConsoleMoreSheet({
               >
                 End period
               </Button>
-              <Button onClick={() => onCommand("period.start")} variant="outline">
+              <Button
+                onClick={() => onCommand("period.start")}
+                variant="outline"
+              >
                 Next period
               </Button>
               <Button
@@ -591,8 +603,8 @@ export function ScorekeeperGameDetailScreen({
   const controlsDisabled = scoring.offlineLockActive;
 
   return (
-    <main className="min-h-screen bg-neutral-100 text-slate-950">
-      <header className="flex h-16 items-center justify-between border-b border-black/10 bg-white px-4 md:h-20 md:px-8">
+    <main className="min-h-screen bg-background text-foreground">
+      <header className="flex h-16 items-center justify-between border-b bg-background px-4 md:h-20 md:px-8">
         <Button
           aria-label="Back to assignments"
           size="icon"
@@ -601,14 +613,15 @@ export function ScorekeeperGameDetailScreen({
         >
           <ArrowLeft className="size-6" />
         </Button>
-        <h1 className="truncate px-3 text-center text-base font-black md:text-2xl">
+        <h1 className="truncate px-3 text-center text-base font-semibold md:text-2xl">
           {matchup}
         </h1>
         <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1 text-sm font-bold">
-            <span className="size-2 rounded-full bg-red-500" />
+          <Badge
+            variant={displayedState.phase === "live" ? "default" : "secondary"}
+          >
             LIVE
-          </span>
+          </Badge>
           <ConsoleMoreSheet
             canFinalize={canFinalize}
             onClaim={() => scoring.claimControl("Scorekeeper device")}
@@ -631,7 +644,7 @@ export function ScorekeeperGameDetailScreen({
         </div>
       </header>
 
-      <div className="md:flex md:min-h-[calc(100vh-5rem)]">
+      <div className="grid gap-3 p-3 md:min-h-[calc(100vh-5rem)] md:grid-cols-[minmax(0,1fr)_280px_minmax(0,1fr)] md:items-stretch">
         <div className="md:hidden">
           <ClockConsole
             onClockToggle={toggleClock}
@@ -677,14 +690,14 @@ export function ScorekeeperGameDetailScreen({
         />
       </div>
 
-      <footer className="sticky bottom-0 flex items-center justify-between border-t border-black/10 bg-white px-4 py-3 text-sm md:hidden">
+      <footer className="sticky bottom-0 flex items-center justify-between border-t bg-background px-4 py-3 text-sm md:hidden">
         <div className="flex min-w-0 items-center gap-2">
           {scoring.local.lastConfirmedAction ? (
-            <CheckCircle2 className="size-6 shrink-0 text-green-600" />
+            <CheckCircle2 className="size-6 shrink-0 text-primary" />
           ) : isOffline ? (
-            <WifiOff className="size-6 shrink-0 text-orange-500" />
+            <WifiOff className="size-6 shrink-0 text-muted-foreground" />
           ) : (
-            <Wifi className="size-6 shrink-0 text-green-600" />
+            <Wifi className="size-6 shrink-0 text-primary" />
           )}
           <span className="truncate font-semibold">
             {scoring.local.lastConfirmedAction ??
@@ -692,7 +705,7 @@ export function ScorekeeperGameDetailScreen({
                 ? "Reconnect to continue"
                 : isOffline
                   ? `${scoring.local.pendingCommands.length} queued`
-                : "Online")}
+                  : "Online")}
           </span>
         </div>
         <Button
@@ -708,7 +721,8 @@ export function ScorekeeperGameDetailScreen({
 
       <div className="fixed bottom-8 left-1/2 z-20 hidden w-[260px] -translate-x-1/2 md:block">
         <Button
-          className="h-14 w-full rounded-md border border-orange-400 bg-slate-950 text-orange-300 hover:bg-slate-900"
+          className="h-14 w-full"
+          variant="outline"
           disabled={!displayedState.latestReversibleEvent || controlsDisabled}
           onClick={undoLatest}
         >
