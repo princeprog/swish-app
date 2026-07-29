@@ -347,6 +347,12 @@ export function useLiveScoring(organizationId?: string, gameId?: string) {
   const sendCommand = React.useCallback(
     async (command: OptimisticCommand) => {
       if (!organizationId || !gameId || !local.state) return;
+      if (
+        local.offlineSince &&
+        Date.now() - local.offlineSince > 90 * 1000
+      ) {
+        return;
+      }
 
       const payload: ScoringCommandPayload = {
         controlToken: local.controlToken ?? undefined,
@@ -376,7 +382,14 @@ export function useLiveScoring(organizationId?: string, gameId?: string) {
         dispatch({ command: queuedCommand, type: "command-queued" });
       }
     },
-    [commandMutation, gameId, local.controlToken, local.state, organizationId],
+    [
+      commandMutation,
+      gameId,
+      local.controlToken,
+      local.offlineSince,
+      local.state,
+      organizationId,
+    ],
   );
 
   const flushQueue = React.useCallback(async () => {
@@ -399,6 +412,9 @@ export function useLiveScoring(organizationId?: string, gameId?: string) {
     isClaimingControl: claimControlMutation.isPending,
     isSendingCommand: commandMutation.isPending,
     local,
+    offlineLockActive: Boolean(
+      local.offlineSince && Date.now() - local.offlineSince > 90 * 1000,
+    ),
     query: stateQuery,
     sendCommand,
     takeoverControl: takeoverControlMutation.mutate,

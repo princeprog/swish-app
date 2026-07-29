@@ -118,7 +118,9 @@ function TeamScorePanel({
   onScore,
   score,
   side,
+  disabled,
 }: {
+  disabled: boolean;
   fouls: number;
   name: string;
   onFoul: () => void;
@@ -176,6 +178,7 @@ function TeamScorePanel({
                 : "border border-slate-200 bg-white text-blue-700 hover:bg-blue-50",
             )}
             variant={points === 2 ? "default" : "outline"}
+            disabled={disabled}
             onClick={() => onScore(points as 1 | 2 | 3)}
           >
             +{points}
@@ -194,6 +197,7 @@ function TeamScorePanel({
         </div>
         <Button
           className="h-12 w-full rounded-md bg-blue-700 text-base font-bold text-white hover:bg-blue-800 md:h-16 md:text-2xl"
+          disabled={disabled}
           onClick={onFoul}
         >
           Team foul
@@ -210,7 +214,9 @@ function ClockConsole({
   running,
   shotClock,
   time,
+  disabled,
 }: {
+  disabled: boolean;
   onClockToggle: () => void;
   onResetShotClock: (resetTo: "full" | "short") => void;
   periodLabel: string;
@@ -231,6 +237,7 @@ function ClockConsole({
           <Button
             className="mt-2 h-10 w-full rounded-md bg-blue-700 text-base font-bold text-white hover:bg-blue-800 md:mt-5 md:h-16 md:text-2xl"
             onClick={onClockToggle}
+            disabled={disabled}
           >
             {running ? <Pause className="size-5" /> : <Play className="size-5" />}
             {running ? "Pause" : "Start"}
@@ -248,12 +255,14 @@ function ClockConsole({
             <Button
               className="h-12 rounded-md bg-blue-700 text-xl font-black text-white hover:bg-blue-800 md:h-16 md:text-3xl"
               onClick={() => onResetShotClock("full")}
+              disabled={disabled}
             >
               24
             </Button>
             <Button
               className="h-12 rounded-md bg-blue-700 text-xl font-black text-white hover:bg-blue-800 md:h-16 md:text-3xl"
               onClick={() => onResetShotClock("short")}
+              disabled={disabled}
             >
               14
             </Button>
@@ -579,6 +588,7 @@ export function ScorekeeperGameDetailScreen({
     displayedState.scores.home !== displayedState.scores.away &&
     scoring.local.pendingCommands.length === 0;
   const isOffline = Boolean(scoring.local.offlineSince);
+  const controlsDisabled = scoring.offlineLockActive;
 
   return (
     <main className="min-h-screen bg-neutral-100 text-slate-950">
@@ -630,6 +640,7 @@ export function ScorekeeperGameDetailScreen({
             running={displayedState.clock.gameClockRunning}
             shotClock={displayedState.clock.shotClockRemainingMs}
             time={formatClock(displayedState.clock.gameClockRemainingMs)}
+            disabled={controlsDisabled}
           />
         </div>
 
@@ -640,6 +651,7 @@ export function ScorekeeperGameDetailScreen({
           onScore={(points) => scoreTeam("home", points)}
           score={displayedState.scores.home}
           side="home"
+          disabled={controlsDisabled}
         />
 
         <div className="hidden md:block">
@@ -650,6 +662,7 @@ export function ScorekeeperGameDetailScreen({
             running={displayedState.clock.gameClockRunning}
             shotClock={displayedState.clock.shotClockRemainingMs}
             time={formatClock(displayedState.clock.gameClockRemainingMs)}
+            disabled={controlsDisabled}
           />
         </div>
 
@@ -660,6 +673,7 @@ export function ScorekeeperGameDetailScreen({
           onScore={(points) => scoreTeam("away", points)}
           score={displayedState.scores.away}
           side="away"
+          disabled={controlsDisabled}
         />
       </div>
 
@@ -674,13 +688,15 @@ export function ScorekeeperGameDetailScreen({
           )}
           <span className="truncate font-semibold">
             {scoring.local.lastConfirmedAction ??
-              (isOffline
-                ? `${scoring.local.pendingCommands.length} queued`
+              (scoring.offlineLockActive
+                ? "Reconnect to continue"
+                : isOffline
+                  ? `${scoring.local.pendingCommands.length} queued`
                 : "Online")}
           </span>
         </div>
         <Button
-          disabled={!displayedState.latestReversibleEvent}
+          disabled={!displayedState.latestReversibleEvent || controlsDisabled}
           size="sm"
           variant="ghost"
           onClick={undoLatest}
@@ -693,7 +709,7 @@ export function ScorekeeperGameDetailScreen({
       <div className="fixed bottom-8 left-1/2 z-20 hidden w-[260px] -translate-x-1/2 md:block">
         <Button
           className="h-14 w-full rounded-md border border-orange-400 bg-slate-950 text-orange-300 hover:bg-slate-900"
-          disabled={!displayedState.latestReversibleEvent}
+          disabled={!displayedState.latestReversibleEvent || controlsDisabled}
           onClick={undoLatest}
         >
           <RotateCcw className="size-5" />
