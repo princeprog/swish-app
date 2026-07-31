@@ -1,28 +1,23 @@
 "use client";
 
-import Link from "next/link";
 import * as React from "react";
-import { ArrowRight, Building2, Loader2, Plus, Trophy } from "lucide-react";
-import { toast } from "sonner";
+import { Building2Icon, SearchIcon } from "lucide-react";
 
 import { getApiErrorMessage } from "@/hooks/use-auth";
+import { useOrganizationsQuery } from "@/hooks/use-organization";
 import {
-  useCreateOrganizationMutation,
-  useOrganizationsQuery,
-} from "@/hooks/use-organization";
-import { getOrganizationLandingPath } from "@/lib/organization-routing";
-import { cn } from "@/lib/utils";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+  filterAndSortOrganizations,
+  type OrganizationRoleFilter,
+  type OrganizationSort,
+} from "@/lib/organization-directory";
+import { OrganizationDirectoryCard } from "@/components/select-organization/organization-directory-card";
+import { OrganizationDirectoryLoading } from "@/components/select-organization/organization-directory-loading";
+import {
+  OrganizationDirectoryOverview,
+  OrganizationInvitationCard,
+  OrganizationsAppHeader,
+} from "@/components/select-organization/organization-directory-overview";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Empty,
   EmptyContent,
@@ -32,236 +27,114 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import {
-  Field,
-  FieldContent,
-  FieldError,
-  FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
-
-function getOrganizationInitials(name: string): string {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
-}
-
-function slugifyName(name: string): string {
-  return name
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .replace(/-{2,}/g, "-");
-}
-
-function OrganizationCardSkeleton() {
-  return (
-    <Card className="border bg-card shadow-xs">
-      <CardHeader className="gap-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Skeleton className="size-14 rounded-full" />
-            <div className="space-y-2">
-              <Skeleton className="h-5 w-44" />
-              <Skeleton className="h-4 w-32" />
-            </div>
-          </div>
-          <Skeleton className="h-6 w-16 rounded-full" />
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Skeleton className="h-20 rounded-lg" />
-          <Skeleton className="h-20 rounded-lg" />
-        </div>
-        <div className="flex items-center justify-between gap-4">
-          <Skeleton className="h-5 w-28" />
-          <Skeleton className="h-10 w-28 rounded-md" />
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function CreateOrganizationFormCard({
-  compact = false,
-}: {
-  compact?: boolean;
-}) {
-  const createOrganizationMutation = useCreateOrganizationMutation();
-  const [name, setName] = React.useState("");
-  const [slug, setSlug] = React.useState("");
-  const [validationError, setValidationError] = React.useState<string | null>(
-    null,
-  );
-
-  function resetForm() {
-    setName("");
-    setSlug("");
-    setValidationError(null);
-  }
-
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!name.trim()) {
-      setValidationError("Organization name is required.");
-      return;
-    }
-
-    if (!slug.trim()) {
-      setValidationError("Organization slug is required.");
-      return;
-    }
-
-    setValidationError(null);
-
-    try {
-      const organization = await createOrganizationMutation.mutateAsync({
-        name: name.trim(),
-        slug: slug.trim(),
-      });
-      toast.success(`Created ${organization.name}`);
-      resetForm();
-    } catch (error) {
-      toast.error(getApiErrorMessage(error));
-    }
-  }
-
-  return (
-    <Card
-      className={cn(
-        "border-dashed bg-card/70 shadow-none",
-        compact && "shadow-xs",
-      )}
-    >
-      <CardHeader>
-        <div className="flex size-12 items-center justify-center rounded-full border bg-background">
-          <Plus className="size-5" />
-        </div>
-        <CardTitle className="text-xl">Create a new organization</CardTitle>
-        <CardDescription>
-          Start a new league shell for a school, barangay, company, or community
-          tournament.
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent className="space-y-6">
-        <div className="rounded-lg border bg-background/60 px-4 py-3 text-sm leading-6 text-muted-foreground">
-          Set up the organization record first, then add seasons, divisions,
-          teams, players, venues, and public pages.
-        </div>
-
-        <form className="space-y-5" onSubmit={handleSubmit}>
-          <Field>
-            <FieldLabel htmlFor="organization-name">
-              Organization name
-            </FieldLabel>
-            <FieldContent>
-              <Input
-                id="organization-name"
-                placeholder="Barangay Central League"
-                value={name}
-                onChange={(event) => {
-                  const nextName = event.target.value;
-                  setName(nextName);
-
-                  if (!slug.trim() || slug === slugifyName(name)) {
-                    setSlug(slugifyName(nextName));
-                  }
-                }}
-              />
-            </FieldContent>
-          </Field>
-
-          <Field>
-            <FieldLabel htmlFor="organization-slug">
-              Organization slug
-            </FieldLabel>
-            <FieldContent>
-              <Input
-                id="organization-slug"
-                placeholder="barangay-central-league"
-                value={slug}
-                onChange={(event) => setSlug(slugifyName(event.target.value))}
-              />
-              <p className="text-sm text-muted-foreground">
-                Lowercase letters, numbers, and hyphens only.
-              </p>
-            </FieldContent>
-          </Field>
-
-          {validationError || createOrganizationMutation.isError ? (
-            <FieldError>
-              {validationError ??
-                getApiErrorMessage(createOrganizationMutation.error)}
-            </FieldError>
-          ) : null}
-
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={createOrganizationMutation.isPending}
-          >
-            {createOrganizationMutation.isPending ? (
-              <>
-                <Loader2 className="size-4 animate-spin" />
-                Creating
-              </>
-            ) : (
-              "Create organization"
-            )}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
-  );
-}
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function SelectOrganizationScreen() {
   const organizationsQuery = useOrganizationsQuery();
   const organizations = organizationsQuery.data ?? [];
+  const [query, setQuery] = React.useState("");
+  const [role, setRole] = React.useState<OrganizationRoleFilter>("all");
+  const [sort, setSort] = React.useState<OrganizationSort>("recent");
+
+  const visibleOrganizations = React.useMemo(
+    () => filterAndSortOrganizations(organizations, { query, role, sort }),
+    [organizations, query, role, sort],
+  );
+  const activeCount = organizations.filter(
+    (organization) => organization.status === "active",
+  ).length;
+  const scorekeeperCount = organizations.filter(
+    (organization) => organization.access.role === "scorekeeper",
+  ).length;
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 py-8 sm:px-8 lg:px-10">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-3 text-sm font-medium">
-              <span className="flex size-10 items-center justify-center rounded-full border bg-background shadow-xs">
-                <Trophy className="size-4" />
-              </span>
-              <span>Swish League OS</span>
-            </div>
-            <div className="space-y-1">
-              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-                Select an organization
-              </h1>
-              <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                Choose where you want to continue. Each organization keeps its
-                own seasons, rosters, venues, and competition setup.
-              </p>
+      <OrganizationsAppHeader />
+
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+        <OrganizationDirectoryOverview
+          activeCount={activeCount}
+          organizationCount={organizations.length}
+          scorekeeperCount={scorekeeperCount}
+        />
+
+        <section className="flex flex-col gap-4" aria-labelledby="your-orgs">
+          <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+            <h2 id="your-orgs" className="text-xl font-semibold">
+              Your organizations
+            </h2>
+
+            <div className="grid gap-3 sm:grid-cols-[minmax(14rem,1fr)_10rem_12rem]">
+              <InputGroup>
+                <InputGroupAddon>
+                  <SearchIcon />
+                </InputGroupAddon>
+                <InputGroupInput
+                  aria-label="Search organizations"
+                  placeholder="Search organizations..."
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                />
+              </InputGroup>
+
+              <Select
+                value={role}
+                onValueChange={(value) =>
+                  setRole(value as OrganizationRoleFilter)
+                }
+              >
+                <SelectTrigger className="w-full" aria-label="Filter by role">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="all">All roles</SelectItem>
+                    <SelectItem value="owner">Owner</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="team_manager">Team manager</SelectItem>
+                    <SelectItem value="scorekeeper">Scorekeeper</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={sort}
+                onValueChange={(value) => setSort(value as OrganizationSort)}
+              >
+                <SelectTrigger
+                  className="w-full"
+                  aria-label="Sort organizations"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="recent">Recently updated</SelectItem>
+                    <SelectItem value="name">Organization name</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          <ThemeToggle />
-        </div>
-
-        {organizationsQuery.isLoading ? (
-          <div className="mt-10 grid gap-5 lg:grid-cols-2">
-            <OrganizationCardSkeleton />
-            <OrganizationCardSkeleton />
-          </div>
-        ) : organizationsQuery.isError ? (
-          <div className="mt-10">
-            <Empty className="border bg-card">
+          {organizationsQuery.isLoading ? (
+            <OrganizationDirectoryLoading />
+          ) : organizationsQuery.isError ? (
+            <Empty className="border">
               <EmptyHeader>
                 <EmptyMedia variant="icon">
-                  <Building2 className="size-5" />
+                  <Building2Icon />
                 </EmptyMedia>
                 <EmptyTitle>
                   We couldn&apos;t load your organizations
@@ -276,104 +149,50 @@ export function SelectOrganizationScreen() {
                 </Button>
               </EmptyContent>
             </Empty>
-          </div>
-        ) : organizations.length === 0 ? (
-          <div className="mt-10">
-            <Empty className="border bg-card">
+          ) : visibleOrganizations.length === 0 ? (
+            <Empty className="border">
               <EmptyHeader>
                 <EmptyMedia variant="icon">
-                  <Building2 className="size-5" />
+                  <SearchIcon />
                 </EmptyMedia>
-                <EmptyTitle>No organizations yet</EmptyTitle>
+                <EmptyTitle>
+                  {organizations.length === 0
+                    ? "No organizations yet"
+                    : "No organizations found"}
+                </EmptyTitle>
                 <EmptyDescription>
-                  Create your first organization to start managing seasons,
-                  divisions, teams, players, venues, and public pages.
+                  {organizations.length === 0
+                    ? "Create your first organization to start managing a basketball league."
+                    : "Try another search term or role filter."}
                 </EmptyDescription>
               </EmptyHeader>
-              <EmptyContent>
-                <div className="w-full max-w-md">
-                  <CreateOrganizationFormCard compact />
-                </div>
-              </EmptyContent>
+              {organizations.length > 0 ? (
+                <EmptyContent>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setQuery("");
+                      setRole("all");
+                    }}
+                  >
+                    Clear filters
+                  </Button>
+                </EmptyContent>
+              ) : null}
             </Empty>
-          </div>
-        ) : (
-          <div className="mt-10 grid gap-5 lg:grid-cols-2">
-            {organizations.map((organization) => (
-              <Card key={organization.id} className="border bg-card shadow-xs">
-                <CardHeader className="gap-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <Avatar size="lg">
-                        <AvatarFallback>
-                          {getOrganizationInitials(organization.name)}
-                        </AvatarFallback>
-                      </Avatar>
+          ) : (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {visibleOrganizations.map((organization) => (
+                <OrganizationDirectoryCard
+                  key={organization.id}
+                  organization={organization}
+                />
+              ))}
+            </div>
+          )}
+        </section>
 
-                      <div className="space-y-1">
-                        <CardTitle className="text-xl">
-                          {organization.name}
-                        </CardTitle>
-                        <CardDescription>
-                          swish.app/{organization.slug}
-                        </CardDescription>
-                      </div>
-                    </div>
-
-                    <Badge
-                      variant="secondary"
-                      className={cn(
-                        organization.status === "active"
-                          ? ""
-                          : "text-muted-foreground",
-                      )}
-                    >
-                      {organization.status}
-                    </Badge>
-                  </div>
-                </CardHeader>
-
-                <CardContent className="space-y-6">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-lg border bg-background/60 px-4 py-3">
-                      <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                        Organization ID
-                      </p>
-                      <p className="mt-2 truncate text-sm font-medium">
-                        {organization.id}
-                      </p>
-                    </div>
-
-                    <div className="rounded-lg border bg-background/60 px-4 py-3">
-                      <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                        Updated
-                      </p>
-                      <p className="mt-2 text-sm font-medium">
-                        {new Date(organization.updated_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Building2 className="size-4" />
-                      <span>Open workspace</span>
-                    </div>
-
-                    <Button asChild>
-                      <Link href={getOrganizationLandingPath(organization)}>
-                        Continue
-                        <ArrowRight className="size-4" />
-                      </Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-
-            <CreateOrganizationFormCard />
-          </div>
-        )}
+        <OrganizationInvitationCard />
       </div>
     </main>
   );
