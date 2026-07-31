@@ -1,4 +1,5 @@
-import { API_BASE_URL } from "@/constants/api-config";
+import { API_BASE_URL, API_ENDPOINTS } from "@/constants/api-config";
+import { createSessionRefreshCoordinator } from "@/lib/auth-refresh-coordinator";
 
 type ApiMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 type QueryValue = string | number | boolean | null | undefined;
@@ -7,6 +8,7 @@ type ApiRequestOptions<TData = unknown> = Omit<
   RequestInit,
   "body" | "method"
 > & {
+  authRetry?: boolean;
   data?: TData;
   method?: ApiMethod;
   query?: Record<string, QueryValue | QueryValue[]>;
@@ -69,11 +71,30 @@ async function parseResponse(response: Response): Promise<unknown> {
   return response.text();
 }
 
-export async function apiRequest<TResponse = unknown, TData = unknown>(
+function isUnauthorizedApiError(error: unknown): boolean {
+  return error instanceof ApiRequestError && error.status === 401;
+}
+
+function isAuthRetryBypassedEndpoint(endpoint: string): boolean {
+  const authEndpoints = [
+    API_ENDPOINTS.auth.login,
+    API_ENDPOINTS.auth.logout,
+    API_ENDPOINTS.auth.refresh,
+    API_ENDPOINTS.auth.register,
+  ];
+  const pathname = /^https?:\/\//i.test(endpoint)
+    ? new URL(endpoint).pathname
+    : endpoint;
+
+  return authEndpoints.includes(pathname as (typeof authEndpoints)[number]);
+}
+
+async function rawApiRequest<TResponse = unknown, TData = unknown>(
   endpoint: string,
   options: ApiRequestOptions<TData> = {},
 ): Promise<TResponse> {
   const {
+    authRetry: _authRetry,
     data,
     headers,
     method = data ? "POST" : "GET",
@@ -118,6 +139,48 @@ export async function apiRequest<TResponse = unknown, TData = unknown>(
   }
 
   return responseData as TResponse;
+}
+
+const authRefreshCoordinator = createSessionRefreshCoordinator({
+  getMe: () =>
+    rawApiRequest<{ user: unknown }>(API_ENDPOINTS.auth.me, {
+      authRetry: false,
+      credentials: "include",
+      method: "GET",
+    }),
+  isUnauthorizedError: isUnauthorizedApiError,
+  refresh: () =>
+    rawApiRequest<{ user: unknown }>(API_ENDPOINTS.auth.refresh, {
+      authRetry: false,
+      credentials: "include",
+      method: "POST",
+    }),
+});
+
+export async function apiRequest<TResponse = unknown, TData = unknown>(
+  endpoint: string,
+  options: ApiRequestOptions<TData> = {},
+): Promise<TResponse> {
+  const { authRetry = true } = options;
+
+  try {
+    return await rawApiRequest<TResponse, TData>(endpoint, options);
+  } catch (error) {
+    if (
+      !authRetry ||
+      !isUnauthorizedApiError(error) ||
+      isAuthRetryBypassedEndpoint(endpoint)
+    ) {
+      throw error;
+    }
+
+    await authRefreshCoordinator.ensureFreshSession();
+
+    return rawApiRequest<TResponse, TData>(endpoint, {
+      ...options,
+      authRetry: false,
+    });
+  }
 }
 
 export const apiService = {

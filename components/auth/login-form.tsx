@@ -17,6 +17,7 @@ export function LoginForm() {
   const searchParams = useSearchParams()
   const loginMutation = useLoginMutation()
   const redirectTo = searchParams.get("redirect") ?? "/organizations"
+  const reason = searchParams.get("reason")
   const [email, setEmail] = React.useState("")
   const [password, setPassword] = React.useState("")
 
@@ -37,6 +38,15 @@ export function LoginForm() {
 
   return (
     <form className="space-y-5" onSubmit={handleSubmit}>
+      {reason === "session_expired" ? (
+        <Alert>
+          <AlertTitle>Your session has expired</AlertTitle>
+          <AlertDescription>
+            Please sign in again to continue.
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
       {loginMutation.isError ? (
         <Alert variant="destructive">
           <AlertTitle>Unable to sign in</AlertTitle>

@@ -29,14 +29,17 @@ export const authService = {
     }),
   login: (data: LoginPayload) =>
     apiService.post<AuthResponse, LoginPayload>(API_ENDPOINTS.auth.login, data, {
+      authRetry: false,
       credentials: "include",
     }),
   logout: () =>
     apiService.post<{ success: boolean }>(API_ENDPOINTS.auth.logout, undefined, {
+      authRetry: false,
       credentials: "include",
     }),
   refresh: () =>
     apiService.post<AuthResponse>(API_ENDPOINTS.auth.refresh, undefined, {
+      authRetry: false,
       credentials: "include",
     }),
   register: (data: RegisterPayload) =>
@@ -44,6 +47,7 @@ export const authService = {
       API_ENDPOINTS.auth.register,
       data,
       {
+        authRetry: false,
         credentials: "include",
       },
     ),
