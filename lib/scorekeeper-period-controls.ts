@@ -13,6 +13,13 @@ export function isPeriodTransitionBlocked(
   return gameClockRemainingMs > 0;
 }
 
+export function canRetryNextPeriodAfterRefresh(input: {
+  commandType: string;
+  gameClockRemainingMs: number;
+}): boolean {
+  return input.commandType === "period.start" && input.gameClockRemainingMs <= 0;
+}
+
 export function getPeriodControlDialog(
   action: PeriodControlAction,
   gameClockRemainingMs: number,
