@@ -58,6 +58,7 @@ import {
   getPeriodControlDialog,
   type PeriodControlAction,
 } from "@/lib/scorekeeper-period-controls";
+import { getTimeoutControlDialog } from "@/lib/scorekeeper-timeout-controls";
 import { cn } from "@/lib/utils";
 import type { ScoringState } from "@/services/scoring.service";
 
@@ -775,7 +776,31 @@ export function ScorekeeperGameDetailScreen({
   const displayedState = useDisplayedScoringState(scoring.local.state);
   const [soundEnabled, setSoundEnabled] = React.useState(false);
   const [startDialogOpen, setStartDialogOpen] = React.useState(false);
+  const [timeoutDialogSide, setTimeoutDialogSide] =
+    React.useState<TeamSide | null>(null);
+  const [timeoutDialogError, setTimeoutDialogError] = React.useState<
+    string | null
+  >(null);
+  const [isRecordingTimeout, setIsRecordingTimeout] = React.useState(false);
   const lastShotViolationVersion = React.useRef<number | null>(null);
+  const timeoutDialogTeam =
+    timeoutDialogSide && displayedState
+      ? timeoutDialogSide === "home"
+        ? displayedState.game.homeTeam
+        : displayedState.game.awayTeam
+      : null;
+  const timeoutDialogRemaining =
+    timeoutDialogSide && displayedState
+      ? timeoutDialogSide === "home"
+        ? displayedState.timeouts.home.remaining
+        : displayedState.timeouts.away.remaining
+      : 0;
+  const timeoutDialog = timeoutDialogTeam
+    ? getTimeoutControlDialog({
+        remaining: timeoutDialogRemaining,
+        teamName: timeoutDialogTeam.name,
+      })
+    : null;
 
   useWakeLock(Boolean(displayedState?.control.controlledByMe));
 
@@ -848,16 +873,55 @@ export function ScorekeeperGameDetailScreen({
   function timeoutTeam(side: TeamSide) {
     if (!displayedState) return;
 
-    const team =
-      side === "home"
-        ? displayedState.game.homeTeam
-        : displayedState.game.awayTeam;
+    setTimeoutDialogError(null);
+    setTimeoutDialogSide(side);
+  }
 
-    if (confirm(`Record timeout for ${team.name}?`)) {
-      sendCommand("timeout.record", {
-        teamId: team.id,
-      });
+  async function recordTimeout() {
+    if (!timeoutDialogTeam || !timeoutDialog || timeoutDialog.blocked) {
+      return;
     }
+
+    setTimeoutDialogError(null);
+    setIsRecordingTimeout(true);
+
+    let result: SendScoringCommandResult;
+    try {
+      result = await sendCommand("timeout.record", {
+        teamId: timeoutDialogTeam.id,
+      });
+    } catch {
+      setIsRecordingTimeout(false);
+      setTimeoutDialogError(
+        "Something interrupted recording this timeout. Please check your connection and try again.",
+      );
+      return;
+    }
+
+    setIsRecordingTimeout(false);
+
+    if (result.status === "confirmed") {
+      setTimeoutDialogSide(null);
+      return;
+    }
+
+    if (result.status === "queued") {
+      setTimeoutDialogError(
+        "You appear to be offline. The timeout was saved on this device and will sync when the connection returns.",
+      );
+      return;
+    }
+
+    if (result.status === "blocked") {
+      setTimeoutDialogError(
+        "Reconnect before recording a timeout. Timeouts need to reach the server right away.",
+      );
+      return;
+    }
+
+    setTimeoutDialogError(
+      "The game state changed while you were reviewing this timeout. Please check the timeout count and try again.",
+    );
   }
 
   async function toggleClock() {
@@ -1244,6 +1308,68 @@ export function ScorekeeperGameDetailScreen({
           timeoutsRemaining={displayedState.timeouts.away.remaining}
         />
       </div>
+
+      <AlertDialog
+        open={timeoutDialogSide !== null}
+        onOpenChange={(open) => {
+          if (isRecordingTimeout) return;
+          if (!open) {
+            setTimeoutDialogSide(null);
+            setTimeoutDialogError(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogMedia
+              className={
+                timeoutDialog?.blocked
+                  ? "bg-destructive/10 text-destructive"
+                  : "bg-primary/10 text-primary"
+              }
+            >
+              <Clock3 className="size-8" />
+            </AlertDialogMedia>
+            <AlertDialogTitle>{timeoutDialog?.title}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {timeoutDialog?.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {timeoutDialogError ? (
+            <div
+              className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+              role="alert"
+            >
+              {timeoutDialogError}
+            </div>
+          ) : null}
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isRecordingTimeout}>
+              {timeoutDialog?.blocked ? "Close" : "Cancel"}
+            </AlertDialogCancel>
+            {timeoutDialog && !timeoutDialog.blocked ? (
+              <AlertDialogAction
+                disabled={isRecordingTimeout}
+                onClick={(event) => {
+                  event.preventDefault();
+                  void recordTimeout();
+                }}
+              >
+                {isRecordingTimeout ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" />
+                    Recording
+                  </>
+                ) : (
+                  timeoutDialog.confirmLabel
+                )}
+              </AlertDialogAction>
+            ) : null}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <footer className="sticky bottom-0 flex items-center justify-between border-t bg-background px-4 py-3 text-sm md:hidden">
         <div className="flex min-w-0 items-center gap-2">
