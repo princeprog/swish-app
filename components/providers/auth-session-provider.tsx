@@ -139,11 +139,11 @@ export function AuthSessionProvider({
         <div className="mx-auto max-w-sm space-y-4 px-6 text-center">
           <div className="space-y-2">
             <p className="text-sm font-medium">
-              We can&apos;t connect to the server right now.
+              Connection interrupted
             </p>
             <p className="text-sm text-muted-foreground">
-              Your session has not been changed. Try again once the API is back
-              online.
+              We couldn&apos;t reach Swish League OS. Your session is still
+              safe. Please try again in a moment.
             </p>
           </div>
           <Button
@@ -155,9 +155,6 @@ export function AuthSessionProvider({
             <RefreshCw className="size-4" />
             Try again
           </Button>
-          <p className="text-sm text-muted-foreground">
-            Default API URL: http://localhost:3001
-          </p>
         </div>
       </div>
     )
