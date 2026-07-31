@@ -8,6 +8,10 @@ import {
   type QueuedScoringCommand,
 } from "@/services/scoring-command-queue";
 import {
+  isQueueableScoringError,
+  rebaseClientScoringState,
+} from "@/lib/scoring-live-display";
+import {
   scoringService,
   type ScoringCommandPayload,
   type ScoringCommandType,
@@ -31,9 +35,17 @@ type LocalScoringState = {
 };
 
 type OptimisticCommand = {
+  controlToken?: string;
   payload?: Record<string, unknown>;
   type: ScoringCommandType;
 };
+
+export type SendScoringCommandResult =
+  | { status: "confirmed"; state: ScoringState }
+  | { status: "queued" }
+  | { status: "failed" }
+  | { status: "blocked" }
+  | { status: "ignored" };
 
 type LiveScoringAction =
   | { state: ScoringState; type: "server-state" }
@@ -50,7 +62,7 @@ function applyOptimisticCommand(
   state: ScoringState,
   command: OptimisticCommand,
 ): ScoringState {
-  const next: ScoringState = structuredClone(state);
+  let next: ScoringState = structuredClone(state);
 
   if (command.type === "score.record") {
     const teamId = command.payload?.teamId;
@@ -82,6 +94,8 @@ function applyOptimisticCommand(
 
     if (teamId === next.game.homeTeam.id) {
       next.fouls.home += 1;
+      next.fouls.homeInPenalty =
+        next.fouls.home >= next.fouls.penaltyAt;
       next.latestReversibleEvent = {
         id: "optimistic",
         payload: command.payload ?? {},
@@ -92,6 +106,8 @@ function applyOptimisticCommand(
 
     if (teamId === next.game.awayTeam.id) {
       next.fouls.away += 1;
+      next.fouls.awayInPenalty =
+        next.fouls.away >= next.fouls.penaltyAt;
       next.latestReversibleEvent = {
         id: "optimistic",
         payload: command.payload ?? {},
@@ -101,8 +117,48 @@ function applyOptimisticCommand(
     }
   }
 
+  if (command.type === "timeout.record") {
+    next = rebaseClientScoringState(next, Date.now());
+    const teamId = command.payload?.teamId;
+
+    if (teamId === next.game.homeTeam.id) {
+      next.timeouts.home.used += 1;
+      next.timeouts.home.remaining = Math.max(
+        0,
+        next.timeouts.home.remaining - 1,
+      );
+      next.latestReversibleEvent = {
+        id: "optimistic",
+        payload: command.payload ?? {},
+        summary: `${next.game.homeTeam.name} timeout`,
+        type: "timeout.record",
+      };
+    }
+
+    if (teamId === next.game.awayTeam.id) {
+      next.timeouts.away.used += 1;
+      next.timeouts.away.remaining = Math.max(
+        0,
+        next.timeouts.away.remaining - 1,
+      );
+      next.latestReversibleEvent = {
+        id: "optimistic",
+        payload: command.payload ?? {},
+        summary: `${next.game.awayTeam.name} timeout`,
+        type: "timeout.record",
+      };
+    }
+
+    next.phase = "paused";
+    next.clock.gameClockRunning = false;
+    next.clock.shotClockRunning = false;
+    next.clock.gameClockStartedAt = null;
+    next.clock.shotClockStartedAt = null;
+  }
+
   if (command.type === "game.start" || command.type === "clocks.start") {
-    const now = new Date().toISOString();
+    next = rebaseClientScoringState(next, Date.now());
+    const now = next.serverTime;
     next.phase = "live";
     next.clock.gameClockRunning = true;
     next.clock.shotClockRunning = true;
@@ -111,6 +167,7 @@ function applyOptimisticCommand(
   }
 
   if (command.type === "clocks.pause") {
+    next = rebaseClientScoringState(next, Date.now());
     next.phase = next.phase === "pregame" ? "pregame" : "paused";
     next.clock.gameClockRunning = false;
     next.clock.shotClockRunning = false;
@@ -119,10 +176,26 @@ function applyOptimisticCommand(
   }
 
   if (command.type === "shot_clock.reset") {
+    next = rebaseClientScoringState(next, Date.now());
     next.clock.shotClockRemainingMs =
       command.payload?.resetTo === "short"
         ? next.config.shotClockShortMs
         : next.config.shotClockFullMs;
+    next.clock.shotClockStartedAt = next.clock.shotClockRunning
+      ? next.serverTime
+      : null;
+  }
+
+  if (command.type === "shot_clock.pause") {
+    next = rebaseClientScoringState(next, Date.now());
+    next.clock.shotClockRunning = false;
+    next.clock.shotClockStartedAt = null;
+  }
+
+  if (command.type === "shot_clock.start") {
+    next = rebaseClientScoringState(next, Date.now());
+    next.clock.shotClockRunning = true;
+    next.clock.shotClockStartedAt = next.serverTime;
   }
 
   if (command.type === "event.reverse") {
@@ -139,6 +212,33 @@ function applyOptimisticCommand(
       const teamId = event.payload.teamId;
       if (teamId === next.game.homeTeam.id) next.fouls.home -= 1;
       if (teamId === next.game.awayTeam.id) next.fouls.away -= 1;
+      next.fouls.homeInPenalty =
+        next.fouls.home >= next.fouls.penaltyAt;
+      next.fouls.awayInPenalty =
+        next.fouls.away >= next.fouls.penaltyAt;
+    }
+
+    if (event?.type === "timeout.record") {
+      const teamId = event.payload.teamId;
+      if (teamId === next.game.homeTeam.id) {
+        next.timeouts.home.used = Math.max(0, next.timeouts.home.used - 1);
+        next.timeouts.home.remaining = Math.min(
+          next.timeouts.allowancePerTeam,
+          next.timeouts.home.remaining + 1,
+        );
+      }
+      if (teamId === next.game.awayTeam.id) {
+        next.timeouts.away.used = Math.max(0, next.timeouts.away.used - 1);
+        next.timeouts.away.remaining = Math.min(
+          next.timeouts.allowancePerTeam,
+          next.timeouts.away.remaining + 1,
+        );
+      }
+      next.phase = "paused";
+      next.clock.gameClockRunning = false;
+      next.clock.shotClockRunning = false;
+      next.clock.gameClockStartedAt = null;
+      next.clock.shotClockStartedAt = null;
     }
 
     next.latestReversibleEvent = null;
@@ -168,6 +268,20 @@ function formatCommandConfirmation(command: OptimisticCommand, state: ScoringSta
         : state.game.awayTeam.name;
 
     return `${teamName} foul recorded`;
+  }
+
+  if (command.type === "timeout.record") {
+    const teamId = command.payload?.teamId;
+    const teamName =
+      teamId === state.game.homeTeam.id
+        ? state.game.homeTeam.name
+        : state.game.awayTeam.name;
+
+    return `${teamName} timeout recorded`;
+  }
+
+  if (command.type === "game.finalize") {
+    return "Game finalized";
   }
 
   return "Scoring action recorded";
@@ -345,17 +459,19 @@ export function useLiveScoring(organizationId?: string, gameId?: string) {
   }, [gameId, heartbeatMutation, local.controlToken, organizationId]);
 
   const sendCommand = React.useCallback(
-    async (command: OptimisticCommand) => {
-      if (!organizationId || !gameId || !local.state) return;
+    async (command: OptimisticCommand): Promise<SendScoringCommandResult> => {
+      if (!organizationId || !gameId || !local.state) {
+        return { status: "ignored" };
+      }
       if (
         local.offlineSince &&
         Date.now() - local.offlineSince > 90 * 1000
       ) {
-        return;
+        return { status: "blocked" };
       }
 
       const payload: ScoringCommandPayload = {
-        controlToken: local.controlToken ?? undefined,
+        controlToken: command.controlToken ?? local.controlToken ?? undefined,
         expectedVersion: local.state.version,
         idempotencyKey: createIdempotencyKey(),
         occurredAt: new Date().toISOString(),
@@ -376,10 +492,20 @@ export function useLiveScoring(organizationId?: string, gameId?: string) {
       });
 
       try {
-        await commandMutation.mutateAsync(payload);
+        const response = await commandMutation.mutateAsync(payload);
+        return { state: response.state, status: "confirmed" };
       } catch (error) {
-        await scoringCommandQueue.add(queuedCommand);
-        dispatch({ command: queuedCommand, type: "command-queued" });
+        if (isQueueableScoringError(error)) {
+          await scoringCommandQueue.add(queuedCommand);
+          dispatch({ command: queuedCommand, type: "command-queued" });
+          return { status: "queued" };
+        }
+
+        const refreshed = await stateQuery.refetch();
+        if (refreshed.data) {
+          dispatch({ state: refreshed.data, type: "server-state" });
+        }
+        return { status: "failed" };
       }
     },
     [
@@ -389,6 +515,7 @@ export function useLiveScoring(organizationId?: string, gameId?: string) {
       local.offlineSince,
       local.state,
       organizationId,
+      stateQuery,
     ],
   );
 
@@ -406,7 +533,7 @@ export function useLiveScoring(organizationId?: string, gameId?: string) {
   }, [commandMutation, gameId, organizationId]);
 
   return {
-    claimControl: claimControlMutation.mutate,
+    claimControl: claimControlMutation.mutateAsync,
     flushQueue,
     heartbeatStatus: heartbeatMutation.status,
     isClaimingControl: claimControlMutation.isPending,
@@ -417,6 +544,6 @@ export function useLiveScoring(organizationId?: string, gameId?: string) {
     ),
     query: stateQuery,
     sendCommand,
-    takeoverControl: takeoverControlMutation.mutate,
+    takeoverControl: takeoverControlMutation.mutateAsync,
   };
 }

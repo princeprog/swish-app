@@ -21,6 +21,7 @@ export type ScoringCommandType =
   | "shot_clock.adjust"
   | "score.record"
   | "team_foul.record"
+  | "timeout.record"
   | "event.reverse"
   | "period.end"
   | "period.start"
@@ -51,7 +52,10 @@ export type ScoringState = {
   };
   fouls: {
     away: number;
+    awayInPenalty: boolean;
     home: number;
+    homeInPenalty: boolean;
+    penaltyAt: number;
   };
   game: {
     awayTeam: {
@@ -72,7 +76,7 @@ export type ScoringState = {
     id: string;
     payload: Record<string, unknown>;
     summary: string;
-    type: "score.record" | "team_foul.record";
+    type: "score.record" | "team_foul.record" | "timeout.record";
   } | null;
   period: {
     label: string;
@@ -85,6 +89,12 @@ export type ScoringState = {
     home: number;
   };
   serverTime: string;
+  timeouts: {
+    allowancePerTeam: number;
+    away: { remaining: number; used: number };
+    home: { remaining: number; used: number };
+    segment: "first_half" | "second_half" | "overtime";
+  };
   version: number;
 };
 

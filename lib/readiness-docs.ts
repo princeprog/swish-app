@@ -23,9 +23,9 @@ export const mvpUserStories = [
   {
     role: "Scorekeeper",
     story:
-      "As a scorekeeper, I can open an assigned game and record team points, team fouls, clocks, quarter changes, corrections, and finalization events.",
+      "As a scorekeeper, I can open an assigned game and record team points, team fouls, team timeouts, clocks, quarter changes, corrections, and finalization events.",
     acceptance:
-      "Every accepted scoring command creates an append-only event and updates a current-state projection; player attribution remains deferred.",
+      "Every accepted scoring command creates an append-only event and updates a current-state projection; player attribution and timeout-duration countdowns remain deferred.",
   },
   {
     role: "League Admin",
@@ -177,12 +177,17 @@ export const scoringEvents = [
   {
     type: "team_foul.record",
     payload: "gameId, teamId, period, clocks, actorMemberId",
-    rule: "Increments current-period team fouls for the selected team.",
+    rule: "Increments current-period team fouls for the selected team and marks penalty at four team fouls.",
+  },
+  {
+    type: "timeout.record",
+    payload: "gameId, teamId, inferred segment, period, clocks, actorMemberId",
+    rule: "Consumes one FIBA team timeout for the current segment, pauses both clocks atomically, rejects depleted teams, and can be immediately undone.",
   },
   {
     type: "clocks.start / clocks.pause",
     payload: "gameId, period, gameClockRemainingMs, shotClockRemainingMs, actorMemberId",
-    rule: "Primary Start/Pause controls both game and shot clocks using server timestamp anchors.",
+    rule: "Game start is allowed only from pregame for scheduled games with active control; primary Start/Pause controls both clocks using server timestamp anchors.",
   },
   {
     type: "shot_clock.reset / shot_clock.adjust",
@@ -197,7 +202,7 @@ export const scoringEvents = [
   {
     type: "period.end / period.start",
     payload: "gameId, fromPeriod, toPeriod, clocks, reason when manually ending early",
-    rule: "Starting the next period resets the game clock, shot clock, and current-period team fouls.",
+    rule: "Starting the next period resets the game clock, shot clock, current-period team fouls, and timeout usage at Q3 and every overtime.",
   },
   {
     type: "game.finalize",
@@ -254,6 +259,7 @@ export const scorekeeperWorkspaceFlow = [
   "The live console uses the approved phone/tablet reference image in public/design-references/scorekeeper-console-reference.png as the hierarchy baseline.",
   "One device controls a game at a time through claim, heartbeat, release, expiry, and takeover records.",
   "Commands use idempotency keys and expected versions; short offline scoring queues locally for up to 90 seconds before the UI should block new mutations.",
+  "The console uses serverTime to display running clocks, records FIBA timeouts as append-only events, and queues only genuine network failures.",
   "Finalization writes the official result to competition.games; standings continue to read only finalized results.",
   "The API remains authoritative: unassigned or cross-organization games return 404, and suspended access returns 403.",
 ];
