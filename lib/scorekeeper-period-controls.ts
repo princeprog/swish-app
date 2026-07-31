@@ -1,5 +1,7 @@
 export type PeriodControlAction = "end" | "next";
 
+export const PERIOD_CLOCK_DISPLAY_ZERO_THRESHOLD_MS = 1000;
+
 type PeriodControlDialog = {
   blocked: boolean;
   confirmLabel: string;
@@ -10,14 +12,17 @@ type PeriodControlDialog = {
 export function isPeriodTransitionBlocked(
   gameClockRemainingMs: number,
 ): boolean {
-  return gameClockRemainingMs > 0;
+  return gameClockRemainingMs >= PERIOD_CLOCK_DISPLAY_ZERO_THRESHOLD_MS;
 }
 
 export function canRetryNextPeriodAfterRefresh(input: {
   commandType: string;
   gameClockRemainingMs: number;
 }): boolean {
-  return input.commandType === "period.start" && input.gameClockRemainingMs <= 0;
+  return (
+    input.commandType === "period.start" &&
+    !isPeriodTransitionBlocked(input.gameClockRemainingMs)
+  );
 }
 
 export function getPeriodControlDialog(
