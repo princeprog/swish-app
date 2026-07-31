@@ -11,6 +11,7 @@ import {
   isQueueableScoringError,
   rebaseClientScoringState,
 } from "@/lib/scoring-live-display";
+import { getFriendlyScoringCommandErrorMessage } from "@/lib/scoring-command-errors";
 import { canRetryNextPeriodAfterRefresh } from "@/lib/scorekeeper-period-controls";
 import {
   scoringService,
@@ -44,7 +45,7 @@ type OptimisticCommand = {
 export type SendScoringCommandResult =
   | { status: "confirmed"; state: ScoringState }
   | { status: "queued" }
-  | { status: "failed"; state?: ScoringState }
+  | { message?: string; state?: ScoringState; status: "failed" }
   | { status: "blocked" }
   | { status: "ignored" };
 
@@ -528,6 +529,7 @@ export function useLiveScoring(organizationId?: string, gameId?: string) {
           return { status: "queued" };
         }
 
+        const failureMessage = getFriendlyScoringCommandErrorMessage(error);
         const refreshed = await stateQuery.refetch();
         if (refreshed.data) {
           dispatch({ state: refreshed.data, type: "server-state" });
@@ -553,12 +555,19 @@ export function useLiveScoring(organizationId?: string, gameId?: string) {
               const retryResponse =
                 await commandMutation.mutateAsync(retryPayload);
               return { state: retryResponse.state, status: "confirmed" };
-            } catch {
-              return { state: refreshed.data, status: "failed" };
+            } catch (retryError) {
+              return {
+                message:
+                  getFriendlyScoringCommandErrorMessage(retryError) ??
+                  failureMessage ??
+                  undefined,
+                state: refreshed.data,
+                status: "failed",
+              };
             }
           }
         }
-        return { status: "failed" };
+        return { message: failureMessage ?? undefined, status: "failed" };
       }
     },
     [

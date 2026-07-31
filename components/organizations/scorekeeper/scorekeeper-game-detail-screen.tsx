@@ -484,7 +484,11 @@ function ConsoleMoreSheet({
       return;
     }
 
-    setPeriodDialogError(getPeriodCommandFailureMessage(action));
+    setPeriodDialogError(
+      result.status === "failed" && result.message
+        ? result.message
+        : getPeriodCommandFailureMessage(action),
+    );
   }
 
   return (
