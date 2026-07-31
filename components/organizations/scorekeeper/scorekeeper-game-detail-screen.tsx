@@ -54,6 +54,10 @@ import {
   useLiveScoring,
 } from "@/hooks/use-scoring";
 import { materializeClientScoringState } from "@/lib/scoring-live-display";
+import {
+  getPeriodControlDialog,
+  type PeriodControlAction,
+} from "@/lib/scorekeeper-period-controls";
 import { cn } from "@/lib/utils";
 import type { ScoringState } from "@/services/scoring.service";
 
@@ -375,6 +379,19 @@ function ConsoleMoreSheet({
   const [finalizeDialogOpen, setFinalizeDialogOpen] = React.useState(false);
   const [finalizeError, setFinalizeError] = React.useState<string | null>(null);
   const [isFinalizing, setIsFinalizing] = React.useState(false);
+  const [periodDialogAction, setPeriodDialogAction] =
+    React.useState<PeriodControlAction | null>(null);
+  const [periodDialogError, setPeriodDialogError] = React.useState<
+    string | null
+  >(null);
+  const [isSendingPeriodCommand, setIsSendingPeriodCommand] =
+    React.useState(false);
+  const periodDialog = periodDialogAction
+    ? getPeriodControlDialog(
+        periodDialogAction,
+        state.clock.gameClockRemainingMs,
+      )
+    : null;
 
   async function finalizeGame() {
     setFinalizeError(null);
@@ -414,6 +431,58 @@ function ConsoleMoreSheet({
 
     setFinalizeError(
       "We couldn't finalize this game yet. The latest game state was reloaded, so please review the score and try again.",
+    );
+  }
+
+  async function sendPeriodCommand(action: PeriodControlAction) {
+    const dialog = getPeriodControlDialog(
+      action,
+      state.clock.gameClockRemainingMs,
+    );
+
+    if (dialog.blocked) {
+      return;
+    }
+
+    setPeriodDialogError(null);
+    setIsSendingPeriodCommand(true);
+
+    let result: SendScoringCommandResult;
+    try {
+      result = await onCommand(
+        action === "end" ? "period.end" : "period.start",
+      );
+    } catch {
+      setIsSendingPeriodCommand(false);
+      setPeriodDialogError(
+        "Something interrupted this period change. Please check your connection and try again.",
+      );
+      return;
+    }
+
+    setIsSendingPeriodCommand(false);
+
+    if (result.status === "confirmed") {
+      setPeriodDialogAction(null);
+      return;
+    }
+
+    if (result.status === "queued") {
+      setPeriodDialogError(
+        "You appear to be offline. Period changes need to sync before continuing.",
+      );
+      return;
+    }
+
+    if (result.status === "blocked") {
+      setPeriodDialogError(
+        "Reconnect before changing the period. The official game clock needs to be checked by the server.",
+      );
+      return;
+    }
+
+    setPeriodDialogError(
+      "The game state changed while you were reviewing this action. Please check the clock and try again.",
     );
   }
 
@@ -496,18 +565,18 @@ function ConsoleMoreSheet({
             <div className="grid grid-cols-3 gap-2">
               <Button
                 onClick={() => {
-                  if (confirm("End this period now?")) {
-                    onCommand("period.end", {
-                      reason: "Manual period end from scorekeeper console",
-                    });
-                  }
+                  setPeriodDialogError(null);
+                  setPeriodDialogAction("end");
                 }}
                 variant="outline"
               >
                 End period
               </Button>
               <Button
-                onClick={() => onCommand("period.start")}
+                onClick={() => {
+                  setPeriodDialogError(null);
+                  setPeriodDialogAction("next");
+                }}
                 variant="outline"
               >
                 Next period
@@ -605,6 +674,64 @@ function ConsoleMoreSheet({
                 </AlertDialogContent>
               </AlertDialog>
             </div>
+            <AlertDialog
+              open={periodDialogAction !== null}
+              onOpenChange={(open) => {
+                if (isSendingPeriodCommand) return;
+                if (!open) {
+                  setPeriodDialogAction(null);
+                  setPeriodDialogError(null);
+                }
+              }}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogMedia
+                    className={
+                      periodDialog?.blocked
+                        ? "bg-destructive/10 text-destructive"
+                        : "bg-primary/10 text-primary"
+                    }
+                  >
+                    <Clock3 className="size-8" />
+                  </AlertDialogMedia>
+                  <AlertDialogTitle>{periodDialog?.title}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {periodDialog?.description}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+
+                {periodDialogError ? (
+                  <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                    {periodDialogError}
+                  </div>
+                ) : null}
+
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={isSendingPeriodCommand}>
+                    {periodDialog?.blocked ? "Close" : "Cancel"}
+                  </AlertDialogCancel>
+                  {periodDialog && !periodDialog.blocked ? (
+                    <AlertDialogAction
+                      disabled={isSendingPeriodCommand}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        void sendPeriodCommand(periodDialogAction ?? "end");
+                      }}
+                    >
+                      {isSendingPeriodCommand ? (
+                        <>
+                          <Loader2 className="size-4 animate-spin" />
+                          Updating
+                        </>
+                      ) : (
+                        periodDialog.confirmLabel
+                      )}
+                    </AlertDialogAction>
+                  ) : null}
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </section>
 
           <section className="space-y-3">
