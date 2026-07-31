@@ -54,6 +54,7 @@ import {
   useLiveScoring,
 } from "@/hooks/use-scoring";
 import { materializeClientScoringState } from "@/lib/scoring-live-display";
+import { areLivePeriodActionsDisabled } from "@/lib/scorekeeper-live-actions";
 import {
   getPeriodControlDialog,
   type PeriodControlAction,
@@ -1049,6 +1050,9 @@ export function ScorekeeperGameDetailScreen({
       !displayedState.control.controlledByMe);
   const timeoutPhaseValid = ["live", "paused"].includes(displayedState.phase);
   const gameClockExpired = displayedState.clock.gameClockRemainingMs === 0;
+  const periodActionsDisabled = areLivePeriodActionsDisabled(
+    displayedState.clock.gameClockRemainingMs,
+  );
   const shotClockExpired = displayedState.clock.shotClockRemainingMs === 0;
 
   if (displayedState.phase === "pregame") {
@@ -1264,10 +1268,11 @@ export function ScorekeeperGameDetailScreen({
           onTimeout={() => timeoutTeam("home")}
           score={displayedState.scores.home}
           side="home"
-          disabled={controlsDisabled}
+          disabled={controlsDisabled || periodActionsDisabled}
           inPenalty={displayedState.fouls.homeInPenalty}
           timeoutDisabled={
             controlsDisabled ||
+            periodActionsDisabled ||
             !timeoutPhaseValid ||
             displayedState.timeouts.home.remaining <= 0
           }
@@ -1298,10 +1303,11 @@ export function ScorekeeperGameDetailScreen({
           onTimeout={() => timeoutTeam("away")}
           score={displayedState.scores.away}
           side="away"
-          disabled={controlsDisabled}
+          disabled={controlsDisabled || periodActionsDisabled}
           inPenalty={displayedState.fouls.awayInPenalty}
           timeoutDisabled={
             controlsDisabled ||
+            periodActionsDisabled ||
             !timeoutPhaseValid ||
             displayedState.timeouts.away.remaining <= 0
           }
