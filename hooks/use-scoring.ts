@@ -50,6 +50,10 @@ export type SendScoringCommandResult =
 type LiveScoringAction =
   | { state: ScoringState; type: "server-state" }
   | { control: ScoringControlResponse; type: "control-claimed" }
+  | {
+      control: Pick<ScoringControlResponse, "expiresAt" | "sessionId">;
+      type: "control-heartbeat";
+    }
   | { command: OptimisticCommand; idempotencyKey: string; type: "optimistic" }
   | { action: string; state: ScoringState; type: "command-confirmed" }
   | { pendingCommands: QueuedScoringCommand[]; type: "pending-loaded" }
@@ -310,6 +314,21 @@ function liveScoringReducer(
             }
           : current.state,
       };
+    case "control-heartbeat":
+      return {
+        ...current,
+        state: current.state
+          ? {
+              ...current.state,
+              control: {
+                ...current.state.control,
+                expiresAt: action.control.expiresAt,
+                sessionId: action.control.sessionId,
+                status: "claimed",
+              },
+            }
+          : current.state,
+      };
     case "optimistic":
       if (!current.state) return current;
       return {
@@ -425,7 +444,14 @@ export function useLiveScoring(organizationId?: string, gameId?: string) {
       scoringService.heartbeatControl(organizationId!, gameId!, {
         controlToken: local.controlToken!,
       }),
+    onSuccess: (control) =>
+      dispatch({ control, type: "control-heartbeat" }),
   });
+  const heartbeatMutateRef = React.useRef(heartbeatMutation.mutate);
+
+  React.useEffect(() => {
+    heartbeatMutateRef.current = heartbeatMutation.mutate;
+  }, [heartbeatMutation.mutate]);
 
   const commandMutation = useMutation({
     mutationFn: (command: ScoringCommandPayload) =>
@@ -452,11 +478,11 @@ export function useLiveScoring(organizationId?: string, gameId?: string) {
     if (!local.controlToken || !organizationId || !gameId) return;
 
     const interval = window.setInterval(() => {
-      heartbeatMutation.mutate();
+      heartbeatMutateRef.current();
     }, 15000);
 
     return () => window.clearInterval(interval);
-  }, [gameId, heartbeatMutation, local.controlToken, organizationId]);
+  }, [gameId, local.controlToken, organizationId]);
 
   const sendCommand = React.useCallback(
     async (command: OptimisticCommand): Promise<SendScoringCommandResult> => {
