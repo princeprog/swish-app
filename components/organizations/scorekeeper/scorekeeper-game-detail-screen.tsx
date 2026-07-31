@@ -995,6 +995,11 @@ export function ScorekeeperGameDetailScreen({
         </h1>
         <div className="flex items-center gap-3">
           <Badge
+            className={
+              displayedState.phase === "live"
+                ? "border-red-600 bg-red-600 text-white hover:bg-red-600"
+                : undefined
+            }
             variant={displayedState.phase === "live" ? "default" : "secondary"}
           >
             LIVE
