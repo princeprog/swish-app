@@ -56,6 +56,7 @@ import {
 import { materializeClientScoringState } from "@/lib/scoring-live-display";
 import { areLivePeriodActionsDisabled } from "@/lib/scorekeeper-live-actions";
 import {
+  getPeriodCommandFailureMessage,
   getPeriodControlDialog,
   type PeriodControlAction,
 } from "@/lib/scorekeeper-period-controls";
@@ -483,9 +484,7 @@ function ConsoleMoreSheet({
       return;
     }
 
-    setPeriodDialogError(
-      "The game state changed while you were reviewing this action. Please check the clock and try again.",
-    );
+    setPeriodDialogError(getPeriodCommandFailureMessage(action));
   }
 
   return (

@@ -39,3 +39,13 @@ export function getPeriodControlDialog(
     title: blocked ? "The next period is not ready yet" : "Start next period?",
   };
 }
+
+export function getPeriodCommandFailureMessage(
+  action: PeriodControlAction,
+): string {
+  if (action === "end") {
+    return "We couldn't end the period. Please check that the clock shows 0:00, then try again.";
+  }
+
+  return "We couldn't start the next period. Please check that the clock shows 0:00, then try again.";
+}
