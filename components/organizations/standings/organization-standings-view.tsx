@@ -2,12 +2,7 @@
 
 import * as React from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import {
-  Medal,
-  ShieldCheck,
-  Trophy,
-  TrendingUp,
-} from "lucide-react"
+import { Trophy } from "lucide-react"
 
 import { AppSidebar } from "@/components/app-sidebar"
 import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
@@ -65,33 +60,6 @@ function formatDifferential(value: number) {
 
 function formatWinPercentage(value: number) {
   return value.toFixed(3)
-}
-
-function SummaryCard({
-  description,
-  icon,
-  title,
-  value,
-}: {
-  description: string
-  icon: React.ReactNode
-  title: string
-  value: string
-}) {
-  return (
-    <Card className="border border-border/60 bg-card/95 shadow-none">
-      <CardHeader className="flex-row items-start justify-between gap-3 space-y-0 px-4 py-3">
-        <div className="space-y-1">
-          <CardDescription className="text-xs">{description}</CardDescription>
-          <CardTitle className="text-xl">{value}</CardTitle>
-          <p className="text-xs text-muted-foreground">{title}</p>
-        </div>
-        <div className="rounded-md border bg-background p-1.5 text-muted-foreground">
-          {icon}
-        </div>
-      </CardHeader>
-    </Card>
-  )
 }
 
 function StandingsTable({ rows }: { rows: StandingsRow[] }) {
@@ -201,11 +169,6 @@ export function OrganizationStandingsView({
   )
   const standings = standingsQuery.data
   const rows = standings?.rows ?? []
-  const leader = rows[0]
-  const differentialLeader = rows.reduce<StandingsRow | null>((best, row) => {
-    if (!best) return row
-    return row.pointDifferential > best.pointDifferential ? row : best
-  }, null)
 
   function setFilter(updates: { divisionId?: string; seasonId?: string }) {
     const params = new URLSearchParams(searchParams.toString())
@@ -275,37 +238,6 @@ export function OrganizationStandingsView({
               </p>
             </div>
           </section>
-
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <SummaryCard
-              description="Teams"
-              icon={<ShieldCheck className="size-4" />}
-              title="Teams included in the current table"
-              value={String(rows.length)}
-            />
-            <SummaryCard
-              description="Finalized games"
-              icon={<Trophy className="size-4" />}
-              title="Games counted toward the current standings"
-              value={String(standings?.finalizedGamesCount ?? 0)}
-            />
-            <SummaryCard
-              description="Best record"
-              icon={<Medal className="size-4" />}
-              title={leader ? leader.teamName : "No finalized games yet"}
-              value={leader ? `${leader.wins}-${leader.losses}` : "0-0"}
-            />
-            <SummaryCard
-              description="Point diff"
-              icon={<TrendingUp className="size-4" />}
-              title={differentialLeader ? differentialLeader.teamName : "No teams yet"}
-              value={
-                differentialLeader
-                  ? formatDifferential(differentialLeader.pointDifferential)
-                  : "0"
-              }
-            />
-          </div>
 
           <Card className="border border-border/60 bg-card/95 shadow-none">
             <CardContent className="grid gap-3 p-4 md:grid-cols-[240px_240px]">
