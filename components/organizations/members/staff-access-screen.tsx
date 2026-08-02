@@ -388,7 +388,7 @@ export function StaffAccessScreen({ slug }: { slug: string }) {
               <Card className="border-border/60 shadow-none">
                 <CardHeader>
                   <CardTitle>Members</CardTitle>
-                  <CardDescription>Roles are organization-specific and assignments narrow access further.</CardDescription>
+                  <CardDescription>Roles are organization-specific and control what each member can manage.</CardDescription>
                 </CardHeader>
                 <CardContent className="overflow-auto">
                   <Table>
@@ -397,7 +397,6 @@ export function StaffAccessScreen({ slug }: { slug: string }) {
                         <TableHead>Member</TableHead>
                         <TableHead>Role</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Assignments</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -410,13 +409,6 @@ export function StaffAccessScreen({ slug }: { slug: string }) {
                           </TableCell>
                           <TableCell><Badge variant="outline">{roleLabel(member.role)}</Badge></TableCell>
                           <TableCell>{member.status}</TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {member.role === "team_manager"
-                              ? `${member.teamAssignments.length} teams`
-                              : member.role === "scorekeeper"
-                                ? "-"
-                                : "Full organization scope"}
-                          </TableCell>
                           <TableCell className="text-right">
                             <Button size="sm" variant="outline" onClick={() => setMemberToEdit(member)}>
                               Edit
