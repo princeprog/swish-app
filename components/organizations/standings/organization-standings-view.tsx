@@ -70,22 +70,15 @@ function formatWinPercentage(value: number) {
   return value.toFixed(3)
 }
 
-function StandingsTable({
-  filters,
-  rows,
-}: {
-  filters: React.ReactNode
-  rows: StandingsRow[]
-}) {
+function StandingsTable({ rows }: { rows: StandingsRow[] }) {
   const header = (
-    <CardHeader className="gap-4 md:flex-row md:items-center md:justify-between">
+    <CardHeader>
       <div className="space-y-1.5">
         <CardTitle>Official standings</CardTitle>
         <CardDescription>
           Calculated from finalized games with recorded scores.
         </CardDescription>
       </div>
-      {filters}
     </CardHeader>
   )
 
@@ -217,7 +210,7 @@ export function OrganizationStandingsView({
   }
 
   const standingsFilters = (
-    <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto md:justify-end">
+    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:justify-end">
       <Select
         disabled={seasons.length === 0}
         value={selectedSeasonId || NO_SEASON_VALUE}
@@ -304,7 +297,7 @@ export function OrganizationStandingsView({
             </BreadcrumbList>
           </Breadcrumb>
 
-          <section className="flex flex-wrap items-start justify-between gap-4">
+          <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">Competition</p>
               <h1 className="text-3xl font-semibold tracking-tight">Standings</h1>
@@ -313,6 +306,7 @@ export function OrganizationStandingsView({
                 season and division.
               </p>
             </div>
+            {standingsFilters}
           </section>
 
           {seasons.length === 0 ? (
@@ -343,7 +337,7 @@ export function OrganizationStandingsView({
               </EmptyHeader>
             </Empty>
           ) : (
-            <StandingsTable filters={standingsFilters} rows={rows} />
+            <StandingsTable rows={rows} />
           )}
         </main>
       </SidebarInset>
