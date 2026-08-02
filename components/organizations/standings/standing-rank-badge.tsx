@@ -7,16 +7,21 @@ const podiumRankStyles: Record<number, string> = {
 }
 
 export function StandingRankBadge({ rank }: { rank: number }) {
-  const isPodium = rank <= 3
+  const sizeClass =
+    rank === 1
+      ? "size-11 rounded-full text-lg"
+      : rank === 2
+        ? "size-10 rounded-full text-base"
+        : rank === 3
+          ? "size-9 rounded-full text-sm"
+          : "size-8 rounded-md bg-background/70 text-sm text-muted-foreground"
 
   return (
     <span
       aria-label={`Rank ${rank}`}
       className={cn(
         "inline-flex items-center justify-center border font-semibold",
-        isPodium
-          ? "size-10 rounded-full text-base"
-          : "size-8 rounded-md bg-background/70 text-sm text-muted-foreground",
+        sizeClass,
         podiumRankStyles[rank],
       )}
     >

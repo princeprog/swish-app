@@ -109,7 +109,13 @@ function StandingsTable({ rows }: { rows: StandingsRow[] }) {
                 key={row.teamId}
                 className={cn(
                   "border-border/60 hover:bg-muted/30",
-                  row.rank <= 3 ? "h-20 bg-muted/15" : "h-16",
+                  row.rank === 1
+                    ? "h-24 bg-muted/20"
+                    : row.rank === 2
+                      ? "h-20 bg-muted/15"
+                      : row.rank === 3
+                        ? "h-18 bg-muted/10"
+                        : "h-16",
                 )}
               >
                 <TableCell className="px-4">
@@ -125,7 +131,11 @@ function StandingsTable({ rows }: { rows: StandingsRow[] }) {
                       <span
                         className={cn(
                           "font-medium",
-                          row.rank <= 3 ? "text-base" : "text-sm",
+                          row.rank === 1
+                            ? "text-lg"
+                            : row.rank === 2
+                              ? "text-base"
+                              : "text-sm",
                         )}
                       >
                         {row.teamName}
