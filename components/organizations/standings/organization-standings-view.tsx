@@ -29,7 +29,13 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import {
   Table,
@@ -53,6 +59,8 @@ type OrganizationStandingsViewProps = {
   seasons: LeagueSeason[]
 }
 
+const NO_SEASON_VALUE = "no-seasons"
+
 function formatDifferential(value: number) {
   if (value > 0) return `+${value}`
   return String(value)
@@ -62,31 +70,49 @@ function formatWinPercentage(value: number) {
   return value.toFixed(3)
 }
 
-function StandingsTable({ rows }: { rows: StandingsRow[] }) {
+function StandingsTable({
+  filters,
+  rows,
+}: {
+  filters: React.ReactNode
+  rows: StandingsRow[]
+}) {
+  const header = (
+    <CardHeader className="gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="space-y-1.5">
+        <CardTitle>Official standings</CardTitle>
+        <CardDescription>
+          Calculated from finalized games with recorded scores.
+        </CardDescription>
+      </div>
+      {filters}
+    </CardHeader>
+  )
+
   if (rows.length === 0) {
     return (
-      <Empty className="border border-dashed bg-card/70">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <Trophy className="size-5" />
-          </EmptyMedia>
-          <EmptyTitle>No teams in this season</EmptyTitle>
-          <EmptyDescription>
-            Add teams to this season before standings can be displayed.
-          </EmptyDescription>
-        </EmptyHeader>
-      </Empty>
+      <Card className="border border-border/60 bg-card/95 shadow-none">
+        {header}
+        <CardContent>
+          <Empty className="border border-dashed bg-card/70">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Trophy className="size-5" />
+              </EmptyMedia>
+              <EmptyTitle>No teams in this season</EmptyTitle>
+              <EmptyDescription>
+                Add teams to this season before standings can be displayed.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        </CardContent>
+      </Card>
     )
   }
 
   return (
     <Card className="border border-border/60 bg-card/95 shadow-none">
-      <CardHeader>
-        <CardTitle>Official standings</CardTitle>
-        <CardDescription>
-          Calculated from finalized games with recorded scores.
-        </CardDescription>
-      </CardHeader>
+      {header}
       <CardContent>
         <Table>
           <TableHeader>
@@ -190,6 +216,56 @@ export function OrganizationStandingsView({
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
   }
 
+  const standingsFilters = (
+    <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto md:justify-end">
+      <Select
+        disabled={seasons.length === 0}
+        value={selectedSeasonId || NO_SEASON_VALUE}
+        onValueChange={(value) => {
+          if (value !== NO_SEASON_VALUE) {
+            setFilter({ seasonId: value })
+          }
+        }}
+      >
+        <SelectTrigger
+          aria-label="Filter standings by season"
+          className="w-full sm:w-[220px]"
+        >
+          <SelectValue placeholder="Select season" />
+        </SelectTrigger>
+        <SelectContent position="popper" align="end">
+          {seasons.length === 0 ? (
+            <SelectItem value={NO_SEASON_VALUE}>No seasons</SelectItem>
+          ) : null}
+          {seasons.map((season) => (
+            <SelectItem key={season.id} value={season.id}>
+              {season.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Select
+        value={selectedDivisionId}
+        onValueChange={(value) => setFilter({ divisionId: value })}
+      >
+        <SelectTrigger
+          aria-label="Filter standings by division"
+          className="w-full sm:w-[180px]"
+        >
+          <SelectValue placeholder="All divisions" />
+        </SelectTrigger>
+        <SelectContent position="popper" align="end">
+          <SelectItem value="all">All divisions</SelectItem>
+          {seasonDivisions.map((division) => (
+            <SelectItem key={division.id} value={division.id}>
+              {division.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  )
+
   return (
     <SidebarProvider>
       <AppSidebar
@@ -239,35 +315,6 @@ export function OrganizationStandingsView({
             </div>
           </section>
 
-          <Card className="border border-border/60 bg-card/95 shadow-none">
-            <CardContent className="grid gap-3 p-4 md:grid-cols-[240px_240px]">
-              <NativeSelect
-                value={selectedSeasonId}
-                onChange={(event) => setFilter({ seasonId: event.target.value })}
-              >
-                {seasons.length === 0 ? (
-                  <NativeSelectOption value="">No seasons</NativeSelectOption>
-                ) : null}
-                {seasons.map((season) => (
-                  <NativeSelectOption key={season.id} value={season.id}>
-                    {season.name}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
-              <NativeSelect
-                value={selectedDivisionId}
-                onChange={(event) => setFilter({ divisionId: event.target.value })}
-              >
-                <NativeSelectOption value="all">All divisions</NativeSelectOption>
-                {seasonDivisions.map((division) => (
-                  <NativeSelectOption key={division.id} value={division.id}>
-                    {division.name}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
-            </CardContent>
-          </Card>
-
           {seasons.length === 0 ? (
             <Empty className="border border-dashed bg-card/70">
               <EmptyHeader>
@@ -296,7 +343,7 @@ export function OrganizationStandingsView({
               </EmptyHeader>
             </Empty>
           ) : (
-            <StandingsTable rows={rows} />
+            <StandingsTable filters={standingsFilters} rows={rows} />
           )}
         </main>
       </SidebarInset>
