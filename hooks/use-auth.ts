@@ -70,9 +70,8 @@ export function useLogoutMutation() {
 
   return useMutation({
     mutationFn: authService.logout,
-    onSuccess: async () => {
-      queryClient.removeQueries({ queryKey: AUTH_QUERY_KEYS.me })
-      await queryClient.invalidateQueries({ queryKey: AUTH_QUERY_KEYS.me })
+    onSuccess: () => {
+      queryClient.removeQueries()
     },
   })
 }

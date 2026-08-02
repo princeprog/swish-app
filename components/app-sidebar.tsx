@@ -24,14 +24,6 @@ import {
   Users2Icon,
 } from "lucide-react"
 
-const baseData = {
-  user: {
-    name: "Swish Admin",
-    email: "admin@swish.local",
-    avatar: "",
-  },
-}
-
 type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
   organization?: {
     access?: OrganizationAccess
@@ -210,7 +202,7 @@ export function AppSidebar({
         ) : null}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={baseData.user} />
+        <NavUser />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

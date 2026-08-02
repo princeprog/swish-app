@@ -1,20 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import {
   ArrowLeftRight,
   Building2,
   Check,
   ChevronDown,
-  LogOut,
-  UserCircle,
 } from "lucide-react";
-import { toast } from "sonner";
 
+import { HeaderAccountMenu } from "@/components/auth/header-account-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,11 +21,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  getApiErrorMessage,
-  useLogoutMutation,
-  useMeQuery,
-} from "@/hooks/use-auth";
 import { getOrganizationLandingPath } from "@/lib/organization-routing";
 import type { Organization } from "@/services/organization.service";
 
@@ -39,34 +30,11 @@ type ScorekeeperShellProps = {
   organizations: Organization[];
 };
 
-function getInitials(value: string): string {
-  return value
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
-}
-
 export function ScorekeeperShell({
   children,
   organization,
   organizations,
 }: ScorekeeperShellProps) {
-  const router = useRouter();
-  const meQuery = useMeQuery();
-  const logoutMutation = useLogoutMutation();
-  const user = meQuery.data?.user;
-
-  async function handleLogout() {
-    try {
-      await logoutMutation.mutateAsync();
-      router.push("/login");
-    } catch (error) {
-      toast.error(getApiErrorMessage(error));
-    }
-  }
-
   return (
     <main className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -125,45 +93,7 @@ export function ScorekeeperShell({
             </DropdownMenu>
 
             <ThemeToggle />
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  aria-label="Open account menu"
-                  variant="outline"
-                  size="icon"
-                >
-                  <Avatar className="size-7">
-                    <AvatarFallback>
-                      {getInitials(user?.name ?? user?.email ?? "User")}
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64">
-                <DropdownMenuLabel>
-                  <div className="flex min-w-0 items-center gap-2">
-                    <UserCircle className="size-4" />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-foreground">
-                        {user?.name ?? "Signed in"}
-                      </p>
-                      <p className="truncate text-xs font-normal">
-                        {user?.email ?? "Account"}
-                      </p>
-                    </div>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  disabled={logoutMutation.isPending}
-                  onClick={handleLogout}
-                >
-                  <LogOut className="size-4" />
-                  Sign out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <HeaderAccountMenu />
           </div>
         </div>
       </header>

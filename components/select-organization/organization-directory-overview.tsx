@@ -6,6 +6,7 @@ import {
   UsersRoundIcon,
 } from "lucide-react";
 
+import { HeaderAccountMenu } from "@/components/auth/header-account-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { CreateOrganizationDialog } from "@/components/select-organization/create-organization-dialog";
 import { Button } from "@/components/ui/button";
@@ -46,7 +47,10 @@ export function OrganizationsAppHeader() {
           </span>
           <span>Organizations</span>
         </nav>
-        <ThemeToggle />
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <HeaderAccountMenu />
+        </div>
       </div>
     </header>
   );
