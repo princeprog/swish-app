@@ -55,6 +55,11 @@ export type CreateSchedulePayload = {
 
 export type UpdateSchedulePayload = Partial<CreateSchedulePayload>;
 
+export type FinalizeScheduleGamePayload = {
+  awayScore: number;
+  homeScore: number;
+};
+
 export type ScorekeeperOption = {
   email: string;
   id: string;
@@ -84,6 +89,16 @@ export const scheduleService = {
       credentials: "include",
       query,
     }),
+  finalize: (
+    organizationId: string,
+    scheduleId: string,
+    data: FinalizeScheduleGamePayload,
+  ) =>
+    apiService.post<Schedule, FinalizeScheduleGamePayload>(
+      API_ENDPOINTS.schedules.finalize(organizationId, scheduleId),
+      data,
+      { credentials: "include" },
+    ),
   listScorekeepers: (organizationId: string) =>
     apiService.get<ScorekeeperOption[]>(
       API_ENDPOINTS.schedules.scorekeepers(organizationId),

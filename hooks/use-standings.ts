@@ -8,8 +8,10 @@ import {
 } from "@/services/standings.service"
 
 export const STANDINGS_QUERY_KEYS = {
+  all: (organizationId: string) =>
+    ["standings", "list", organizationId] as const,
   list: (organizationId: string, params: StandingsParams) =>
-    ["standings", "list", organizationId, params] as const,
+    [...STANDINGS_QUERY_KEYS.all(organizationId), params] as const,
 }
 
 export function useStandingsQuery(

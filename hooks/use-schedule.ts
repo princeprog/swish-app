@@ -5,12 +5,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   scheduleService,
   type CreateSchedulePayload,
+  type FinalizeScheduleGamePayload,
   type Schedule,
   type ScheduleListQuery,
   type ScorekeeperOption,
   type UpdateScorekeeperAssignmentPayload,
   type UpdateSchedulePayload,
 } from "@/services/schedule.service";
+import { STANDINGS_QUERY_KEYS } from "@/hooks/use-standings";
 
 export const SCHEDULE_QUERY_KEYS = {
   all: (organizationId: string) =>
@@ -101,6 +103,29 @@ export function useDeleteScheduleMutation(organizationId: string) {
       await queryClient.invalidateQueries({
         queryKey: SCHEDULE_QUERY_KEYS.all(organizationId),
       });
+    },
+  });
+}
+
+export function useFinalizeScheduleGameMutation(organizationId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    Schedule,
+    unknown,
+    { payload: FinalizeScheduleGamePayload; scheduleId: string }
+  >({
+    mutationFn: ({ payload, scheduleId }) =>
+      scheduleService.finalize(organizationId, scheduleId, payload),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: SCHEDULE_QUERY_KEYS.all(organizationId),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: STANDINGS_QUERY_KEYS.all(organizationId),
+        }),
+      ]);
     },
   });
 }

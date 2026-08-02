@@ -88,11 +88,17 @@ import { getApiErrorMessage } from "@/hooks/use-auth"
 import {
   useCreateScheduleMutation,
   useDeleteScheduleMutation,
+  useFinalizeScheduleGameMutation,
   useSchedulesQuery,
   useScorekeepersQuery,
   useUpdateScorekeeperAssignmentMutation,
   useUpdateScheduleMutation,
 } from "@/hooks/use-schedule"
+import {
+  canManuallyFinalizeScheduleGame,
+  getManualFinalScoreValidationError,
+  parseManualFinalScores,
+} from "@/lib/schedule-finalization"
 import type { Division } from "@/services/division.service"
 import type { LeagueSeason } from "@/services/league-season.service"
 import type { Organization } from "@/services/organization.service"
@@ -422,6 +428,7 @@ function ScheduleActionsPopover({
   onAssignScorekeeper,
   onDelete,
   onEdit,
+  onFinalize,
   onViewSummary,
 }: {
   canManageSchedule: boolean
@@ -429,6 +436,7 @@ function ScheduleActionsPopover({
   onAssignScorekeeper: () => void
   onDelete: () => void
   onEdit: () => void
+  onFinalize: () => void
   onViewSummary: () => void
 }) {
   const [open, setOpen] = React.useState(false)
@@ -498,6 +506,7 @@ function ScheduleActionsPopover({
   }
 
   const assignmentLocked = !canAssignScorekeeper(game.status)
+  const canFinalizeManually = canManuallyFinalizeScheduleGame(game.status)
   const isFinalGame = game.status === "final"
 
   return (
@@ -597,6 +606,20 @@ function ScheduleActionsPopover({
                       <PencilLine className="size-4" />
                       Edit game
                     </Button>
+                    {canFinalizeManually ? (
+                      <Button
+                        className="w-full justify-start"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setOpen(false)
+                          onFinalize()
+                        }}
+                      >
+                        <CheckCircle2 className="size-4" />
+                        Finalize game
+                      </Button>
+                    ) : null}
                     <Button
                       className="w-full justify-start"
                       disabled={assignmentLocked}
@@ -674,6 +697,7 @@ function ScheduleBoard({
   onAssignScorekeeper,
   onDeleteGame,
   onEditGame,
+  onFinalizeGame,
   onViewFinalSummary,
 }: {
   canManageSchedule: boolean
@@ -681,6 +705,7 @@ function ScheduleBoard({
   onAssignScorekeeper: (game: Schedule) => void
   onDeleteGame: (game: Schedule) => void
   onEditGame: (game: Schedule) => void
+  onFinalizeGame: (game: Schedule) => void
   onViewFinalSummary: (game: Schedule) => void
 }) {
   if (games.length === 0) {
@@ -852,6 +877,7 @@ function ScheduleBoard({
                           }
                           onDelete={() => onDeleteGame(game)}
                           onEdit={() => onEditGame(game)}
+                          onFinalize={() => onFinalizeGame(game)}
                           onViewSummary={() => onViewFinalSummary(game)}
                         />
                       </div>
@@ -967,6 +993,202 @@ function FinalGameSummaryModal({
             Close
           </Button>
         </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function ManualFinalizeGameModal({
+  game,
+  onClose,
+  organizationId,
+}: {
+  game: Schedule
+  onClose: () => void
+  organizationId: string
+}) {
+  const finalizeScheduleGameMutation =
+    useFinalizeScheduleGameMutation(organizationId)
+  const [homeScore, setHomeScore] = React.useState(
+    game.home_score === null ? "" : String(game.home_score),
+  )
+  const [awayScore, setAwayScore] = React.useState(
+    game.away_score === null ? "" : String(game.away_score),
+  )
+  const [validationError, setValidationError] = React.useState<string | null>(
+    null,
+  )
+  const [submissionError, setSubmissionError] = React.useState<string | null>(
+    null,
+  )
+  const visibleError = validationError ?? submissionError
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    const nextValidationError = getManualFinalScoreValidationError({
+      awayScore,
+      homeScore,
+    })
+
+    if (nextValidationError) {
+      setValidationError(nextValidationError)
+      setSubmissionError(null)
+      return
+    }
+
+    setValidationError(null)
+    setSubmissionError(null)
+
+    try {
+      await finalizeScheduleGameMutation.mutateAsync({
+        payload: parseManualFinalScores({ awayScore, homeScore }),
+        scheduleId: game.id,
+      })
+      toast.success("Final score saved. This game is now official.")
+      onClose()
+    } catch (error) {
+      setSubmissionError(getApiErrorMessage(error))
+    }
+  }
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-h-[calc(100vh-2rem)] gap-0 overflow-hidden p-0 sm:max-w-2xl">
+        <DialogHeader className="gap-1.5 border-b border-border/60 px-6 py-5 pr-14">
+          <div className="mb-2 flex size-10 items-center justify-center rounded-md border border-border/70 bg-muted">
+            <CheckCircle2 className="size-5 text-emerald-600" />
+          </div>
+          <DialogTitle className="text-lg">Finalize game</DialogTitle>
+          <DialogDescription>
+            Enter the official score for {game.home_team_name} vs{" "}
+            {game.away_team_name}.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form className="flex min-h-0 flex-col" onSubmit={handleSubmit}>
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
+            <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-medium">
+                    {game.home_team_name} vs {game.away_team_name}
+                  </div>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    This result becomes official and updates the standings.
+                  </p>
+                </div>
+                <Badge variant="outline">Scheduled</Badge>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor="manual-final-home-score">
+                    {game.home_team_name}
+                  </FieldLabel>
+                  <FieldContent>
+                    <Input
+                      className="h-11 text-lg font-semibold tabular-nums"
+                      id="manual-final-home-score"
+                      inputMode="numeric"
+                      min={0}
+                      placeholder="Home score"
+                      step={1}
+                      type="number"
+                      value={homeScore}
+                      onChange={(event) => {
+                        setHomeScore(event.target.value)
+                        setValidationError(null)
+                      }}
+                    />
+                  </FieldContent>
+                </Field>
+
+                <Field>
+                  <FieldLabel htmlFor="manual-final-away-score">
+                    {game.away_team_name}
+                  </FieldLabel>
+                  <FieldContent>
+                    <Input
+                      className="h-11 text-lg font-semibold tabular-nums"
+                      id="manual-final-away-score"
+                      inputMode="numeric"
+                      min={0}
+                      placeholder="Away score"
+                      step={1}
+                      type="number"
+                      value={awayScore}
+                      onChange={(event) => {
+                        setAwayScore(event.target.value)
+                        setValidationError(null)
+                      }}
+                    />
+                  </FieldContent>
+                </Field>
+              </div>
+            </div>
+
+            <div className="grid gap-3 text-sm sm:grid-cols-2">
+              <div className="rounded-lg border border-border/60 p-3">
+                <div className="text-xs font-medium uppercase text-muted-foreground">
+                  Season
+                </div>
+                <div className="mt-1 font-medium">
+                  {game.league_season_name}
+                </div>
+              </div>
+              <div className="rounded-lg border border-border/60 p-3">
+                <div className="text-xs font-medium uppercase text-muted-foreground">
+                  Division
+                </div>
+                <div className="mt-1 font-medium">{game.division_name}</div>
+              </div>
+              <div className="rounded-lg border border-border/60 p-3">
+                <div className="text-xs font-medium uppercase text-muted-foreground">
+                  Venue
+                </div>
+                <div className="mt-1 font-medium">{game.venue_name}</div>
+              </div>
+              <div className="rounded-lg border border-border/60 p-3">
+                <div className="text-xs font-medium uppercase text-muted-foreground">
+                  Scheduled
+                </div>
+                <div className="mt-1 font-medium">
+                  {formatScheduleDateTime(game.starts_at)}
+                </div>
+              </div>
+            </div>
+
+            {visibleError ? <FieldError>{visibleError}</FieldError> : null}
+          </div>
+
+          <DialogFooter className="border-t border-border/60 px-6 py-4">
+            <Button
+              disabled={finalizeScheduleGameMutation.isPending}
+              type="button"
+              variant="outline"
+              onClick={onClose}
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={finalizeScheduleGameMutation.isPending}
+              type="submit"
+            >
+              {finalizeScheduleGameMutation.isPending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Saving final score
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="size-4" />
+                  Save final score
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )
@@ -2015,6 +2237,8 @@ export function OrganizationSchedulesView({
   const [gameToAssign, setGameToAssign] = React.useState<Schedule | null>(null)
   const [gameToDelete, setGameToDelete] = React.useState<Schedule | null>(null)
   const [gameToEdit, setGameToEdit] = React.useState<Schedule | null>(null)
+  const [gameToFinalize, setGameToFinalize] =
+    React.useState<Schedule | null>(null)
   const [gameToSummarize, setGameToSummarize] =
     React.useState<Schedule | null>(null)
   const [search, setSearch] = React.useState("")
@@ -2256,6 +2480,7 @@ export function OrganizationSchedulesView({
                 onAssignScorekeeper={setGameToAssign}
                 onDeleteGame={setGameToDelete}
                 onEditGame={setGameToEdit}
+                onFinalizeGame={setGameToFinalize}
                 onViewFinalSummary={setGameToSummarize}
               />
             </div>
@@ -2307,6 +2532,14 @@ export function OrganizationSchedulesView({
           game={gameToDelete}
           organizationId={organization.id}
           onClose={() => setGameToDelete(null)}
+        />
+      ) : null}
+
+      {gameToFinalize ? (
+        <ManualFinalizeGameModal
+          game={gameToFinalize}
+          organizationId={organization.id}
+          onClose={() => setGameToFinalize(null)}
         />
       ) : null}
 

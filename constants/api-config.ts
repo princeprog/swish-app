@@ -87,6 +87,8 @@ export const API_ENDPOINTS = {
   schedules: {
     create: (organizationId: string) =>
       `/organizations/${organizationId}/games`,
+    finalize: (organizationId: string, gameId: string) =>
+      `/organizations/${organizationId}/games/${gameId}/finalize`,
     list: (organizationId: string) =>
       `/organizations/${organizationId}/games`,
     scorekeeper: (organizationId: string, gameId: string) =>
