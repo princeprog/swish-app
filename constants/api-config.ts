@@ -91,6 +91,10 @@ export const API_ENDPOINTS = {
       `/organizations/${organizationId}/games`,
     list: (organizationId: string) =>
       `/organizations/${organizationId}/games`,
+    scorekeeper: (organizationId: string, gameId: string) =>
+      `/organizations/${organizationId}/games/${gameId}/scorekeeper`,
+    scorekeepers: (organizationId: string) =>
+      `/organizations/${organizationId}/games/scorekeepers`,
   },
   standings: {
     list: (organizationId: string) =>

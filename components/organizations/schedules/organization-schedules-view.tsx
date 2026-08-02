@@ -18,6 +18,7 @@ import {
   Search,
   Shield,
   Trash2,
+  UserRoundCheck,
   X,
 } from "lucide-react"
 import { toast } from "sonner"
@@ -78,12 +79,18 @@ import {
   useCreateScheduleMutation,
   useDeleteScheduleMutation,
   useSchedulesQuery,
+  useScorekeepersQuery,
+  useUpdateScorekeeperAssignmentMutation,
   useUpdateScheduleMutation,
 } from "@/hooks/use-schedule"
 import type { Division } from "@/services/division.service"
 import type { LeagueSeason } from "@/services/league-season.service"
 import type { Organization } from "@/services/organization.service"
-import type { Schedule, ScheduleListQuery } from "@/services/schedule.service"
+import type {
+  Schedule,
+  ScheduleListQuery,
+  ScorekeeperOption,
+} from "@/services/schedule.service"
 import type { Team } from "@/services/team.service"
 import type { Venue } from "@/services/venue.service"
 
@@ -178,6 +185,10 @@ function toTitleCase(value: string) {
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ")
+}
+
+function canAssignScorekeeper(status: string) {
+  return ["draft", "scheduled", "postponed"].includes(status)
 }
 
 function ScheduleDateTimePicker({
@@ -316,11 +327,13 @@ function ScheduleSummaryCards({ schedules }: { schedules: Schedule[] }) {
 function ScheduleActionsPopover({
   canManageSchedule,
   game,
+  onAssignScorekeeper,
   onDelete,
   onEdit,
 }: {
   canManageSchedule: boolean
   game: Schedule
+  onAssignScorekeeper: () => void
   onDelete: () => void
   onEdit: () => void
 }) {
@@ -383,6 +396,8 @@ function ScheduleActionsPopover({
     return null
   }
 
+  const assignmentLocked = !canAssignScorekeeper(game.status)
+
   return (
     <div
       className="relative inline-flex justify-end"
@@ -423,6 +438,31 @@ function ScheduleActionsPopover({
                   <PencilLine className="size-4" />
                   Edit game
                 </Button>
+                <Button
+                  className="w-full justify-start"
+                  disabled={assignmentLocked}
+                  size="sm"
+                  title={
+                    assignmentLocked
+                      ? "Scorekeeper assignments lock after the game begins."
+                      : undefined
+                  }
+                  variant="ghost"
+                  onClick={() => {
+                    setOpen(false)
+                    onAssignScorekeeper()
+                  }}
+                >
+                  <UserRoundCheck className="size-4" />
+                  {game.scorekeeper_member_id
+                    ? "Change scorekeeper"
+                    : "Assign scorekeeper"}
+                </Button>
+                {assignmentLocked ? (
+                  <p className="px-3 py-1.5 text-xs leading-5 text-muted-foreground">
+                    Assignments lock after the game begins.
+                  </p>
+                ) : null}
                 <Button
                   className="w-full justify-start text-destructive hover:text-destructive"
                   size="sm"
@@ -470,11 +510,13 @@ function groupSchedulesByDay(games: Schedule[]) {
 function ScheduleBoard({
   canManageSchedule,
   games,
+  onAssignScorekeeper,
   onDeleteGame,
   onEditGame,
 }: {
   canManageSchedule: boolean
   games: Schedule[]
+  onAssignScorekeeper: (game: Schedule) => void
   onDeleteGame: (game: Schedule) => void
   onEditGame: (game: Schedule) => void
 }) {
@@ -579,7 +621,7 @@ function ScheduleBoard({
                       key={game.id}
                       className={[
                         "grid gap-3 bg-card px-4 py-4",
-                        "md:grid-cols-[130px_minmax(0,1.2fr)_180px_190px_120px_44px]",
+                        "md:grid-cols-[110px_minmax(0,1.1fr)_150px_170px_170px_100px_44px]",
                         index !== group.games.length - 1
                           ? "border-b border-border/60"
                           : "",
@@ -629,6 +671,22 @@ function ScheduleBoard({
                         </div>
                       </div>
 
+                      <div className="space-y-1 text-sm">
+                        <div className="flex items-center gap-1">
+                          <UserRoundCheck className="size-3.5 text-muted-foreground" />
+                          {game.scorekeeper_name ? (
+                            <span>{game.scorekeeper_name}</span>
+                          ) : (
+                            <Badge
+                              className="border-amber-500/25 bg-amber-500/10 text-amber-300"
+                              variant="outline"
+                            >
+                              Unassigned
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
                       <div className="flex items-start md:justify-end">
                         <Badge
                           className={scheduleStatusTone(game.status)}
@@ -639,9 +697,12 @@ function ScheduleBoard({
                       </div>
 
                       <div className="flex items-start justify-end">
-                    <ScheduleActionsPopover
-                      canManageSchedule={canManageSchedule}
-                      game={game}
+                        <ScheduleActionsPopover
+                          canManageSchedule={canManageSchedule}
+                          game={game}
+                          onAssignScorekeeper={() =>
+                            onAssignScorekeeper(game)
+                          }
                           onDelete={() => onDeleteGame(game)}
                           onEdit={() => onEditGame(game)}
                         />
@@ -1113,12 +1174,174 @@ function DeleteScheduleModal({
   )
 }
 
+function AssignScorekeeperModal({
+  game,
+  onClose,
+  organizationId,
+  scorekeepers,
+}: {
+  game: Schedule
+  onClose: () => void
+  organizationId: string
+  scorekeepers: ScorekeeperOption[]
+}) {
+  const assignmentMutation =
+    useUpdateScorekeeperAssignmentMutation(organizationId)
+  const [scorekeeperMemberId, setScorekeeperMemberId] = React.useState(
+    game.scorekeeper_member_id ?? "unassigned",
+  )
+  const assignmentLocked = !canAssignScorekeeper(game.status)
+
+  async function handleSave(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (assignmentLocked) {
+      return
+    }
+
+    try {
+      const updatedGame = await assignmentMutation.mutateAsync({
+        payload: {
+          scorekeeperMemberId:
+            scorekeeperMemberId === "unassigned"
+              ? null
+              : scorekeeperMemberId,
+        },
+        scheduleId: game.id,
+      })
+      toast.success(
+        updatedGame.scorekeeper_name
+          ? `${updatedGame.scorekeeper_name} is assigned to this game.`
+          : "This game is now unassigned.",
+      )
+      onClose()
+    } catch (error) {
+      toast.error(getApiErrorMessage(error))
+    }
+  }
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-lg">
+        <DialogHeader className="gap-1.5 border-b border-border/60 px-6 py-5 pr-14">
+          <div className="mb-2 flex size-10 items-center justify-center rounded-md border border-border/70 bg-muted">
+            <UserRoundCheck className="size-5 text-muted-foreground" />
+          </div>
+          <DialogTitle className="text-lg">
+            {game.scorekeeper_member_id
+              ? "Change scorekeeper"
+              : "Assign scorekeeper"}
+          </DialogTitle>
+          <DialogDescription>
+            Choose the scorekeeper responsible for this scheduled game.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSave}>
+          <div className="space-y-5 px-6 py-5">
+            <div className="rounded-lg border border-border/60 bg-muted/30 p-4">
+              <div className="text-sm font-medium">
+                {game.home_team_name} vs {game.away_team_name}
+              </div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                {new Date(game.starts_at).toLocaleString([], {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                })}{" "}
+                at {game.venue_name}
+              </div>
+            </div>
+
+            <Field>
+              <FieldLabel htmlFor="schedule-scorekeeper-assignment">
+                Scorekeeper
+              </FieldLabel>
+              <FieldContent>
+                <NativeSelect
+                  className="w-full"
+                  disabled={assignmentLocked || assignmentMutation.isPending}
+                  id="schedule-scorekeeper-assignment"
+                  value={scorekeeperMemberId}
+                  onChange={(event) =>
+                    setScorekeeperMemberId(event.target.value)
+                  }
+                >
+                  <NativeSelectOption value="unassigned">
+                    Unassigned
+                  </NativeSelectOption>
+                  {scorekeepers.map((scorekeeper) => (
+                    <NativeSelectOption
+                      key={scorekeeper.id}
+                      value={scorekeeper.id}
+                    >
+                      {scorekeeper.name || scorekeeper.email}
+                    </NativeSelectOption>
+                  ))}
+                </NativeSelect>
+              </FieldContent>
+            </Field>
+
+            <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-sm leading-6 text-muted-foreground">
+              Current assignment:{" "}
+              <span className="font-medium text-foreground">
+                {game.scorekeeper_name ?? "Unassigned"}
+              </span>
+            </div>
+
+            {scorekeepers.length === 0 ? (
+              <FieldError>
+                No active scorekeepers are available yet. You can leave this
+                game unassigned.
+              </FieldError>
+            ) : null}
+
+            {assignmentLocked ? (
+              <FieldError>
+                Scorekeeper assignments lock after the game begins.
+              </FieldError>
+            ) : null}
+
+            {assignmentMutation.isError ? (
+              <FieldError>
+                {getApiErrorMessage(assignmentMutation.error)}
+              </FieldError>
+            ) : null}
+          </div>
+
+          <DialogFooter className="border-t border-border/60 px-6 py-4">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={assignmentLocked || assignmentMutation.isPending}
+            >
+              {assignmentMutation.isPending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Saving
+                </>
+              ) : (
+                <>
+                  <UserRoundCheck className="size-4" />
+                  Save assignment
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 function CreateScheduleModal({
   divisions,
   errorMessage,
   onClose,
   onSubmit,
   pending,
+  scorekeepers,
   seasons,
   teams,
   venues,
@@ -1131,10 +1354,12 @@ function CreateScheduleModal({
     divisionId: string
     homeTeamId: string
     leagueSeasonId: string
+    scorekeeperMemberId: string | null
     startsAt: string
     venueId: string
   }) => Promise<void>
   pending: boolean
+  scorekeepers: ScorekeeperOption[]
   seasons: LeagueSeason[]
   teams: Team[]
   venues: Venue[]
@@ -1163,6 +1388,8 @@ function CreateScheduleModal({
   const [homeTeamId, setHomeTeamId] = React.useState("")
   const [awayTeamId, setAwayTeamId] = React.useState("")
   const [venueId, setVenueId] = React.useState(availableVenues[0]?.id ?? "")
+  const [scorekeeperMemberId, setScorekeeperMemberId] =
+    React.useState("unassigned")
   const [startsAt, setStartsAt] = React.useState(
     toLocalDateTimeInputValue(new Date().toISOString()),
   )
@@ -1235,6 +1462,8 @@ function CreateScheduleModal({
       divisionId,
       homeTeamId,
       leagueSeasonId,
+      scorekeeperMemberId:
+        scorekeeperMemberId === "unassigned" ? null : scorekeeperMemberId,
       startsAt: new Date(startsAt).toISOString(),
       venueId,
     })
@@ -1378,6 +1607,34 @@ function CreateScheduleModal({
               </Field>
             </div>
 
+            <Field>
+              <FieldLabel htmlFor="schedule-scorekeeper">
+                Scorekeeper
+              </FieldLabel>
+              <FieldContent>
+                <NativeSelect
+                  className="w-full"
+                  id="schedule-scorekeeper"
+                  value={scorekeeperMemberId}
+                  onChange={(event) =>
+                    setScorekeeperMemberId(event.target.value)
+                  }
+                >
+                  <NativeSelectOption value="unassigned">
+                    Unassigned
+                  </NativeSelectOption>
+                  {scorekeepers.map((scorekeeper) => (
+                    <NativeSelectOption
+                      key={scorekeeper.id}
+                      value={scorekeeper.id}
+                    >
+                      {scorekeeper.name || scorekeeper.email}
+                    </NativeSelectOption>
+                  ))}
+                </NativeSelect>
+              </FieldContent>
+            </Field>
+
             {validationError || errorMessage ? (
               <FieldError>{validationError ?? errorMessage}</FieldError>
             ) : null}
@@ -1422,6 +1679,7 @@ export function OrganizationSchedulesView({
 }) {
   const createScheduleMutation = useCreateScheduleMutation(organization.id)
   const [createModalOpen, setCreateModalOpen] = React.useState(false)
+  const [gameToAssign, setGameToAssign] = React.useState<Schedule | null>(null)
   const [gameToDelete, setGameToDelete] = React.useState<Schedule | null>(null)
   const [gameToEdit, setGameToEdit] = React.useState<Schedule | null>(null)
   const [search, setSearch] = React.useState("")
@@ -1448,12 +1706,18 @@ export function OrganizationSchedulesView({
   )
   const schedules = schedulesQuery.data ?? []
   const canManageSchedule = canManageOrganizationSchedule(organization)
+  const scorekeepersQuery = useScorekeepersQuery(
+    organization.id,
+    canManageSchedule,
+  )
+  const scorekeepers = scorekeepersQuery.data ?? []
 
   async function handleCreateSchedule(payload: {
     awayTeamId: string
     divisionId: string
     homeTeamId: string
     leagueSeasonId: string
+    scorekeeperMemberId: string | null
     startsAt: string
     venueId: string
   }) {
@@ -1654,6 +1918,7 @@ export function OrganizationSchedulesView({
               <ScheduleBoard
                 canManageSchedule={canManageSchedule}
                 games={schedules}
+                onAssignScorekeeper={setGameToAssign}
                 onDeleteGame={setGameToDelete}
                 onEditGame={setGameToEdit}
               />
@@ -1671,6 +1936,7 @@ export function OrganizationSchedulesView({
               : null
           }
           pending={createScheduleMutation.isPending}
+          scorekeepers={scorekeepers}
           seasons={seasons}
           teams={teams}
           venues={venues}
@@ -1688,6 +1954,15 @@ export function OrganizationSchedulesView({
           teams={teams}
           venues={venues}
           onClose={() => setGameToEdit(null)}
+        />
+      ) : null}
+
+      {gameToAssign ? (
+        <AssignScorekeeperModal
+          game={gameToAssign}
+          organizationId={organization.id}
+          scorekeepers={scorekeepers}
+          onClose={() => setGameToAssign(null)}
         />
       ) : null}
 

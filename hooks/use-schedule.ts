@@ -7,6 +7,8 @@ import {
   type CreateSchedulePayload,
   type Schedule,
   type ScheduleListQuery,
+  type ScorekeeperOption,
+  type UpdateScorekeeperAssignmentPayload,
   type UpdateSchedulePayload,
 } from "@/services/schedule.service";
 
@@ -17,6 +19,8 @@ export const SCHEDULE_QUERY_KEYS = {
     ["schedules", "detail", organizationId, scheduleId] as const,
   list: (organizationId: string, query?: ScheduleListQuery) =>
     [...SCHEDULE_QUERY_KEYS.all(organizationId), query ?? {}] as const,
+  scorekeepers: (organizationId: string) =>
+    ["schedules", "scorekeepers", organizationId] as const,
 };
 
 export function useSchedulesQuery(
@@ -40,6 +44,18 @@ export function useScheduleQuery(organizationId?: string, scheduleId?: string) {
       organizationId ?? "unknown",
       scheduleId ?? "unknown",
     ),
+    retry: false,
+  });
+}
+
+export function useScorekeepersQuery(
+  organizationId?: string,
+  enabled = true,
+) {
+  return useQuery({
+    enabled: Boolean(organizationId && enabled),
+    queryFn: () => scheduleService.listScorekeepers(organizationId!),
+    queryKey: SCHEDULE_QUERY_KEYS.scorekeepers(organizationId ?? "unknown"),
     retry: false,
   });
 }
@@ -88,3 +104,23 @@ export function useDeleteScheduleMutation(organizationId: string) {
     },
   });
 }
+
+export function useUpdateScorekeeperAssignmentMutation(organizationId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    Schedule,
+    unknown,
+    { payload: UpdateScorekeeperAssignmentPayload; scheduleId: string }
+  >({
+    mutationFn: ({ payload, scheduleId }) =>
+      scheduleService.updateScorekeeper(organizationId, scheduleId, payload),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: SCHEDULE_QUERY_KEYS.all(organizationId),
+      });
+    },
+  });
+}
+
+export type { ScorekeeperOption };

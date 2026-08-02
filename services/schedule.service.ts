@@ -23,6 +23,8 @@ export type Schedule = {
   league_season_slug: string;
   organization_id: string;
   published_at: string | null;
+  scorekeeper_member_id: string | null;
+  scorekeeper_name: string | null;
   starts_at: string;
   status: string;
   updated_at: string;
@@ -38,6 +40,7 @@ export type CreateSchedulePayload = {
   homeTeamId: string;
   homeScore?: number;
   leagueSeasonId: string;
+  scorekeeperMemberId?: string | null;
   startsAt: string;
   status?:
     | "draft"
@@ -51,6 +54,16 @@ export type CreateSchedulePayload = {
 };
 
 export type UpdateSchedulePayload = Partial<CreateSchedulePayload>;
+
+export type ScorekeeperOption = {
+  email: string;
+  id: string;
+  name: string;
+};
+
+export type UpdateScorekeeperAssignmentPayload = {
+  scorekeeperMemberId: string | null;
+};
 
 export type ScheduleListQuery = {
   divisionId?: string;
@@ -71,6 +84,13 @@ export const scheduleService = {
       credentials: "include",
       query,
     }),
+  listScorekeepers: (organizationId: string) =>
+    apiService.get<ScorekeeperOption[]>(
+      API_ENDPOINTS.schedules.scorekeepers(organizationId),
+      {
+        credentials: "include",
+      },
+    ),
   get: (organizationId: string, scheduleId: string) =>
     apiService.get<Schedule>(
       `${API_ENDPOINTS.schedules.list(organizationId)}/${scheduleId}`,
@@ -92,6 +112,16 @@ export const scheduleService = {
   ) =>
     apiService.patch<Schedule, UpdateSchedulePayload>(
       `${API_ENDPOINTS.schedules.list(organizationId)}/${scheduleId}`,
+      data,
+      { credentials: "include" },
+    ),
+  updateScorekeeper: (
+    organizationId: string,
+    scheduleId: string,
+    data: UpdateScorekeeperAssignmentPayload,
+  ) =>
+    apiService.put<Schedule, UpdateScorekeeperAssignmentPayload>(
+      API_ENDPOINTS.schedules.scorekeeper(organizationId, scheduleId),
       data,
       { credentials: "include" },
     ),
