@@ -55,11 +55,6 @@ type OrganizationStandingsViewProps = {
 
 const NO_SEASON_VALUE = "no-seasons"
 
-function formatDifferential(value: number) {
-  if (value > 0) return `+${value}`
-  return String(value)
-}
-
 function formatWinPercentage(value: number) {
   return value.toFixed(3)
 }
@@ -97,9 +92,6 @@ function StandingsTable({ rows }: { rows: StandingsRow[] }) {
               <TableHead className="text-right">W</TableHead>
               <TableHead className="text-right">L</TableHead>
               <TableHead className="text-right">GP</TableHead>
-              <TableHead className="text-right">PF</TableHead>
-              <TableHead className="text-right">PA</TableHead>
-              <TableHead className="text-right">Diff</TableHead>
               <TableHead className="text-right">Win%</TableHead>
             </TableRow>
           </TableHeader>
@@ -122,11 +114,6 @@ function StandingsTable({ rows }: { rows: StandingsRow[] }) {
                 <TableCell className="text-right font-medium">{row.wins}</TableCell>
                 <TableCell className="text-right">{row.losses}</TableCell>
                 <TableCell className="text-right">{row.gamesPlayed}</TableCell>
-                <TableCell className="text-right">{row.pointsFor}</TableCell>
-                <TableCell className="text-right">{row.pointsAgainst}</TableCell>
-                <TableCell className="text-right">
-                  {formatDifferential(row.pointDifferential)}
-                </TableCell>
                 <TableCell className="text-right">
                   {formatWinPercentage(row.winPercentage)}
                 </TableCell>
