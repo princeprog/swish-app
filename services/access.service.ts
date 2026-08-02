@@ -14,7 +14,6 @@ export type StaffAssignment = {
 export type OrganizationMember = {
   created_at: string
   email: string
-  gameAssignments: StaffAssignment[]
   id: string
   name: string
   role: OrganizationRole
@@ -99,16 +98,6 @@ export const accessService = {
     apiService.post<{ success: boolean }, typeof data>(
       API_ENDPOINTS.organizationMembers.transferOwnership(organizationId),
       data,
-      { credentials: "include" },
-    ),
-  updateGameAssignments: (
-    organizationId: string,
-    memberId: string,
-    gameIds: string[],
-  ) =>
-    apiService.put<{ gameIds: string[]; success: boolean }, { gameIds: string[] }>(
-      API_ENDPOINTS.organizationMembers.gameAssignments(organizationId, memberId),
-      { gameIds },
       { credentials: "include" },
     ),
   updateMember: (

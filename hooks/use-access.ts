@@ -83,18 +83,6 @@ export function useUpdateTeamAssignmentsMutation(organizationId: string) {
   })
 }
 
-export function useUpdateGameAssignmentsMutation(organizationId: string) {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: ({ gameIds, memberId }: { gameIds: string[]; memberId: string }) =>
-      accessService.updateGameAssignments(organizationId, memberId, gameIds),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ACCESS_QUERY_KEYS.members(organizationId) })
-    },
-  })
-}
-
 export function useTransferOwnershipMutation(organizationId: string) {
   const queryClient = useQueryClient()
 

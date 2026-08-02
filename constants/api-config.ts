@@ -45,8 +45,6 @@ export const API_ENDPOINTS = {
       `/organizations/${organizationId}/invitations/${invitationId}`,
   },
   organizationMembers: {
-    gameAssignments: (organizationId: string, memberId: string) =>
-      `/organizations/${organizationId}/members/${memberId}/game-assignments`,
     list: (organizationId: string) =>
       `/organizations/${organizationId}/members`,
     teamAssignments: (organizationId: string, memberId: string) =>

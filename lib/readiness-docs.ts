@@ -16,9 +16,9 @@ export const mvpUserStories = [
   {
     role: "League Admin",
     story:
-      "As a league admin, I can create and publish scheduled games with teams, venue, date, time, and assigned scorer so the league schedule is clear.",
+      "As a league admin, I can create and publish scheduled games with teams, venue, date, time, and an optional primary scorekeeper so the league schedule is clear.",
     acceptance:
-      "Scheduled games appear in admin and public views with clear status labels.",
+      "Scheduled games appear in admin and public views with clear status labels, and scorekeeper assignment is managed from Schedules.",
   },
   {
     role: "Scorekeeper",
@@ -233,7 +233,7 @@ export const publicDataBoundary = [
   },
   {
     category: "Private",
-    data: "Role invites, invite tokens, admin notes, scorer assignment internals, correction audit details, user contact details, and private dispute notes.",
+    data: "Role invites, invite tokens, admin notes, scorekeeper assignment internals, correction audit details, user contact details, and private dispute notes.",
   },
   {
     category: "Conditional",
@@ -242,11 +242,11 @@ export const publicDataBoundary = [
 ];
 
 export const invitationFlow = [
-  "Only the active organization owner can invite, resend, revoke, assign staff scopes, suspend members, or transfer ownership.",
+  "Only the active organization owner can invite, resend, revoke, assign team-manager team scopes, suspend members, or transfer ownership.",
   "A user has one role per organization, but may hold a different role in another organization.",
   "Invitations are sent for admin, team manager, or scorekeeper roles only; ownership moves through explicit transfer.",
   "Invitation tokens are single-use, stored only as hashes, expire after seven days, and require the signed-in email to match.",
-  "Team managers are scoped to assigned teams and rosters. Scorekeepers are scoped to explicitly assigned games.",
+  "Team managers are scoped to assigned teams and rosters. Scorekeepers are scoped to games assigned from the Schedules page.",
   "After invitation acceptance, users land in the workspace that matches their role for that organization.",
 ];
 
@@ -254,6 +254,7 @@ export const scorekeeperWorkspaceFlow = [
   "Scorekeepers land at /organizations/[slug]/scorekeeper instead of the admin workspace.",
   "The scorekeeper shell has no sidebar, setup navigation, member controls, or schedule-management actions.",
   "The frontend loads only the signed-in user's organizations and assignment-scoped game endpoints.",
+  "Each game supports one optional primary scorekeeper; assignment changes are available only before the game begins.",
   "Assigned games are grouped by local browser time into needs-attention, today, upcoming, and completed sections.",
   "Assigned game detail pages open the live console at /organizations/[slug]/scorekeeper/games/[gameId].",
   "The live console uses the approved phone/tablet reference image in public/design-references/scorekeeper-console-reference.png as the hierarchy baseline.",
@@ -269,7 +270,7 @@ export const pilotDefinition = [
   "8 to 12 teams, manually entered by the league admin.",
   "At least 8 players per team, with jersey numbers.",
   "Manual schedule covering at least one round-robin stage.",
-  "At least two scorers assigned to games.",
+  "At least two scorekeepers assigned to games from the Schedules page.",
   "At least 10 finalized games used to calculate standings.",
   "Top 4 single-elimination playoff bracket.",
   "Public page shared with coaches, players, and viewers.",

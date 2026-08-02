@@ -34,13 +34,11 @@ import {
   useResendInvitationMutation,
   useRevokeInvitationMutation,
   useTransferOwnershipMutation,
-  useUpdateGameAssignmentsMutation,
   useUpdateMemberMutation,
   useUpdateTeamAssignmentsMutation,
 } from "@/hooks/use-access"
 import { getApiErrorMessage } from "@/hooks/use-auth"
 import { useOrganizationsQuery } from "@/hooks/use-organization"
-import { useSchedulesQuery } from "@/hooks/use-schedule"
 import { useTeamsQuery } from "@/hooks/use-team"
 import type { OrganizationMember } from "@/services/access.service"
 import type { OrganizationRole } from "@/services/organization.service"
@@ -167,13 +165,11 @@ function InviteDialog({
 }
 
 function MemberEditor({
-  games,
   member,
   onClose,
   organizationId,
   teams,
 }: {
-  games: { id: string; home_team_name: string; away_team_name: string; starts_at: string }[]
   member: OrganizationMember
   onClose: () => void
   organizationId: string
@@ -181,11 +177,9 @@ function MemberEditor({
 }) {
   const updateMember = useUpdateMemberMutation(organizationId)
   const updateTeams = useUpdateTeamAssignmentsMutation(organizationId)
-  const updateGames = useUpdateGameAssignmentsMutation(organizationId)
   const [role, setRole] = React.useState<OrganizationRole>(member.role)
   const [status, setStatus] = React.useState(member.status)
   const [teamIds, setTeamIds] = React.useState(member.teamAssignments.map((item) => item.id))
-  const [gameIds, setGameIds] = React.useState(member.gameAssignments.map((item) => item.id))
 
   async function save() {
     try {
@@ -194,9 +188,6 @@ function MemberEditor({
       }
       if (role === "team_manager") {
         await updateTeams.mutateAsync({ memberId: member.id, teamIds })
-      }
-      if (role === "scorekeeper") {
-        await updateGames.mutateAsync({ gameIds, memberId: member.id })
       }
       toast.success("Member access updated")
       onClose()
@@ -243,21 +234,10 @@ function MemberEditor({
               onChange={setTeamIds}
             />
           ) : null}
-          {role === "scorekeeper" ? (
-            <AssignmentList
-              items={games.map((game) => ({
-                id: game.id,
-                label: `${game.home_team_name} vs ${game.away_team_name}`,
-              }))}
-              selectedIds={gameIds}
-              title="Assigned games"
-              onChange={setGameIds}
-            />
-          ) : null}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button disabled={updateMember.isPending || updateTeams.isPending || updateGames.isPending} onClick={save}>Save changes</Button>
+          <Button disabled={updateMember.isPending || updateTeams.isPending} onClick={save}>Save changes</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -304,7 +284,6 @@ export function StaffAccessScreen({ slug }: { slug: string }) {
   const membersQuery = useOrganizationMembersQuery(organization?.id)
   const invitationsQuery = useOrganizationInvitationsQuery(organization?.id)
   const teamsQuery = useTeamsQuery(organization?.id, { pageSize: 50 })
-  const gamesQuery = useSchedulesQuery(organization?.id)
   const resendInvitation = useResendInvitationMutation(organization?.id ?? "")
   const revokeInvitation = useRevokeInvitationMutation(organization?.id ?? "")
   const transferOwnership = useTransferOwnershipMutation(organization?.id ?? "")
@@ -314,7 +293,7 @@ export function StaffAccessScreen({ slug }: { slug: string }) {
   const [confirmationSlug, setConfirmationSlug] = React.useState("")
   const [lastLink, setLastLink] = React.useState<string | null>(null)
 
-  if (organizationsQuery.isLoading || (organization && (membersQuery.isLoading || invitationsQuery.isLoading || teamsQuery.isLoading || gamesQuery.isLoading))) {
+  if (organizationsQuery.isLoading || (organization && (membersQuery.isLoading || invitationsQuery.isLoading || teamsQuery.isLoading))) {
     return <LoadingState />
   }
 
@@ -435,7 +414,7 @@ export function StaffAccessScreen({ slug }: { slug: string }) {
                             {member.role === "team_manager"
                               ? `${member.teamAssignments.length} teams`
                               : member.role === "scorekeeper"
-                                ? `${member.gameAssignments.length} games`
+                                ? "-"
                                 : "Full organization scope"}
                           </TableCell>
                           <TableCell className="text-right">
@@ -517,7 +496,6 @@ export function StaffAccessScreen({ slug }: { slug: string }) {
       {inviteOpen ? <InviteDialog organizationId={organization.id} onClose={() => setInviteOpen(false)} /> : null}
       {memberToEdit ? (
         <MemberEditor
-          games={(gamesQuery.data ?? []) as never}
           member={memberToEdit}
           organizationId={organization.id}
           teams={teamsQuery.data?.data ?? []}
