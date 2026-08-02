@@ -1589,27 +1589,28 @@ function AssignScorekeeperModal({
                 Scorekeeper
               </FieldLabel>
               <FieldContent>
-                <NativeSelect
-                  className="w-full"
+                <Select
                   disabled={assignmentLocked || assignmentMutation.isPending}
-                  id="schedule-scorekeeper-assignment"
                   value={scorekeeperMemberId}
-                  onChange={(event) =>
-                    setScorekeeperMemberId(event.target.value)
-                  }
+                  onValueChange={setScorekeeperMemberId}
                 >
-                  <NativeSelectOption value="unassigned">
-                    Unassigned
-                  </NativeSelectOption>
-                  {scorekeepers.map((scorekeeper) => (
-                    <NativeSelectOption
-                      key={scorekeeper.id}
-                      value={scorekeeper.id}
-                    >
-                      {scorekeeper.name || scorekeeper.email}
-                    </NativeSelectOption>
-                  ))}
-                </NativeSelect>
+                  <SelectTrigger
+                    id="schedule-scorekeeper-assignment"
+                    className="h-10 w-full"
+                  >
+                    <SelectValue placeholder="Choose a scorekeeper" />
+                  </SelectTrigger>
+                  <SelectContent position="popper" align="start">
+                    <SelectGroup>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
+                      {scorekeepers.map((scorekeeper) => (
+                        <SelectItem key={scorekeeper.id} value={scorekeeper.id}>
+                          {scorekeeper.name || scorekeeper.email}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
               </FieldContent>
             </Field>
 
