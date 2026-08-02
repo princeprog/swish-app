@@ -263,22 +263,15 @@ function getScheduleActionsMenuPosition({
     scheduleActionsMenuOffset -
     scheduleActionsViewportGutter
   const opensBelow = spaceBelow >= menuHeight || spaceBelow >= spaceAbove
-  const availableHeight = Math.max(
-    120,
-    opensBelow ? spaceBelow : spaceAbove,
-  )
+  const availableHeight = Math.max(48, opensBelow ? spaceBelow : spaceAbove)
   const top = opensBelow
     ? triggerRect.bottom + scheduleActionsMenuOffset
-    : Math.max(
-        scheduleActionsViewportGutter,
-        triggerRect.top -
-          scheduleActionsMenuOffset -
-          Math.min(menuHeight, availableHeight),
-      )
+    : triggerRect.top - scheduleActionsMenuOffset
 
   return {
     left,
     maxHeight: availableHeight,
+    transform: opensBelow ? "none" : "translateY(-100%)",
     top,
   }
 }
@@ -438,6 +431,7 @@ function ScheduleActionsPopover({
     left: number
     maxHeight: number
     top: number
+    transform: string
   } | null>(null)
 
   React.useEffect(() => {
@@ -526,6 +520,7 @@ function ScheduleActionsPopover({
                 left: menuPosition.left,
                 maxHeight: menuPosition.maxHeight,
                 top: menuPosition.top,
+                transform: menuPosition.transform,
               }}
             >
               <div data-schedule-actions={game.id}>
