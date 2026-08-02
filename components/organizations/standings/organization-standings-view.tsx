@@ -15,13 +15,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import {
   Empty,
   EmptyDescription,
@@ -71,21 +65,9 @@ function formatWinPercentage(value: number) {
 }
 
 function StandingsTable({ rows }: { rows: StandingsRow[] }) {
-  const header = (
-    <CardHeader>
-      <div className="space-y-1.5">
-        <CardTitle>Official standings</CardTitle>
-        <CardDescription>
-          Calculated from finalized games with recorded scores.
-        </CardDescription>
-      </div>
-    </CardHeader>
-  )
-
   if (rows.length === 0) {
     return (
       <Card className="border border-border/60 bg-card/95 shadow-none">
-        {header}
         <CardContent>
           <Empty className="border border-dashed bg-card/70">
             <EmptyHeader>
@@ -105,8 +87,7 @@ function StandingsTable({ rows }: { rows: StandingsRow[] }) {
 
   return (
     <Card className="border border-border/60 bg-card/95 shadow-none">
-      {header}
-      <CardContent>
+      <CardContent className="pt-6">
         <Table>
           <TableHeader>
             <TableRow>
