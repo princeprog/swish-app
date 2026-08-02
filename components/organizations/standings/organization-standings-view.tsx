@@ -41,10 +41,12 @@ import {
 } from "@/components/ui/table"
 import { getApiErrorMessage } from "@/hooks/use-auth"
 import { useStandingsQuery } from "@/hooks/use-standings"
+import { cn } from "@/lib/utils"
 import type { Division } from "@/services/division.service"
 import type { LeagueSeason } from "@/services/league-season.service"
 import type { Organization } from "@/services/organization.service"
 import type { StandingsRow } from "@/services/standings.service"
+import { StandingRankBadge } from "./standing-rank-badge"
 
 type OrganizationStandingsViewProps = {
   divisions: Division[]
@@ -54,6 +56,12 @@ type OrganizationStandingsViewProps = {
 }
 
 const NO_SEASON_VALUE = "no-seasons"
+
+const podiumLabels: Record<number, string> = {
+  1: "League leader",
+  2: "Second place",
+  3: "Third place",
+}
 
 function formatWinPercentage(value: number) {
   return value.toFixed(3)
@@ -81,31 +89,53 @@ function StandingsTable({ rows }: { rows: StandingsRow[] }) {
   }
 
   return (
-    <Card className="border border-border/60 bg-card/95 shadow-none">
-      <CardContent className="pt-6">
+    <Card className="border border-border/60 bg-card/95 py-0 shadow-none">
+      <CardContent className="p-0">
         <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-14">Rank</TableHead>
-              <TableHead>Team</TableHead>
-              <TableHead>Division</TableHead>
-              <TableHead className="text-right">W</TableHead>
-              <TableHead className="text-right">L</TableHead>
-              <TableHead className="text-right">GP</TableHead>
-              <TableHead className="text-right">Win%</TableHead>
+          <TableHeader className="bg-muted/40">
+            <TableRow className="border-border/60 hover:bg-transparent">
+              <TableHead className="w-20 px-4 text-muted-foreground">Rank</TableHead>
+              <TableHead className="h-12 text-muted-foreground">Team</TableHead>
+              <TableHead className="text-muted-foreground">Division</TableHead>
+              <TableHead className="text-right text-muted-foreground">W</TableHead>
+              <TableHead className="text-right text-muted-foreground">L</TableHead>
+              <TableHead className="text-right text-muted-foreground">GP</TableHead>
+              <TableHead className="pr-4 text-right text-muted-foreground">Win%</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {rows.map((row) => (
-              <TableRow key={row.teamId}>
-                <TableCell className="font-medium">{row.rank}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
+              <TableRow
+                key={row.teamId}
+                className={cn(
+                  "border-border/60 hover:bg-muted/30",
+                  row.rank <= 3 ? "h-20 bg-muted/15" : "h-16",
+                )}
+              >
+                <TableCell className="px-4">
+                  <StandingRankBadge rank={row.rank} />
+                </TableCell>
+                <TableCell className="whitespace-normal">
+                  <div className="flex items-center gap-3">
                     <span
                       className="size-2.5 rounded-full border"
                       style={{ backgroundColor: row.teamColor ?? "transparent" }}
                     />
-                    <span className="font-medium">{row.teamName}</span>
+                    <div className="flex flex-col gap-1">
+                      <span
+                        className={cn(
+                          "font-medium",
+                          row.rank <= 3 ? "text-base" : "text-sm",
+                        )}
+                      >
+                        {row.teamName}
+                      </span>
+                      {row.rank <= 3 ? (
+                        <span className="text-xs text-muted-foreground">
+                          {podiumLabels[row.rank]}
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
                 </TableCell>
                 <TableCell>
@@ -114,7 +144,7 @@ function StandingsTable({ rows }: { rows: StandingsRow[] }) {
                 <TableCell className="text-right font-medium">{row.wins}</TableCell>
                 <TableCell className="text-right">{row.losses}</TableCell>
                 <TableCell className="text-right">{row.gamesPlayed}</TableCell>
-                <TableCell className="text-right">
+                <TableCell className="pr-4 text-right">
                   {formatWinPercentage(row.winPercentage)}
                 </TableCell>
               </TableRow>
