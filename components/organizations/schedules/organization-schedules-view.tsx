@@ -194,6 +194,10 @@ function canAssignScorekeeper(status: string) {
   return ["draft", "scheduled", "postponed"].includes(status)
 }
 
+const scheduleActionsMenuWidth = 224
+const scheduleActionsMenuOffset = 8
+const scheduleActionsViewportGutter = 12
+
 function formatScheduleDateTime(value: string) {
   return new Date(value).toLocaleString([], {
     dateStyle: "medium",
@@ -224,6 +228,58 @@ function getFinalGameOutcome(game: Schedule) {
   return {
     detail: `${winner} won the game.`,
     winner,
+  }
+}
+
+function getScheduleActionsMenuPosition({
+  menuRect,
+  triggerRect,
+}: {
+  menuRect?: DOMRect
+  triggerRect: DOMRect
+}) {
+  const viewportWidth = window.innerWidth
+  const viewportHeight = window.innerHeight
+  const menuWidth = menuRect?.width ?? scheduleActionsMenuWidth
+  const menuHeight = menuRect?.height ?? 220
+  const maxLeft = Math.max(
+    scheduleActionsViewportGutter,
+    viewportWidth - menuWidth - scheduleActionsViewportGutter,
+  )
+  const left = Math.min(
+    Math.max(
+      triggerRect.right - menuWidth,
+      scheduleActionsViewportGutter,
+    ),
+    maxLeft,
+  )
+  const spaceBelow =
+    viewportHeight -
+    triggerRect.bottom -
+    scheduleActionsMenuOffset -
+    scheduleActionsViewportGutter
+  const spaceAbove =
+    triggerRect.top -
+    scheduleActionsMenuOffset -
+    scheduleActionsViewportGutter
+  const opensBelow = spaceBelow >= menuHeight || spaceBelow >= spaceAbove
+  const availableHeight = Math.max(
+    120,
+    opensBelow ? spaceBelow : spaceAbove,
+  )
+  const top = opensBelow
+    ? triggerRect.bottom + scheduleActionsMenuOffset
+    : Math.max(
+        scheduleActionsViewportGutter,
+        triggerRect.top -
+          scheduleActionsMenuOffset -
+          Math.min(menuHeight, availableHeight),
+      )
+
+  return {
+    left,
+    maxHeight: availableHeight,
+    top,
   }
 }
 
@@ -377,9 +433,11 @@ function ScheduleActionsPopover({
 }) {
   const [open, setOpen] = React.useState(false)
   const buttonRef = React.useRef<HTMLButtonElement | null>(null)
+  const menuRef = React.useRef<HTMLDivElement | null>(null)
   const [menuPosition, setMenuPosition] = React.useState<{
-    top: number
     left: number
+    maxHeight: number
+    top: number
   } | null>(null)
 
   React.useEffect(() => {
@@ -395,13 +453,16 @@ function ScheduleActionsPopover({
         return
       }
 
-      setMenuPosition({
-        top: rect.bottom + 8,
-        left: rect.right - 176,
-      })
+      setMenuPosition(
+        getScheduleActionsMenuPosition({
+          menuRect: menuRef.current?.getBoundingClientRect(),
+          triggerRect: rect,
+        }),
+      )
     }
 
     updatePosition()
+    const animationFrame = window.requestAnimationFrame(updatePosition)
 
     function handlePointerDown(event: MouseEvent) {
       const target = event.target as HTMLElement | null
@@ -423,6 +484,7 @@ function ScheduleActionsPopover({
     window.addEventListener("scroll", updatePosition, true)
 
     return () => {
+      window.cancelAnimationFrame(animationFrame)
       document.removeEventListener("mousedown", handlePointerDown)
       document.removeEventListener("keydown", handleEscape)
       window.removeEventListener("resize", updatePosition)
@@ -457,10 +519,12 @@ function ScheduleActionsPopover({
       {open && menuPosition
         ? createPortal(
             <div
-              className="fixed z-50 min-w-56 rounded-xl border border-border/70 bg-popover p-1.5 shadow-xl"
+              className="fixed z-50 w-56 overflow-y-auto rounded-xl border border-border/70 bg-popover p-1.5 shadow-xl"
+              ref={menuRef}
               role="menu"
               style={{
-                left: Math.max(menuPosition.left, 12),
+                left: menuPosition.left,
+                maxHeight: menuPosition.maxHeight,
                 top: menuPosition.top,
               }}
             >
