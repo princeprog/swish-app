@@ -22,7 +22,6 @@ import {
   Shield,
   Trash2,
   UserRoundCheck,
-  X,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -76,6 +75,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { getApiErrorMessage } from "@/hooks/use-auth"
 import {
@@ -1112,211 +1119,290 @@ function EditScheduleModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4 py-8 backdrop-blur-sm">
-      <Card className="w-full max-w-3xl border border-border/70 bg-card shadow-2xl">
-        <CardHeader className="gap-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-1">
-              <CardTitle className="text-xl">Edit game</CardTitle>
-              <CardDescription>
-                Update the official schedule record for this matchup.
-              </CardDescription>
-            </div>
-            <Button
-              aria-label="Close edit game modal"
-              size="icon-sm"
-              variant="ghost"
-              onClick={onClose}
-            >
-              <X className="size-4" />
-            </Button>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-h-[calc(100vh-2rem)] gap-0 overflow-hidden p-0 sm:max-w-3xl">
+        <DialogHeader className="gap-1.5 border-b border-border/60 px-6 py-5 pr-14">
+          <div className="mb-2 flex size-10 items-center justify-center rounded-md border border-border/70 bg-muted">
+            <PencilLine className="size-5 text-muted-foreground" />
           </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <form className="space-y-5" onSubmit={handleSubmit}>
-            <div className="grid gap-5 md:grid-cols-2">
-              <Field>
-                <FieldLabel htmlFor="edit-schedule-season">Season</FieldLabel>
-                <FieldContent>
-                  <NativeSelect
-                    id="edit-schedule-season"
-                    value={leagueSeasonId}
-                    onChange={(event) => setLeagueSeasonId(event.target.value)}
-                  >
-                    <NativeSelectOption value="">
-                      Select a season
-                    </NativeSelectOption>
-                    {seasons.map((season) => (
-                      <NativeSelectOption key={season.id} value={season.id}>
-                        {season.name}
-                      </NativeSelectOption>
-                    ))}
-                  </NativeSelect>
-                </FieldContent>
-              </Field>
+          <DialogTitle className="text-lg">Edit game</DialogTitle>
+          <DialogDescription>
+            Update the schedule details for {game.home_team_name} vs{" "}
+            {game.away_team_name}.
+          </DialogDescription>
+        </DialogHeader>
 
-              <Field>
-                <FieldLabel htmlFor="edit-schedule-division">
-                  Division
-                </FieldLabel>
-                <FieldContent>
-                  <NativeSelect
-                    id="edit-schedule-division"
-                    value={divisionId}
-                    onChange={(event) => setDivisionId(event.target.value)}
-                  >
-                    <NativeSelectOption value="">
-                      Select a division
-                    </NativeSelectOption>
-                    {availableDivisions.map((division) => (
-                      <NativeSelectOption key={division.id} value={division.id}>
-                        {division.name}
-                      </NativeSelectOption>
-                    ))}
-                  </NativeSelect>
-                </FieldContent>
-              </Field>
+        <form className="flex min-h-0 flex-col" onSubmit={handleSubmit}>
+          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-5">
+            <section className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium">Match details</h3>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  Choose where this game belongs in the schedule.
+                </p>
+              </div>
 
-              <Field>
-                <FieldLabel htmlFor="edit-schedule-home-team">
-                  Home team
-                </FieldLabel>
-                <FieldContent>
-                  <NativeSelect
-                    id="edit-schedule-home-team"
-                    value={homeTeamId}
-                    onChange={(event) => setHomeTeamId(event.target.value)}
-                  >
-                    <NativeSelectOption value="">
-                      Select a home team
-                    </NativeSelectOption>
-                    {availableTeams.map((team) => (
-                      <NativeSelectOption key={team.id} value={team.id}>
-                        {team.name}
-                      </NativeSelectOption>
-                    ))}
-                  </NativeSelect>
-                </FieldContent>
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="edit-schedule-away-team">
-                  Away team
-                </FieldLabel>
-                <FieldContent>
-                  <NativeSelect
-                    id="edit-schedule-away-team"
-                    value={awayTeamId}
-                    onChange={(event) => setAwayTeamId(event.target.value)}
-                  >
-                    <NativeSelectOption value="">
-                      Select an away team
-                    </NativeSelectOption>
-                    {availableTeams
-                      .filter((team) => team.id !== homeTeamId)
-                      .map((team) => (
-                        <NativeSelectOption key={team.id} value={team.id}>
-                          {team.name}
-                        </NativeSelectOption>
-                      ))}
-                  </NativeSelect>
-                </FieldContent>
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="edit-schedule-venue">Venue</FieldLabel>
-                <FieldContent>
-                  <NativeSelect
-                    id="edit-schedule-venue"
-                    value={venueId}
-                    onChange={(event) => setVenueId(event.target.value)}
-                  >
-                    <NativeSelectOption value="">
-                      Select a venue
-                    </NativeSelectOption>
-                    {availableVenues.map((venue) => (
-                      <NativeSelectOption key={venue.id} value={venue.id}>
-                        {venue.name}
-                      </NativeSelectOption>
-                    ))}
-                  </NativeSelect>
-                </FieldContent>
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="edit-schedule-status">Status</FieldLabel>
-                <FieldContent>
-                  <NativeSelect
-                    id="edit-schedule-status"
-                    value={status}
-                    onChange={(event) =>
-                      setStatus(event.target.value as ScheduleStatus)
-                    }
-                  >
-                    {[
-                      "draft",
-                      "scheduled",
-                      "live",
-                      "final",
-                      "reopened",
-                      "postponed",
-                      "cancelled",
-                    ].map((value) => (
-                      <NativeSelectOption key={value} value={value}>
-                        {toTitleCase(value)}
-                      </NativeSelectOption>
-                    ))}
-                  </NativeSelect>
-                </FieldContent>
-              </Field>
-            </div>
-
-            <Field>
-              <FieldLabel htmlFor="edit-schedule-starts-at">
-                Game date and time
-              </FieldLabel>
-              <FieldContent>
-                <Input
-                  id="edit-schedule-starts-at"
-                  type="datetime-local"
-                  value={startsAt}
-                  onChange={(event) => setStartsAt(event.target.value)}
-                />
-              </FieldContent>
-            </Field>
-
-            {status === "final" ? (
-              <div className="grid gap-5 md:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-2">
                 <Field>
-                  <FieldLabel htmlFor="edit-schedule-home-score">
-                    Home score
+                  <FieldLabel htmlFor="edit-schedule-season">
+                    Season
                   </FieldLabel>
                   <FieldContent>
-                    <Input
-                      id="edit-schedule-home-score"
-                      min={0}
-                      type="number"
-                      value={homeScore}
-                      onChange={(event) => setHomeScore(event.target.value)}
-                    />
+                    <Select
+                      value={leagueSeasonId}
+                      onValueChange={setLeagueSeasonId}
+                    >
+                      <SelectTrigger
+                        id="edit-schedule-season"
+                        className="h-10 w-full"
+                      >
+                        <SelectValue placeholder="Select a season" />
+                      </SelectTrigger>
+                      <SelectContent position="popper" align="start">
+                        <SelectGroup>
+                          {seasons.map((season) => (
+                            <SelectItem key={season.id} value={season.id}>
+                              {season.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
                   </FieldContent>
                 </Field>
+
                 <Field>
-                  <FieldLabel htmlFor="edit-schedule-away-score">
-                    Away score
+                  <FieldLabel htmlFor="edit-schedule-division">
+                    Division
+                  </FieldLabel>
+                  <FieldContent>
+                    <Select
+                      value={divisionId}
+                      onValueChange={setDivisionId}
+                      disabled={availableDivisions.length === 0}
+                    >
+                      <SelectTrigger
+                        id="edit-schedule-division"
+                        className="h-10 w-full"
+                      >
+                        <SelectValue placeholder="Select a division" />
+                      </SelectTrigger>
+                      <SelectContent position="popper" align="start">
+                        <SelectGroup>
+                          {availableDivisions.map((division) => (
+                            <SelectItem key={division.id} value={division.id}>
+                              {division.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </FieldContent>
+                </Field>
+              </div>
+            </section>
+
+            <section className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium">Teams and venue</h3>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  Select the matchup and where the game will be played.
+                </p>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor="edit-schedule-home-team">
+                    Home team
+                  </FieldLabel>
+                  <FieldContent>
+                    <Select
+                      value={homeTeamId}
+                      onValueChange={setHomeTeamId}
+                      disabled={availableTeams.length === 0}
+                    >
+                      <SelectTrigger
+                        id="edit-schedule-home-team"
+                        className="h-10 w-full"
+                      >
+                        <SelectValue placeholder="Select a home team" />
+                      </SelectTrigger>
+                      <SelectContent position="popper" align="start">
+                        <SelectGroup>
+                          {availableTeams.map((team) => (
+                            <SelectItem key={team.id} value={team.id}>
+                              {team.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </FieldContent>
+                </Field>
+
+                <Field>
+                  <FieldLabel htmlFor="edit-schedule-away-team">
+                    Away team
+                  </FieldLabel>
+                  <FieldContent>
+                    <Select
+                      value={awayTeamId}
+                      onValueChange={setAwayTeamId}
+                      disabled={availableTeams.length < 2}
+                    >
+                      <SelectTrigger
+                        id="edit-schedule-away-team"
+                        className="h-10 w-full"
+                      >
+                        <SelectValue placeholder="Select an away team" />
+                      </SelectTrigger>
+                      <SelectContent position="popper" align="start">
+                        <SelectGroup>
+                          {availableTeams
+                            .filter((team) => team.id !== homeTeamId)
+                            .map((team) => (
+                              <SelectItem key={team.id} value={team.id}>
+                                {team.name}
+                              </SelectItem>
+                            ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </FieldContent>
+                </Field>
+
+                <Field>
+                  <FieldLabel htmlFor="edit-schedule-venue">Venue</FieldLabel>
+                  <FieldContent>
+                    <Select
+                      value={venueId}
+                      onValueChange={setVenueId}
+                      disabled={availableVenues.length === 0}
+                    >
+                      <SelectTrigger
+                        id="edit-schedule-venue"
+                        className="h-10 w-full"
+                      >
+                        <SelectValue placeholder="Select a venue" />
+                      </SelectTrigger>
+                      <SelectContent position="popper" align="start">
+                        <SelectGroup>
+                          {availableVenues.map((venue) => (
+                            <SelectItem key={venue.id} value={venue.id}>
+                              {venue.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </FieldContent>
+                </Field>
+
+                <Field>
+                  <FieldLabel htmlFor="edit-schedule-starts-at">
+                    Game date and time
                   </FieldLabel>
                   <FieldContent>
                     <Input
-                      id="edit-schedule-away-score"
-                      min={0}
-                      type="number"
-                      value={awayScore}
-                      onChange={(event) => setAwayScore(event.target.value)}
+                      id="edit-schedule-starts-at"
+                      className="h-10"
+                      type="datetime-local"
+                      value={startsAt}
+                      onChange={(event) => setStartsAt(event.target.value)}
                     />
                   </FieldContent>
                 </Field>
               </div>
-            ) : null}
+            </section>
+
+            <section className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium">Game status</h3>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  Update the game status and enter a score only when marking the
+                  game final.
+                </p>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor="edit-schedule-status">
+                    Status
+                  </FieldLabel>
+                  <FieldContent>
+                    <Select
+                      value={status}
+                      onValueChange={(value) =>
+                        setStatus(value as ScheduleStatus)
+                      }
+                    >
+                      <SelectTrigger
+                        id="edit-schedule-status"
+                        className="h-10 w-full"
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent position="popper" align="start">
+                        <SelectGroup>
+                          {[
+                            "draft",
+                            "scheduled",
+                            "live",
+                            "final",
+                            "reopened",
+                            "postponed",
+                            "cancelled",
+                          ].map((value) => (
+                            <SelectItem key={value} value={value}>
+                              {toTitleCase(value)}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </FieldContent>
+                </Field>
+
+                {status === "final" ? (
+                  <>
+                    <Field>
+                      <FieldLabel htmlFor="edit-schedule-home-score">
+                        Home score
+                      </FieldLabel>
+                      <FieldContent>
+                        <Input
+                          id="edit-schedule-home-score"
+                          className="h-10"
+                          min={0}
+                          type="number"
+                          value={homeScore}
+                          onChange={(event) =>
+                            setHomeScore(event.target.value)
+                          }
+                        />
+                      </FieldContent>
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="edit-schedule-away-score">
+                        Away score
+                      </FieldLabel>
+                      <FieldContent>
+                        <Input
+                          id="edit-schedule-away-score"
+                          className="h-10"
+                          min={0}
+                          type="number"
+                          value={awayScore}
+                          onChange={(event) =>
+                            setAwayScore(event.target.value)
+                          }
+                        />
+                      </FieldContent>
+                    </Field>
+                  </>
+                ) : null}
+              </div>
+            </section>
 
             {validationError || updateScheduleMutation.isError ? (
               <FieldError>
@@ -1324,29 +1410,29 @@ function EditScheduleModal({
                   getApiErrorMessage(updateScheduleMutation.error)}
               </FieldError>
             ) : null}
+          </div>
 
-            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={updateScheduleMutation.isPending}>
-                {updateScheduleMutation.isPending ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" />
-                    Saving
-                  </>
-                ) : (
-                  <>
-                    <PencilLine className="size-4" />
-                    Save changes
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+          <DialogFooter className="border-t border-border/60 px-6 py-4">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={updateScheduleMutation.isPending}>
+              {updateScheduleMutation.isPending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Saving
+                </>
+              ) : (
+                <>
+                  <PencilLine className="size-4" />
+                  Save changes
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
 
