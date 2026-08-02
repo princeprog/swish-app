@@ -80,18 +80,16 @@ function SummaryCard({
 }) {
   return (
     <Card className="border border-border/60 bg-card/95 shadow-none">
-      <CardHeader className="flex-row items-start justify-between space-y-0">
+      <CardHeader className="flex-row items-start justify-between gap-3 space-y-0 px-4 py-3">
         <div className="space-y-1">
-          <CardDescription>{description}</CardDescription>
-          <CardTitle className="text-2xl">{value}</CardTitle>
+          <CardDescription className="text-xs">{description}</CardDescription>
+          <CardTitle className="text-xl">{value}</CardTitle>
+          <p className="text-xs text-muted-foreground">{title}</p>
         </div>
-        <div className="rounded-md border bg-background p-2 text-muted-foreground">
+        <div className="rounded-md border bg-background p-1.5 text-muted-foreground">
           {icon}
         </div>
       </CardHeader>
-      <CardContent>
-        <p className="text-xs text-muted-foreground">{title}</p>
-      </CardContent>
     </Card>
   )
 }
@@ -278,7 +276,7 @@ export function OrganizationStandingsView({
             </div>
           </section>
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <SummaryCard
               description="Teams"
               icon={<ShieldCheck className="size-4" />}
