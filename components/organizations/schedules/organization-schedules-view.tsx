@@ -10,11 +10,14 @@ import {
   ChevronLeft,
   ChevronRight,
   Ellipsis,
+  FileText,
   Globe,
+  History,
   MapPin,
   Loader2,
   PencilLine,
   Plus,
+  RotateCcw,
   Search,
   Shield,
   Trash2,
@@ -191,6 +194,39 @@ function canAssignScorekeeper(status: string) {
   return ["draft", "scheduled", "postponed"].includes(status)
 }
 
+function formatScheduleDateTime(value: string) {
+  return new Date(value).toLocaleString([], {
+    dateStyle: "medium",
+    timeStyle: "short",
+  })
+}
+
+function getFinalGameOutcome(game: Schedule) {
+  if (game.home_score === null || game.away_score === null) {
+    return {
+      detail: "The official score is not available.",
+      winner: null,
+    }
+  }
+
+  if (game.home_score === game.away_score) {
+    return {
+      detail: "This game ended in a tie.",
+      winner: null,
+    }
+  }
+
+  const winner =
+    game.home_score > game.away_score
+      ? game.home_team_name
+      : game.away_team_name
+
+  return {
+    detail: `${winner} won the game.`,
+    winner,
+  }
+}
+
 function ScheduleDateTimePicker({
   id,
   value,
@@ -330,12 +366,14 @@ function ScheduleActionsPopover({
   onAssignScorekeeper,
   onDelete,
   onEdit,
+  onViewSummary,
 }: {
   canManageSchedule: boolean
   game: Schedule
   onAssignScorekeeper: () => void
   onDelete: () => void
   onEdit: () => void
+  onViewSummary: () => void
 }) {
   const [open, setOpen] = React.useState(false)
   const buttonRef = React.useRef<HTMLButtonElement | null>(null)
@@ -397,6 +435,7 @@ function ScheduleActionsPopover({
   }
 
   const assignmentLocked = !canAssignScorekeeper(game.status)
+  const isFinalGame = game.status === "final"
 
   return (
     <div
@@ -418,7 +457,7 @@ function ScheduleActionsPopover({
       {open && menuPosition
         ? createPortal(
             <div
-              className="fixed z-50 min-w-44 rounded-xl border border-border/70 bg-popover p-1.5 shadow-xl"
+              className="fixed z-50 min-w-56 rounded-xl border border-border/70 bg-popover p-1.5 shadow-xl"
               role="menu"
               style={{
                 left: Math.max(menuPosition.left, 12),
@@ -426,55 +465,111 @@ function ScheduleActionsPopover({
               }}
             >
               <div data-schedule-actions={game.id}>
-                <Button
-                  className="w-full justify-start"
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    setOpen(false)
-                    onEdit()
-                  }}
-                >
-                  <PencilLine className="size-4" />
-                  Edit game
-                </Button>
-                <Button
-                  className="w-full justify-start"
-                  disabled={assignmentLocked}
-                  size="sm"
-                  title={
-                    assignmentLocked
-                      ? "Scorekeeper assignments lock after the game begins."
-                      : undefined
-                  }
-                  variant="ghost"
-                  onClick={() => {
-                    setOpen(false)
-                    onAssignScorekeeper()
-                  }}
-                >
-                  <UserRoundCheck className="size-4" />
-                  {game.scorekeeper_member_id
-                    ? "Change scorekeeper"
-                    : "Assign scorekeeper"}
-                </Button>
-                {assignmentLocked ? (
-                  <p className="px-3 py-1.5 text-xs leading-5 text-muted-foreground">
-                    Assignments lock after the game begins.
-                  </p>
-                ) : null}
-                <Button
-                  className="w-full justify-start text-destructive hover:text-destructive"
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    setOpen(false)
-                    onDelete()
-                  }}
-                >
-                  <Trash2 className="size-4" />
-                  Delete game
-                </Button>
+                {isFinalGame ? (
+                  <>
+                    <Button
+                      className="w-full justify-start"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setOpen(false)
+                        onViewSummary()
+                      }}
+                    >
+                      <FileText className="size-4" />
+                      View game summary
+                    </Button>
+                    <Button
+                      aria-disabled="true"
+                      className="w-full justify-start opacity-60"
+                      disabled
+                      size="sm"
+                      title="Scoring history is not available yet."
+                      variant="ghost"
+                    >
+                      <History className="size-4" />
+                      View scoring history
+                    </Button>
+                    <Button
+                      aria-disabled="true"
+                      className="w-full justify-start opacity-60"
+                      disabled
+                      size="sm"
+                      title="Public game pages are not available yet."
+                      variant="ghost"
+                    >
+                      <Globe className="size-4" />
+                      View public page
+                    </Button>
+                    <Button
+                      aria-disabled="true"
+                      className="w-full justify-start opacity-60"
+                      disabled
+                      size="sm"
+                      title="Reopening finalized games is not available yet."
+                      variant="ghost"
+                    >
+                      <RotateCcw className="size-4" />
+                      Reopen game
+                    </Button>
+                    <div className="space-y-1 px-3 py-2 text-xs leading-5 text-muted-foreground">
+                      <p>Coming soon actions are not available yet.</p>
+                      <p>Final games are protected as official records.</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      className="w-full justify-start"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setOpen(false)
+                        onEdit()
+                      }}
+                    >
+                      <PencilLine className="size-4" />
+                      Edit game
+                    </Button>
+                    <Button
+                      className="w-full justify-start"
+                      disabled={assignmentLocked}
+                      size="sm"
+                      title={
+                        assignmentLocked
+                          ? "Scorekeeper assignments lock after the game begins."
+                          : undefined
+                      }
+                      variant="ghost"
+                      onClick={() => {
+                        setOpen(false)
+                        onAssignScorekeeper()
+                      }}
+                    >
+                      <UserRoundCheck className="size-4" />
+                      {game.scorekeeper_member_id
+                        ? "Change scorekeeper"
+                        : "Assign scorekeeper"}
+                    </Button>
+                    {assignmentLocked ? (
+                      <p className="px-3 py-1.5 text-xs leading-5 text-muted-foreground">
+                        Assignments lock after the game begins.
+                      </p>
+                    ) : null}
+                    <Button
+                      className="w-full justify-start text-destructive hover:text-destructive"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setOpen(false)
+                        onDelete()
+                      }}
+                    >
+                      <Trash2 className="size-4" />
+                      Delete game
+                    </Button>
+                  </>
+                )}
               </div>
             </div>,
             document.body,
@@ -513,12 +608,14 @@ function ScheduleBoard({
   onAssignScorekeeper,
   onDeleteGame,
   onEditGame,
+  onViewFinalSummary,
 }: {
   canManageSchedule: boolean
   games: Schedule[]
   onAssignScorekeeper: (game: Schedule) => void
   onDeleteGame: (game: Schedule) => void
   onEditGame: (game: Schedule) => void
+  onViewFinalSummary: (game: Schedule) => void
 }) {
   if (games.length === 0) {
     return (
@@ -689,6 +786,7 @@ function ScheduleBoard({
                           }
                           onDelete={() => onDeleteGame(game)}
                           onEdit={() => onEditGame(game)}
+                          onViewSummary={() => onViewFinalSummary(game)}
                         />
                       </div>
                     </div>
@@ -700,6 +798,111 @@ function ScheduleBoard({
         </div>
       </CardContent>
     </Card>
+  )
+}
+
+function FinalGameSummaryModal({
+  game,
+  onClose,
+}: {
+  game: Schedule
+  onClose: () => void
+}) {
+  const outcome = getFinalGameOutcome(game)
+  const hasOfficialScore = game.home_score !== null && game.away_score !== null
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-xl">
+        <DialogHeader className="gap-1.5 border-b border-border/60 px-6 py-5 pr-14">
+          <div className="mb-2 flex size-10 items-center justify-center rounded-md border border-border/70 bg-muted">
+            <CheckCircle2 className="size-5 text-emerald-600" />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <DialogTitle className="text-lg">Game summary</DialogTitle>
+            <Badge className={scheduleStatusTone("final")} variant="outline">
+              Final
+            </Badge>
+          </div>
+          <DialogDescription>
+            Official result for {game.home_team_name} vs {game.away_team_name}.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-5 px-6 py-5">
+          <div className="rounded-lg border border-border/60 bg-muted/30 p-4">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+              <div className="min-w-0">
+                <div className="truncate text-sm font-medium">
+                  {game.home_team_name}
+                </div>
+                <div className="mt-2 truncate text-sm font-medium">
+                  {game.away_team_name}
+                </div>
+              </div>
+              <div className="text-right text-3xl font-semibold tabular-nums">
+                {hasOfficialScore ? (
+                  <>
+                    <div>{game.home_score}</div>
+                    <div className="mt-2">{game.away_score}</div>
+                  </>
+                ) : (
+                  <span className="text-base text-muted-foreground">--</span>
+                )}
+              </div>
+            </div>
+            <p className="mt-4 text-sm leading-6 text-muted-foreground">
+              {outcome.detail}
+            </p>
+          </div>
+
+          <div className="grid gap-3 text-sm sm:grid-cols-2">
+            <div className="rounded-lg border border-border/60 p-3">
+              <div className="text-xs font-medium uppercase text-muted-foreground">
+                Season
+              </div>
+              <div className="mt-1 font-medium">{game.league_season_name}</div>
+            </div>
+            <div className="rounded-lg border border-border/60 p-3">
+              <div className="text-xs font-medium uppercase text-muted-foreground">
+                Division
+              </div>
+              <div className="mt-1 font-medium">{game.division_name}</div>
+            </div>
+            <div className="rounded-lg border border-border/60 p-3">
+              <div className="text-xs font-medium uppercase text-muted-foreground">
+                Venue
+              </div>
+              <div className="mt-1 font-medium">{game.venue_name}</div>
+            </div>
+            <div className="rounded-lg border border-border/60 p-3">
+              <div className="text-xs font-medium uppercase text-muted-foreground">
+                Scheduled
+              </div>
+              <div className="mt-1 font-medium">
+                {formatScheduleDateTime(game.starts_at)}
+              </div>
+            </div>
+            <div className="rounded-lg border border-border/60 p-3 sm:col-span-2">
+              <div className="text-xs font-medium uppercase text-muted-foreground">
+                Finalized
+              </div>
+              <div className="mt-1 font-medium">
+                {game.finalized_at
+                  ? formatScheduleDateTime(game.finalized_at)
+                  : "Finalization time is not available."}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter className="border-t border-border/60 px-6 py-4">
+          <Button type="button" onClick={onClose}>
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -1666,6 +1869,8 @@ export function OrganizationSchedulesView({
   const [gameToAssign, setGameToAssign] = React.useState<Schedule | null>(null)
   const [gameToDelete, setGameToDelete] = React.useState<Schedule | null>(null)
   const [gameToEdit, setGameToEdit] = React.useState<Schedule | null>(null)
+  const [gameToSummarize, setGameToSummarize] =
+    React.useState<Schedule | null>(null)
   const [search, setSearch] = React.useState("")
   const [divisionFilter, setDivisionFilter] = React.useState("all")
   const [statusFilter, setStatusFilter] = React.useState("all")
@@ -1905,6 +2110,7 @@ export function OrganizationSchedulesView({
                 onAssignScorekeeper={setGameToAssign}
                 onDeleteGame={setGameToDelete}
                 onEditGame={setGameToEdit}
+                onViewFinalSummary={setGameToSummarize}
               />
             </div>
           </section>
@@ -1955,6 +2161,13 @@ export function OrganizationSchedulesView({
           game={gameToDelete}
           organizationId={organization.id}
           onClose={() => setGameToDelete(null)}
+        />
+      ) : null}
+
+      {gameToSummarize ? (
+        <FinalGameSummaryModal
+          game={gameToSummarize}
+          onClose={() => setGameToSummarize(null)}
         />
       ) : null}
     </SidebarProvider>
