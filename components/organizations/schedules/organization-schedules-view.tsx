@@ -621,7 +621,7 @@ function ScheduleBoard({
                       key={game.id}
                       className={[
                         "grid gap-3 bg-card px-4 py-4",
-                        "md:grid-cols-[110px_minmax(0,1.1fr)_150px_170px_170px_100px_44px]",
+                        "md:grid-cols-[130px_minmax(0,1.2fr)_180px_190px_120px_44px]",
                         index !== group.games.length - 1
                           ? "border-b border-border/60"
                           : "",
@@ -668,22 +668,6 @@ function ScheduleBoard({
                         <div className="flex items-center gap-1">
                           <MapPin className="size-3.5 text-muted-foreground" />
                           {game.venue_name}
-                        </div>
-                      </div>
-
-                      <div className="space-y-1 text-sm">
-                        <div className="flex items-center gap-1">
-                          <UserRoundCheck className="size-3.5 text-muted-foreground" />
-                          {game.scorekeeper_name ? (
-                            <span>{game.scorekeeper_name}</span>
-                          ) : (
-                            <Badge
-                              className="border-amber-500/25 bg-amber-500/10 text-amber-300"
-                              variant="outline"
-                            >
-                              Unassigned
-                            </Badge>
-                          )}
                         </div>
                       </div>
 
