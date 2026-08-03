@@ -13,6 +13,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import { useOrganizationsQuery } from "@/hooks/use-organization"
 import type { OrganizationAccess } from "@/services/organization.service"
 import {
   Building2Icon,
@@ -35,11 +36,12 @@ export function AppSidebar({
   organization,
   ...props
 }: AppSidebarProps) {
+  const organizationsQuery = useOrganizationsQuery()
   const workspaceBasePath = organization
     ? `/organizations/${organization.slug}`
     : "/organizations"
 
-  const workspaceItems = organization
+  const fallbackWorkspaceItems = organization
     ? [
         {
           name: organization.name,
@@ -56,6 +58,15 @@ export function AppSidebar({
           href: "/organizations",
         },
       ]
+
+  const workspaceItems = organizationsQuery.data?.length
+    ? organizationsQuery.data.map((item) => ({
+        name: item.name,
+        logo: <Building2Icon />,
+        plan: item.status,
+        href: `/organizations/${item.slug}`,
+      }))
+    : fallbackWorkspaceItems
 
   const permissions = organization?.access?.permissions ?? []
   const canManageCompetition = permissions.includes("schedule.manage")
@@ -165,7 +176,7 @@ export function AppSidebar({
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={workspaceItems} />
+        <TeamSwitcher activeHref={workspaceBasePath} teams={workspaceItems} />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={navMain} />

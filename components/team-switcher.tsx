@@ -1,23 +1,43 @@
 "use client"
 import * as React from "react"
+import Link from "next/link"
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { ChevronsUpDownIcon, PlusIcon } from "lucide-react"
+import { CheckIcon, ChevronsUpDownIcon } from "lucide-react"
+
+export const VISIBLE_ORGANIZATION_LIMIT = 3
+
+type TeamSwitcherItem = {
+  name: string
+  logo: React.ReactNode
+  plan: string
+  href?: string
+}
 
 export function TeamSwitcher({
+  activeHref,
   teams,
 }: {
-  teams: {
-    name: string
-    logo: React.ReactNode
-    plan: string
-    href?: string
-  }[]
+  activeHref?: string
+  teams: TeamSwitcherItem[]
 }) {
-  const [activeTeam, setActiveTeam] = React.useState(teams[0])
+  const activeTeam =
+    teams.find((team) => team.href === activeHref) ?? teams[0]
+  const visibleTeams = teams.slice(0, VISIBLE_ORGANIZATION_LIMIT)
+  const hasMoreTeams = teams.length > VISIBLE_ORGANIZATION_LIMIT
 
   if (!activeTeam) {
     return null
@@ -26,7 +46,8 @@ export function TeamSwitcher({
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <div className="space-y-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
           <SidebarMenuButton
             size="lg"
             className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
@@ -40,39 +61,47 @@ export function TeamSwitcher({
             </div>
             <ChevronsUpDownIcon className="ml-auto" />
           </SidebarMenuButton>
-
-          <div className="space-y-1 px-2 pb-1 group-data-[collapsible=icon]:hidden">
-            {teams.map((team) => (
-              <button
-                key={team.name}
-                type="button"
-                onClick={() => setActiveTeam(team)}
-                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-sidebar-accent"
-              >
-                <div className="flex size-6 items-center justify-center rounded-md border">
-                  {team.logo}
-                </div>
-                <div className="min-w-0">
-                  <span className="block truncate">{team.name}</span>
-                  {team.href ? (
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {team.href}
-                    </span>
-                  ) : null}
-                </div>
-              </button>
-            ))}
-            <button
-              type="button"
-              className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent"
-            >
-              <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
-                <PlusIcon className="size-4" />
-              </div>
-              <span>Add team</span>
-            </button>
-          </div>
-        </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="start"
+            className="w-64"
+            side="bottom"
+            sideOffset={8}
+          >
+            <DropdownMenuLabel>Organizations</DropdownMenuLabel>
+            <DropdownMenuGroup>
+              {visibleTeams.map((team) => (
+                <DropdownMenuItem key={team.href ?? team.name} asChild>
+                  <Link
+                    href={team.href ?? "/organizations"}
+                    className="flex items-center gap-2"
+                  >
+                    <div className="flex size-6 items-center justify-center rounded-md border">
+                      {team.logo}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <span className="block truncate">{team.name}</span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {team.plan}
+                      </span>
+                    </div>
+                    {team.href === activeHref ? (
+                      <CheckIcon className="ml-auto size-4" />
+                    ) : null}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
+            {hasMoreTeams ? (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/organizations">Show organizations</Link>
+                </DropdownMenuItem>
+              </>
+            ) : null}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
   )
