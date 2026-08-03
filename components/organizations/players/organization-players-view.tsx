@@ -3,10 +3,12 @@
 import * as React from "react"
 import { createPortal } from "react-dom"
 import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
   Check,
   CheckCircle2,
   Clock3,
-  Filter,
   Loader2,
   MoreHorizontal,
   PencilLine,
@@ -49,6 +51,13 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import {
   Table,
@@ -68,14 +77,15 @@ import {
 import type { Division } from "@/services/division.service"
 import type { Organization } from "@/services/organization.service"
 import type { PageSizeOption, PaginationMeta } from "@/services/pagination"
-import type { Player } from "@/services/player.service"
+import type { Player, PlayerSortBy } from "@/services/player.service"
 import type { Team } from "@/services/team.service"
 
 type PlayerTableFilters = {
   divisionFilter: string
   search: string
-  sortBy: "name" | "recent" | "team"
-  statusFilter: string
+  sortBy: PlayerSortBy
+  sortDirection: "asc" | "desc"
+  statusFilter: "active" | "all" | "inactive"
   teamFilter: string
 }
 
@@ -98,10 +108,10 @@ function formatPlayerPosition(position: string) {
 
 function statusTone(status: string) {
   if (status === "active") {
-    return "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+    return "border-emerald-600 bg-emerald-600 text-white"
   }
 
-  return "border-zinc-500/20 bg-zinc-500/10 text-zinc-300"
+  return "border-zinc-600 bg-zinc-600 text-white"
 }
 
 function getInitials(name: string) {
@@ -538,26 +548,81 @@ function DeletePlayerModal({
   )
 }
 
+function SortableTableHead({
+  activeSortBy,
+  children,
+  className,
+  onSortChange,
+  sortBy,
+  sortDirection,
+}: {
+  activeSortBy: PlayerSortBy
+  children: React.ReactNode
+  className?: string
+  onSortChange: (sortBy: PlayerSortBy) => void
+  sortBy: PlayerSortBy
+  sortDirection: "asc" | "desc"
+}) {
+  const active = activeSortBy === sortBy
+  const SortIcon = active
+    ? sortDirection === "asc"
+      ? ArrowUp
+      : ArrowDown
+    : ArrowUpDown
+
+  return (
+    <TableHead
+      className={cn("text-muted-foreground", className)}
+      aria-sort={active ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+    >
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="-ml-2 h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+        aria-label={`Sort by ${String(children)}`}
+        onClick={() => onSortChange(sortBy)}
+      >
+        {children}
+        <SortIcon
+          className={cn(
+            "size-3.5",
+            active ? "text-foreground" : "text-muted-foreground/70",
+          )}
+        />
+      </Button>
+    </TableHead>
+  )
+}
+
 function PlayersTable({
   divisionsById,
+  isRefreshing,
   onPageChange,
   onPageSizeChange,
+  onSortChange,
   onDeletePlayer,
   onEditPlayer,
   pagination,
   players,
+  sortBy,
+  sortDirection,
   teamsById,
 }: {
   divisionsById: Map<string, Division>
+  isRefreshing: boolean
   onPageChange: (page: number) => void
   onPageSizeChange: (pageSize: PageSizeOption) => void
+  onSortChange: (sortBy: PlayerSortBy) => void
   onDeletePlayer: (player: Player) => void
   onEditPlayer: (player: Player) => void
   pagination: PaginationMeta
   players: Player[]
+  sortBy: PlayerSortBy
+  sortDirection: "asc" | "desc"
   teamsById: Map<string, Team>
 }) {
-  if (players.length === 0) {
+  if (players.length === 0 && !isRefreshing) {
     return (
       <Empty className="border bg-card">
         <EmptyHeader>
@@ -575,7 +640,18 @@ function PlayersTable({
   }
 
   return (
-    <Card className="border border-border/60 bg-card/95 py-0 shadow-none">
+    <Card
+      className="relative overflow-hidden border border-border/60 bg-card/95 py-0 shadow-none"
+      aria-busy={isRefreshing}
+    >
+      {isRefreshing ? (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/75 backdrop-blur-[1px]">
+          <div className="inline-flex items-center gap-2 rounded-md border border-border/70 bg-background px-3 py-2 text-sm font-medium shadow-sm">
+            <Loader2 className="size-4 animate-spin text-muted-foreground" />
+            Updating players
+          </div>
+        </div>
+      ) : null}
       <CardContent className="p-0">
         <Table>
           <TableHeader className="bg-muted/40">
@@ -583,17 +659,82 @@ function PlayersTable({
               <TableHead className="w-12 px-4">
                 <Checkbox aria-label="Select all players" />
               </TableHead>
-              <TableHead className="h-12 text-muted-foreground">Player</TableHead>
-              <TableHead className="text-muted-foreground">Team</TableHead>
-              <TableHead className="text-muted-foreground">Division</TableHead>
-              <TableHead className="text-muted-foreground">Jersey no.</TableHead>
-              <TableHead className="text-muted-foreground">Position</TableHead>
-              <TableHead className="text-muted-foreground">Status</TableHead>
-              <TableHead className="text-muted-foreground">Updated</TableHead>
+              <SortableTableHead
+                activeSortBy={sortBy}
+                className="h-12"
+                sortBy="name"
+                sortDirection={sortDirection}
+                onSortChange={onSortChange}
+              >
+                Player
+              </SortableTableHead>
+              <SortableTableHead
+                activeSortBy={sortBy}
+                sortBy="team"
+                sortDirection={sortDirection}
+                onSortChange={onSortChange}
+              >
+                Team
+              </SortableTableHead>
+              <SortableTableHead
+                activeSortBy={sortBy}
+                sortBy="division"
+                sortDirection={sortDirection}
+                onSortChange={onSortChange}
+              >
+                Division
+              </SortableTableHead>
+              <SortableTableHead
+                activeSortBy={sortBy}
+                sortBy="jerseyNumber"
+                sortDirection={sortDirection}
+                onSortChange={onSortChange}
+              >
+                Jersey no.
+              </SortableTableHead>
+              <SortableTableHead
+                activeSortBy={sortBy}
+                sortBy="position"
+                sortDirection={sortDirection}
+                onSortChange={onSortChange}
+              >
+                Position
+              </SortableTableHead>
+              <SortableTableHead
+                activeSortBy={sortBy}
+                sortBy="status"
+                sortDirection={sortDirection}
+                onSortChange={onSortChange}
+              >
+                Status
+              </SortableTableHead>
+              <SortableTableHead
+                activeSortBy={sortBy}
+                sortBy="updated"
+                sortDirection={sortDirection}
+                onSortChange={onSortChange}
+              >
+                Updated
+              </SortableTableHead>
               <TableHead className="w-14 text-right"> </TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
+          <TableBody
+            className={cn(
+              "transition-opacity duration-200 ease-out",
+              isRefreshing ? "opacity-60" : "opacity-100",
+            )}
+          >
+            {players.length === 0 ? (
+              <TableRow className="h-24 border-border/60 hover:bg-transparent">
+                <TableCell
+                  colSpan={9}
+                  className="text-center text-sm text-muted-foreground"
+                >
+                  Updating players
+                </TableCell>
+              </TableRow>
+            ) : null}
             {players.map((player) => {
               const team = teamsById.get(player.team_id)
               const division = team ? divisionsById.get(team.division_id) : undefined
@@ -601,7 +742,7 @@ function PlayersTable({
               return (
                 <TableRow
                   key={player.id}
-                  className="h-18 border-border/60 hover:bg-muted/30"
+                  className="h-18 border-border/60 transition-colors duration-200 ease-out hover:bg-muted/30"
                 >
                   <TableCell className="px-4">
                     <Checkbox aria-label={`Select ${player.name}`} />
@@ -756,6 +897,7 @@ function PlayersSummaryCards({
 export function OrganizationPlayersView({
   divisions,
   filters,
+  isPlayersTableRefreshing,
   onFiltersChange,
   onPageChange,
   onPageSizeChange,
@@ -766,6 +908,7 @@ export function OrganizationPlayersView({
 }: {
   divisions: Division[]
   filters: PlayerTableFilters
+  isPlayersTableRefreshing: boolean
   onFiltersChange: (filters: PlayerTableFilters) => void
   onPageChange: (page: number) => void
   onPageSizeChange: (pageSize: PageSizeOption) => void
@@ -803,6 +946,15 @@ export function OrganizationPlayersView({
   const teamsWithCompleteRosters = `${
     rosterCounts.filter((item) => item.count >= 8).length
   } / ${teams.length || 0}`
+
+  function handleSortChange(sortBy: PlayerSortBy) {
+    onFiltersChange({
+      ...filters,
+      sortBy,
+      sortDirection:
+        filters.sortBy === sortBy && filters.sortDirection === "asc" ? "desc" : "asc",
+    })
+  }
 
   async function handleCreatePlayer(payload: {
     jerseyNumber: string
@@ -878,12 +1030,7 @@ export function OrganizationPlayersView({
         <main className="flex flex-1 flex-col gap-6 bg-background px-4 py-4 lg:px-6 lg:py-5">
           <section className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">People setup</p>
               <h1 className="text-3xl font-semibold tracking-tight">Players</h1>
-              <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-                Manage player records, jersey numbers, team assignments, and roster
-                readiness across the organization.
-              </p>
             </div>
           </section>
 
@@ -908,90 +1055,98 @@ export function OrganizationPlayersView({
 
           <section className="space-y-6">
             <div className="space-y-6">
-              <Card className="border border-border/60 bg-card/95 shadow-none">
-                <CardContent className="space-y-4 p-4">
-                  <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px_180px_140px_180px_130px]">
-                    <div className="relative">
-                      <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        className="pl-9"
-                        placeholder="Search players..."
-                        value={filters.search}
-                        onChange={(event) =>
-                          onFiltersChange({ ...filters, search: event.target.value })
-                        }
-                      />
-                    </div>
-                    <NativeSelect
-                      value={filters.teamFilter}
-                      onChange={(event) =>
-                        onFiltersChange({ ...filters, teamFilter: event.target.value })
-                      }
-                    >
-                      <NativeSelectOption value="all">All teams</NativeSelectOption>
-                      {teams.map((team) => (
-                        <NativeSelectOption key={team.id} value={team.id}>
-                          {team.name}
-                        </NativeSelectOption>
-                      ))}
-                    </NativeSelect>
-                    <NativeSelect
-                      value={filters.divisionFilter}
-                      onChange={(event) =>
-                        onFiltersChange({
-                          ...filters,
-                          divisionFilter: event.target.value,
-                        })
-                      }
-                    >
-                      <NativeSelectOption value="all">All divisions</NativeSelectOption>
-                      {divisions.map((division) => (
-                        <NativeSelectOption key={division.id} value={division.id}>
-                          {division.name}
-                        </NativeSelectOption>
-                      ))}
-                    </NativeSelect>
-                    <NativeSelect
-                      value={filters.statusFilter}
-                      onChange={(event) =>
-                        onFiltersChange({ ...filters, statusFilter: event.target.value })
-                      }
-                    >
-                      <NativeSelectOption value="all">All status</NativeSelectOption>
-                      <NativeSelectOption value="active">Active</NativeSelectOption>
-                      <NativeSelectOption value="inactive">Inactive</NativeSelectOption>
-                    </NativeSelect>
-                    <NativeSelect
-                      value={filters.sortBy}
-                      onChange={(event) =>
-                        onFiltersChange({
-                          ...filters,
-                          sortBy: event.target.value as PlayerTableFilters["sortBy"],
-                        })
-                      }
-                    >
-                      <NativeSelectOption value="recent">Sort: Recently updated</NativeSelectOption>
-                      <NativeSelectOption value="name">Sort: Player name</NativeSelectOption>
-                      <NativeSelectOption value="team">Sort: Team</NativeSelectOption>
-                    </NativeSelect>
-                    <div className="flex gap-2">
-                      <Button className="flex-1" variant="outline">
-                        <Filter className="size-4" />
-                        View options
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_minmax(150px,170px)_minmax(160px,180px)_minmax(140px,160px)]">
+                <div className="relative md:col-span-2 xl:col-span-1">
+                  <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    className="h-9 w-full pl-9"
+                    placeholder="Search players..."
+                    value={filters.search}
+                    onChange={(event) =>
+                      onFiltersChange({ ...filters, search: event.target.value })
+                    }
+                  />
+                </div>
+                <Select
+                  value={filters.teamFilter}
+                  onValueChange={(value) =>
+                    onFiltersChange({ ...filters, teamFilter: value })
+                  }
+                >
+                  <SelectTrigger
+                    aria-label="Filter by team"
+                    className="w-full"
+                  >
+                    <SelectValue placeholder="All teams" />
+                  </SelectTrigger>
+                  <SelectContent position="popper" align="start">
+                    <SelectItem value="all">All teams</SelectItem>
+                    {teams.map((team) => (
+                      <SelectItem key={team.id} value={team.id}>
+                        {team.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={filters.divisionFilter}
+                  onValueChange={(value) =>
+                    onFiltersChange({
+                      ...filters,
+                      divisionFilter: value,
+                    })
+                  }
+                >
+                  <SelectTrigger
+                    aria-label="Filter by division"
+                    className="w-full"
+                  >
+                    <SelectValue placeholder="All divisions" />
+                  </SelectTrigger>
+                  <SelectContent position="popper" align="start">
+                    <SelectItem value="all">All divisions</SelectItem>
+                    {divisions.map((division) => (
+                      <SelectItem key={division.id} value={division.id}>
+                        {division.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={filters.statusFilter}
+                  onValueChange={(value) =>
+                    onFiltersChange({
+                      ...filters,
+                      statusFilter: value as PlayerTableFilters["statusFilter"],
+                    })
+                  }
+                >
+                  <SelectTrigger
+                    aria-label="Filter by status"
+                    className="w-full"
+                  >
+                    <SelectValue placeholder="All status" />
+                  </SelectTrigger>
+                  <SelectContent position="popper" align="start">
+                    <SelectItem value="all">All status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
               <PlayersTable
                 divisionsById={divisionsById}
+                isRefreshing={isPlayersTableRefreshing}
                 onPageChange={onPageChange}
                 onPageSizeChange={onPageSizeChange}
+                onSortChange={handleSortChange}
                 onDeletePlayer={setPlayerToDelete}
                 onEditPlayer={setPlayerToEdit}
                 pagination={pagination}
                 players={players}
+                sortBy={filters.sortBy === "recent" ? "updated" : filters.sortBy}
+                sortDirection={filters.sortDirection}
                 teamsById={teamsById}
               />
             </div>

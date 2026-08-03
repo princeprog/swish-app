@@ -15,6 +15,7 @@ export type StandingsRow = {
   pointsAgainst: number
   pointsFor: number
   rank: number
+  recentResults: Array<"W" | "L">
   teamColor: string | null
   teamId: string
   teamName: string

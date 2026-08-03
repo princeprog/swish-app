@@ -7,14 +7,6 @@ import { Trophy } from "lucide-react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
 import { Badge } from "@/components/ui/badge"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
 import { Card, CardContent } from "@/components/ui/card"
 import {
   Empty,
@@ -67,6 +59,35 @@ function formatWinPercentage(value: number) {
   return value.toFixed(3)
 }
 
+function RecentResultsForm({
+  recentResults,
+}: {
+  recentResults: StandingsRow["recentResults"]
+}) {
+  if (recentResults.length === 0) {
+    return <span className="text-muted-foreground">-</span>
+  }
+
+  return (
+    <div
+      aria-label={`Recent form ${recentResults.join("")}`}
+      className="flex justify-end gap-1"
+    >
+      {recentResults.map((result, index) => (
+        <span
+          key={`${result}-${index}`}
+          className={cn(
+            "inline-flex size-5 items-center justify-center rounded-sm text-[11px] font-semibold text-white",
+            result === "W" ? "bg-emerald-600" : "bg-red-600",
+          )}
+        >
+          {result}
+        </span>
+      ))}
+    </div>
+  )
+}
+
 function StandingsTable({ rows }: { rows: StandingsRow[] }) {
   if (rows.length === 0) {
     return (
@@ -100,6 +121,7 @@ function StandingsTable({ rows }: { rows: StandingsRow[] }) {
               <TableHead className="text-right text-muted-foreground">W</TableHead>
               <TableHead className="text-right text-muted-foreground">L</TableHead>
               <TableHead className="text-right text-muted-foreground">GP</TableHead>
+              <TableHead className="text-right text-muted-foreground">Last 5</TableHead>
               <TableHead className="pr-4 text-right text-muted-foreground">Win%</TableHead>
             </TableRow>
           </TableHeader>
@@ -154,6 +176,9 @@ function StandingsTable({ rows }: { rows: StandingsRow[] }) {
                 <TableCell className="text-right font-medium">{row.wins}</TableCell>
                 <TableCell className="text-right">{row.losses}</TableCell>
                 <TableCell className="text-right">{row.gamesPlayed}</TableCell>
+                <TableCell className="text-right">
+                  <RecentResultsForm recentResults={row.recentResults} />
+                </TableCell>
                 <TableCell className="pr-4 text-right">
                   {formatWinPercentage(row.winPercentage)}
                 </TableCell>
@@ -218,52 +243,70 @@ export function OrganizationStandingsView({
   }
 
   const standingsFilters = (
-    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:justify-end">
-      <Select
-        disabled={seasons.length === 0}
-        value={selectedSeasonId || NO_SEASON_VALUE}
-        onValueChange={(value) => {
-          if (value !== NO_SEASON_VALUE) {
-            setFilter({ seasonId: value })
-          }
-        }}
-      >
-        <SelectTrigger
-          aria-label="Filter standings by season"
-          className="w-full sm:w-[220px]"
+    <div className="grid w-full gap-3 sm:w-auto sm:grid-cols-[220px_180px]">
+      <div className="space-y-1.5">
+        <label
+          htmlFor="standings-season-filter"
+          className="text-xs font-medium text-muted-foreground"
         >
-          <SelectValue placeholder="Select season" />
-        </SelectTrigger>
-        <SelectContent position="popper" align="end">
-          {seasons.length === 0 ? (
-            <SelectItem value={NO_SEASON_VALUE}>No seasons</SelectItem>
-          ) : null}
-          {seasons.map((season) => (
-            <SelectItem key={season.id} value={season.id}>
-              {season.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Select
-        value={selectedDivisionId}
-        onValueChange={(value) => setFilter({ divisionId: value })}
-      >
-        <SelectTrigger
-          aria-label="Filter standings by division"
-          className="w-full sm:w-[180px]"
+          Season
+        </label>
+        <Select
+          disabled={seasons.length === 0}
+          value={selectedSeasonId || NO_SEASON_VALUE}
+          onValueChange={(value) => {
+            if (value !== NO_SEASON_VALUE) {
+              setFilter({ seasonId: value })
+            }
+          }}
         >
-          <SelectValue placeholder="All divisions" />
-        </SelectTrigger>
-        <SelectContent position="popper" align="end">
-          <SelectItem value="all">All divisions</SelectItem>
-          {seasonDivisions.map((division) => (
-            <SelectItem key={division.id} value={division.id}>
-              {division.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+          <SelectTrigger
+            id="standings-season-filter"
+            aria-label="Filter standings by season"
+            className="w-full"
+          >
+            <SelectValue placeholder="Select season" />
+          </SelectTrigger>
+          <SelectContent position="popper" align="end">
+            {seasons.length === 0 ? (
+              <SelectItem value={NO_SEASON_VALUE}>No seasons</SelectItem>
+            ) : null}
+            {seasons.map((season) => (
+              <SelectItem key={season.id} value={season.id}>
+                {season.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1.5">
+        <label
+          htmlFor="standings-division-filter"
+          className="text-xs font-medium text-muted-foreground"
+        >
+          Division
+        </label>
+        <Select
+          value={selectedDivisionId}
+          onValueChange={(value) => setFilter({ divisionId: value })}
+        >
+          <SelectTrigger
+            id="standings-division-filter"
+            aria-label="Filter standings by division"
+            className="w-full"
+          >
+            <SelectValue placeholder="All divisions" />
+          </SelectTrigger>
+          <SelectContent position="popper" align="end">
+            <SelectItem value="all">All divisions</SelectItem>
+            {seasonDivisions.map((division) => (
+              <SelectItem key={division.id} value={division.id}>
+                {division.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   )
 
@@ -287,32 +330,9 @@ export function OrganizationStandingsView({
         />
 
         <main className="flex flex-1 flex-col gap-6 bg-background px-4 py-4 lg:px-6 lg:py-5">
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink href="/organizations">Organizations</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbLink href={`/organizations/${organization.slug}`}>
-                  {organization.name}
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>Standings</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-
           <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Competition</p>
               <h1 className="text-3xl font-semibold tracking-tight">Standings</h1>
-              <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-                Track official team records from finalized games in a selected
-                season and division.
-              </p>
             </div>
             {standingsFilters}
           </section>

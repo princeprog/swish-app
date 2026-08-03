@@ -3,7 +3,6 @@
 import * as React from "react"
 import { createPortal } from "react-dom"
 import {
-  CalendarDays,
   CalendarClock,
   CalendarRange,
   CheckCircle2,
@@ -29,14 +28,6 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { canManageOrganizationSchedule } from "@/components/organizations/schedules/schedule-access"
 import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
 import { Badge } from "@/components/ui/badge"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -179,20 +170,22 @@ function updateDateTimePickerTime(value: string, nextTime: string) {
 
 function scheduleStatusTone(status: string) {
   switch (status) {
+    case "draft":
+      return "border-zinc-600 bg-zinc-600 text-white dark:border-zinc-500 dark:bg-zinc-500 dark:text-white"
     case "scheduled":
-      return "border-blue-500/20 bg-blue-500/10 text-blue-300"
+      return "border-blue-600 bg-blue-600 text-white dark:border-blue-500 dark:bg-blue-500 dark:text-white"
     case "final":
-      return "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+      return "border-emerald-600 bg-emerald-600 text-white dark:border-emerald-500 dark:bg-emerald-500 dark:text-white"
     case "live":
-      return "border-orange-500/20 bg-orange-500/10 text-orange-300"
+      return "border-red-600 bg-red-600 text-white dark:border-red-500 dark:bg-red-500 dark:text-white"
     case "postponed":
-      return "border-amber-500/20 bg-amber-500/10 text-amber-300"
+      return "border-amber-600 bg-amber-600 text-white dark:border-amber-500 dark:bg-amber-500 dark:text-white"
     case "cancelled":
-      return "border-rose-500/20 bg-rose-500/10 text-rose-300"
+      return "border-rose-600 bg-rose-600 text-white dark:border-rose-500 dark:bg-rose-500 dark:text-white"
     case "reopened":
-      return "border-violet-500/20 bg-violet-500/10 text-violet-300"
+      return "border-violet-600 bg-violet-600 text-white dark:border-violet-500 dark:bg-violet-500 dark:text-white"
     default:
-      return "border-zinc-500/20 bg-zinc-500/10 text-zinc-300"
+      return "border-zinc-600 bg-zinc-600 text-white dark:border-zinc-500 dark:bg-zinc-500 dark:text-white"
   }
 }
 
@@ -2326,49 +2319,10 @@ export function OrganizationSchedulesView({
         <main className="flex flex-1 flex-col gap-6 bg-background px-4 py-4 lg:px-6 lg:py-5">
           <section className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-2">
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem>
-                    <BreadcrumbLink
-                      href={`/organizations/${organization.slug}`}
-                    >
-                      Organizations
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator />
-                  <BreadcrumbItem>
-                    <BreadcrumbLink
-                      href={`/organizations/${organization.slug}`}
-                    >
-                      {organization.name}
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>Schedules</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
               <h1 className="text-3xl font-semibold tracking-tight">
                 Schedules
               </h1>
-              <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-                Manage the official game calendar for {organization.name} across
-                all divisions and venues.
-              </p>
             </div>
-            {canManageSchedule ? (
-              <div className="flex flex-wrap items-center gap-2">
-              <Button variant="outline">
-                <CalendarDays className="size-4" />
-                Import schedule
-              </Button>
-              <Button variant="outline">
-                <Globe className="size-4" />
-                Publish schedule
-              </Button>
-              </div>
-            ) : null}
           </section>
 
           <ScheduleSummaryCards schedules={schedules} />
@@ -2387,92 +2341,101 @@ export function OrganizationSchedulesView({
 
           <section className="space-y-6">
             <div className="space-y-6">
-              <Card className="border border-border/60 bg-card/95 shadow-none">
-                <CardContent className="space-y-4 p-4">
-                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_minmax(160px,180px)_minmax(150px,170px)_minmax(190px,210px)]">
-                    <div className="relative md:col-span-2 xl:col-span-1">
-                      <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        aria-label="Search games"
-                        className="h-10 w-full pl-9"
-                        placeholder="Search games..."
-                        value={search}
-                        onChange={(event) => setSearch(event.target.value)}
-                      />
-                    </div>
-                    <NativeSelect
+              <div className="space-y-4">
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_minmax(160px,180px)_minmax(150px,170px)_minmax(190px,210px)]">
+                  <div className="relative md:col-span-2 xl:col-span-1">
+                    <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      aria-label="Search games"
+                      className="h-10 w-full pl-9"
+                      placeholder="Search games..."
+                      value={search}
+                      onChange={(event) => setSearch(event.target.value)}
+                    />
+                  </div>
+                  <Select
+                    value={divisionFilter}
+                    onValueChange={setDivisionFilter}
+                  >
+                    <SelectTrigger
                       aria-label="Filter by division"
                       className="h-10 w-full"
-                      value={divisionFilter}
-                      onChange={(event) =>
-                        setDivisionFilter(event.target.value)
-                      }
                     >
-                      <NativeSelectOption value="all">
-                        All divisions
-                      </NativeSelectOption>
-                      {divisions.map((division) => (
-                        <NativeSelectOption
-                          key={division.id}
-                          value={division.id}
-                        >
-                          {division.name}
-                        </NativeSelectOption>
-                      ))}
-                    </NativeSelect>
-                    <NativeSelect
+                      <SelectValue placeholder="All divisions" />
+                    </SelectTrigger>
+                    <SelectContent position="popper" align="start">
+                      <SelectGroup>
+                        <SelectItem value="all">All divisions</SelectItem>
+                        {divisions.map((division) => (
+                          <SelectItem key={division.id} value={division.id}>
+                            {division.name}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={statusFilter}
+                    onValueChange={setStatusFilter}
+                  >
+                    <SelectTrigger
                       aria-label="Filter by status"
                       className="h-10 w-full"
-                      value={statusFilter}
-                      onChange={(event) => setStatusFilter(event.target.value)}
                     >
-                      <NativeSelectOption value="all">
-                        All status
-                      </NativeSelectOption>
-                      {[
-                        "draft",
-                        "scheduled",
-                        "live",
-                        "final",
-                        "reopened",
-                        "postponed",
-                        "cancelled",
-                      ].map((status) => (
-                        <NativeSelectOption key={status} value={status}>
-                          {status}
-                        </NativeSelectOption>
-                      ))}
-                    </NativeSelect>
-                    <NativeSelect
+                      <SelectValue placeholder="All status" />
+                    </SelectTrigger>
+                    <SelectContent position="popper" align="start">
+                      <SelectGroup>
+                        <SelectItem value="all">All status</SelectItem>
+                        {[
+                          "draft",
+                          "scheduled",
+                          "live",
+                          "final",
+                          "reopened",
+                          "postponed",
+                          "cancelled",
+                        ].map((status) => (
+                          <SelectItem key={status} value={status}>
+                            {status}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={sortBy}
+                    onValueChange={(value) =>
+                      setSortBy(
+                        value as NonNullable<
+                          ScheduleListQuery["sortBy"]
+                        >,
+                      )
+                    }
+                  >
+                    <SelectTrigger
                       aria-label="Sort schedule"
                       className="h-10 w-full"
-                      value={sortBy}
-                      onChange={(event) =>
-                        setSortBy(
-                          event.target.value as NonNullable<
-                            ScheduleListQuery["sortBy"]
-                          >,
-                        )
-                      }
                     >
-                      <NativeSelectOption value="date">
-                        Sort: Date (Earliest)
-                      </NativeSelectOption>
-                      <NativeSelectOption value="division">
-                        Sort: Division
-                      </NativeSelectOption>
-                      <NativeSelectOption value="venue">
-                        Sort: Venue
-                      </NativeSelectOption>
-                    </NativeSelect>
-                  </div>
-                  {schedulesQuery.isError ? (
-                    <FieldError>
-                      {getApiErrorMessage(schedulesQuery.error)}
-                    </FieldError>
-                  ) : null}
-                </CardContent>
-              </Card>
+                      <SelectValue placeholder="Sort schedule" />
+                    </SelectTrigger>
+                    <SelectContent position="popper" align="start">
+                      <SelectGroup>
+                        <SelectItem value="date">
+                          Sort: Date (Earliest)
+                        </SelectItem>
+                        <SelectItem value="division">Sort: Division</SelectItem>
+                        <SelectItem value="venue">Sort: Venue</SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {schedulesQuery.isError ? (
+                  <FieldError>
+                    {getApiErrorMessage(schedulesQuery.error)}
+                  </FieldError>
+                ) : null}
+              </div>
 
               <ScheduleBoard
                 canManageSchedule={canManageSchedule}

@@ -24,6 +24,14 @@ export function proxy(request: NextRequest) {
   const hasRefreshToken = request.cookies.has(AUTH_COOKIE_NAMES.refresh)
   const hasAuthCookie = hasAccessToken || hasRefreshToken
 
+  if (pathname === "/") {
+    const redirectRoute = hasAuthCookie ? AUTHENTICATED_REDIRECT_ROUTE : "/login"
+
+    return NextResponse.redirect(
+      new URL(redirectRoute, request.url),
+    )
+  }
+
   if (isAuthRoute(pathname) && hasAuthCookie) {
     return NextResponse.redirect(
       new URL(AUTHENTICATED_REDIRECT_ROUTE, request.url),
@@ -38,5 +46,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/login", "/signup", "/organizations/:path*"],
+  matcher: ["/", "/login", "/signup", "/organizations/:path*"],
 }

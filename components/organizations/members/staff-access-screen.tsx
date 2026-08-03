@@ -4,7 +4,6 @@ import * as React from "react"
 import Link from "next/link"
 import {
   Clipboard,
-  KeyRound,
   Loader2,
   RefreshCw,
   ShieldCheck,
@@ -33,13 +32,13 @@ import {
   useOrganizationMembersQuery,
   useResendInvitationMutation,
   useRevokeInvitationMutation,
-  useTransferOwnershipMutation,
   useUpdateMemberMutation,
   useUpdateTeamAssignmentsMutation,
 } from "@/hooks/use-access"
 import { getApiErrorMessage } from "@/hooks/use-auth"
 import { useOrganizationsQuery } from "@/hooks/use-organization"
 import { useTeamsQuery } from "@/hooks/use-team"
+import { STAFF_ACCESS_TABS } from "@/lib/staff-access-tabs"
 import type { OrganizationMember } from "@/services/access.service"
 import type { OrganizationRole } from "@/services/organization.service"
 
@@ -133,7 +132,7 @@ function InviteDialog({
                   </NativeSelectOption>
                 ))}
               </NativeSelect>
-              <FieldDescription>Owners are assigned only through ownership transfer.</FieldDescription>
+              <FieldDescription>The owner role cannot be assigned from an invitation.</FieldDescription>
             </FieldContent>
           </Field>
           {createInvitation.isError ? <FieldError>{getApiErrorMessage(createInvitation.error)}</FieldError> : null}
@@ -286,11 +285,8 @@ export function StaffAccessScreen({ slug }: { slug: string }) {
   const teamsQuery = useTeamsQuery(organization?.id, { pageSize: 50 })
   const resendInvitation = useResendInvitationMutation(organization?.id ?? "")
   const revokeInvitation = useRevokeInvitationMutation(organization?.id ?? "")
-  const transferOwnership = useTransferOwnershipMutation(organization?.id ?? "")
   const [inviteOpen, setInviteOpen] = React.useState(false)
   const [memberToEdit, setMemberToEdit] = React.useState<OrganizationMember | null>(null)
-  const [transferTargetId, setTransferTargetId] = React.useState("")
-  const [confirmationSlug, setConfirmationSlug] = React.useState("")
   const [lastLink, setLastLink] = React.useState<string | null>(null)
 
   if (organizationsQuery.isLoading || (organization && (membersQuery.isLoading || invitationsQuery.isLoading || teamsQuery.isLoading))) {
@@ -306,7 +302,7 @@ export function StaffAccessScreen({ slug }: { slug: string }) {
   }
 
   if (!organization.access.permissions.includes("members.manage")) {
-    return <EmptyShell title="Staff access is owner-only" description="Your current role cannot manage invitations, assignments, or ownership for this organization." />
+    return <EmptyShell title="Staff access is owner-only" description="Your current role cannot manage invitations or assignments for this organization." />
   }
 
   async function resend(invitationId: string) {
@@ -328,21 +324,8 @@ export function StaffAccessScreen({ slug }: { slug: string }) {
     }
   }
 
-  async function transfer() {
-    if (!transferTargetId) return
-    try {
-      await transferOwnership.mutateAsync({ confirmationSlug, targetMemberId: transferTargetId })
-      toast.success("Ownership transferred")
-      setConfirmationSlug("")
-      setTransferTargetId("")
-    } catch (error) {
-      toast.error(getApiErrorMessage(error))
-    }
-  }
-
   const members = membersQuery.data ?? []
   const invitations = invitationsQuery.data ?? []
-  const activeAdmins = members.filter((member) => member.role === "admin" && member.status === "active")
 
   return (
     <SidebarProvider>
@@ -353,13 +336,7 @@ export function StaffAccessScreen({ slug }: { slug: string }) {
           organizationName={organization.name} organizationSlug={organization.slug} pageTitle="Staff & access" primaryAction={{ label: "Invite staff", onClick: () => setInviteOpen(true) }} />
         <main className="flex flex-1 flex-col gap-4 bg-background px-4 py-4 lg:px-6 lg:py-5">
           <section className="flex flex-wrap items-start justify-between gap-4">
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Owner controls</p>
-              <h1 className="text-3xl font-semibold tracking-tight">Staff & access</h1>
-              <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                Manage organization staff, scoped assignments, invitations, and owner transfer for {organization.name}.
-              </p>
-            </div>
+            <h1 className="text-3xl font-semibold tracking-tight">Staff & access</h1>
             <Button onClick={() => setInviteOpen(true)}>
               <UserPlus className="size-4" />
               Invite staff
@@ -380,9 +357,11 @@ export function StaffAccessScreen({ slug }: { slug: string }) {
 
           <Tabs defaultValue="members">
             <TabsList>
-              <TabsTrigger value="members">Members</TabsTrigger>
-              <TabsTrigger value="invitations">Invitations</TabsTrigger>
-              <TabsTrigger value="ownership">Ownership</TabsTrigger>
+              {STAFF_ACCESS_TABS.map((tab) => (
+                <TabsTrigger key={tab.value} value={tab.value}>
+                  {tab.label}
+                </TabsTrigger>
+              ))}
             </TabsList>
             <TabsContent value="members">
               <Card className="border-border/60 shadow-none">
@@ -458,27 +437,6 @@ export function StaffAccessScreen({ slug }: { slug: string }) {
                       ))}
                     </TableBody>
                   </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            <TabsContent value="ownership">
-              <Card className="border-border/60 shadow-none">
-                <CardHeader>
-                  <CardTitle>Transfer ownership</CardTitle>
-                  <CardDescription>Transfer to an active admin by typing the organization slug.</CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-4 md:max-w-xl">
-                  <NativeSelect value={transferTargetId} onChange={(event) => setTransferTargetId(event.target.value)}>
-                    <NativeSelectOption value="">Select active admin</NativeSelectOption>
-                    {activeAdmins.map((member) => (
-                      <NativeSelectOption key={member.id} value={member.id}>{member.name}</NativeSelectOption>
-                    ))}
-                  </NativeSelect>
-                  <Input placeholder={organization.slug} value={confirmationSlug} onChange={(event) => setConfirmationSlug(event.target.value)} />
-                  <Button disabled={!transferTargetId || confirmationSlug !== organization.slug || transferOwnership.isPending} onClick={transfer}>
-                    <KeyRound className="size-4" />
-                    Transfer ownership
-                  </Button>
                 </CardContent>
               </Card>
             </TabsContent>

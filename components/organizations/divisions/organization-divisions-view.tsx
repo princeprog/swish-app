@@ -792,15 +792,8 @@ export function OrganizationDivisionsView({
         <main className="flex flex-1 flex-col gap-6 bg-background px-4 py-4 lg:px-6 lg:py-5">
           <section className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Competition setup</p>
               <h1 className="text-3xl font-semibold tracking-tight">Divisions</h1>
-              <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                Organize competition categories for {organization.name}. Divisions
-                define where teams compete and how schedules, standings, and
-                playoffs are grouped inside a season.
-              </p>
             </div>
-
           </section>
 
           {seasons.length === 0 ? (

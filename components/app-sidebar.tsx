@@ -4,7 +4,6 @@ import * as React from "react"
 import Link from "next/link"
 
 import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
 import {
@@ -18,7 +17,6 @@ import type { OrganizationAccess } from "@/services/organization.service"
 import {
   Building2Icon,
   CalendarDaysIcon,
-  Settings2Icon,
   ShieldCheckIcon,
   TrophyIcon,
   Users2Icon,
@@ -164,27 +162,6 @@ export function AppSidebar({
       : null,
   ].filter((item) => item !== null)
 
-  const quickLinks = organization
-    ? [
-        {
-          name: "Open docs",
-          url: "/docs",
-          icon: <Settings2Icon />,
-        },
-        {
-          name: "All organizations",
-          url: "/organizations",
-          icon: <Building2Icon />,
-        },
-      ]
-    : [
-        {
-          name: "Planning docs",
-          url: "/docs",
-          icon: <Settings2Icon />,
-        },
-      ]
-
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -192,7 +169,6 @@ export function AppSidebar({
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={navMain} />
-        <NavProjects projects={quickLinks} />
         {organization ? (
           <div className="px-4 py-2 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
             <Link href="/organizations" className="hover:text-foreground">

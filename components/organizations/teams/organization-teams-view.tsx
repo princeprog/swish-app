@@ -97,10 +97,10 @@ function slugifyName(name: string): string {
 
 function statusTone(status: string) {
   if (status === "active") {
-    return "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+    return "border-emerald-600 bg-emerald-600 text-white"
   }
 
-  return "border-zinc-500/20 bg-zinc-500/10 text-zinc-300"
+  return "border-zinc-600 bg-zinc-600 text-white"
 }
 
 function getTeamInitials(name: string) {
@@ -875,13 +875,7 @@ export function OrganizationTeamsView({
         <main className="flex flex-1 flex-col gap-4 bg-background px-4 py-4 lg:px-6 lg:py-5">
           <section className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">People setup</p>
               <h1 className="text-3xl font-semibold tracking-tight">Teams</h1>
-              <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                Manage registered teams for {organization.name}. Teams belong to
-                a division and become the official participants for schedules,
-                standings, and public competition pages.
-              </p>
             </div>
           </section>
 
@@ -905,68 +899,65 @@ export function OrganizationTeamsView({
           ) : null}
 
           <section className="space-y-4">
-            <Card className="border border-border/60 bg-card/95 shadow-none">
-              <CardContent className="p-3">
-                <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px_140px_180px_130px]">
-                  <div className="relative">
-                    <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      className="pl-9"
-                      placeholder="Search teams..."
-                      value={filters.search}
-                      onChange={(event) =>
-                        onFiltersChange({ ...filters, search: event.target.value })
-                      }
-                    />
-                  </div>
-                  <NativeSelect
-                    value={filters.divisionFilter}
-                    onChange={(event) =>
-                      onFiltersChange({
-                        ...filters,
-                        divisionFilter: event.target.value,
-                      })
-                    }
-                  >
-                    <NativeSelectOption value="all">All divisions</NativeSelectOption>
-                    {divisions.map((division) => (
-                      <NativeSelectOption key={division.id} value={division.id}>
-                        {division.name}
-                      </NativeSelectOption>
-                    ))}
-                  </NativeSelect>
-                  <NativeSelect
-                    value={filters.statusFilter}
-                    onChange={(event) =>
-                      onFiltersChange({ ...filters, statusFilter: event.target.value })
-                    }
-                  >
-                    <NativeSelectOption value="all">All status</NativeSelectOption>
-                    <NativeSelectOption value="active">Active</NativeSelectOption>
-                    <NativeSelectOption value="inactive">Inactive</NativeSelectOption>
-                  </NativeSelect>
-                  <NativeSelect
-                    value={filters.sortBy}
-                    onChange={(event) =>
-                      onFiltersChange({
-                        ...filters,
-                        sortBy: event.target.value as TeamTableFilters["sortBy"],
-                      })
-                    }
-                  >
-                    <NativeSelectOption value="recent">Sort: Recently updated</NativeSelectOption>
-                    <NativeSelectOption value="name">Sort: Team name</NativeSelectOption>
-                    <NativeSelectOption value="division">Sort: Division</NativeSelectOption>
-                  </NativeSelect>
-                  <div className="flex gap-2">
-                    <Button className="flex-1" variant="outline">
-                      <Filter className="size-4" />
-                      View options
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(260px,1fr)_minmax(160px,180px)_minmax(140px,160px)_minmax(190px,210px)_minmax(140px,160px)]">
+              <div className="relative md:col-span-2 xl:col-span-1">
+                <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  className="h-10 w-full pl-9"
+                  placeholder="Search teams..."
+                  value={filters.search}
+                  onChange={(event) =>
+                    onFiltersChange({ ...filters, search: event.target.value })
+                  }
+                />
+              </div>
+              <NativeSelect
+                className="h-10 w-full"
+                value={filters.divisionFilter}
+                onChange={(event) =>
+                  onFiltersChange({
+                    ...filters,
+                    divisionFilter: event.target.value,
+                  })
+                }
+              >
+                <NativeSelectOption value="all">All divisions</NativeSelectOption>
+                {divisions.map((division) => (
+                  <NativeSelectOption key={division.id} value={division.id}>
+                    {division.name}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+              <NativeSelect
+                className="h-10 w-full"
+                value={filters.statusFilter}
+                onChange={(event) =>
+                  onFiltersChange({ ...filters, statusFilter: event.target.value })
+                }
+              >
+                <NativeSelectOption value="all">All status</NativeSelectOption>
+                <NativeSelectOption value="active">Active</NativeSelectOption>
+                <NativeSelectOption value="inactive">Inactive</NativeSelectOption>
+              </NativeSelect>
+              <NativeSelect
+                className="h-10 w-full"
+                value={filters.sortBy}
+                onChange={(event) =>
+                  onFiltersChange({
+                    ...filters,
+                    sortBy: event.target.value as TeamTableFilters["sortBy"],
+                  })
+                }
+              >
+                <NativeSelectOption value="recent">Sort: Recently updated</NativeSelectOption>
+                <NativeSelectOption value="name">Sort: Team name</NativeSelectOption>
+                <NativeSelectOption value="division">Sort: Division</NativeSelectOption>
+              </NativeSelect>
+              <Button className="h-10 w-full justify-center" variant="outline">
+                <Filter className="size-4" />
+                View options
+              </Button>
+            </div>
 
             <TeamsTable
               divisionsById={divisionsById}

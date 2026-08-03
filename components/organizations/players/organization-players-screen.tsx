@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import Link from "next/link"
 import { Users2 } from "lucide-react"
 
@@ -21,10 +22,47 @@ import { usePlayersQuery } from "@/hooks/use-player"
 import { useTeamsQuery } from "@/hooks/use-team"
 import { useTablePaginationState } from "@/hooks/use-table-pagination-state"
 import { getDefaultPaginationMeta } from "@/services/pagination"
-import type { PlayerListParams } from "@/services/player.service"
+import type { PlayerListParams, PlayerSortBy } from "@/services/player.service"
 
 type OrganizationPlayersScreenProps = {
   slug: string
+}
+
+type PlayerTableFilters = {
+  divisionFilter: string
+  search: string
+  sortBy: PlayerSortBy
+  sortDirection: "asc" | "desc"
+  statusFilter: "active" | "all" | "inactive"
+  teamFilter: string
+}
+
+function arePlayerFiltersEqual(
+  current: PlayerTableFilters,
+  next: PlayerTableFilters,
+) {
+  return (
+    current.divisionFilter === next.divisionFilter &&
+    current.search === next.search &&
+    current.sortBy === next.sortBy &&
+    current.sortDirection === next.sortDirection &&
+    current.statusFilter === next.statusFilter &&
+    current.teamFilter === next.teamFilter
+  )
+}
+
+function useDebouncedValue<T>(value: T, delayMs: number) {
+  const [debouncedValue, setDebouncedValue] = React.useState(value)
+
+  React.useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedValue(value)
+    }, delayMs)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [delayMs, value])
+
+  return debouncedValue
 }
 
 function PlayersLoadingState() {
@@ -72,28 +110,105 @@ export function OrganizationPlayersScreen({ slug }: OrganizationPlayersScreenPro
   const organizationsQuery = useOrganizationsQuery()
   const organization = organizationsQuery.data?.find((item) => item.slug === slug)
   const tablePagination = useTablePaginationState()
-  const search = tablePagination.searchParams.get("search") ?? ""
-  const teamFilter = tablePagination.searchParams.get("teamId") ?? "all"
-  const divisionFilter = tablePagination.searchParams.get("divisionId") ?? "all"
-  const statusParam = tablePagination.searchParams.get("status")
+  const {
+    params: paginationParams,
+    searchParams,
+    setPage,
+    setPageSize,
+    setParams,
+  } = tablePagination
+  const search = searchParams.get("search") ?? ""
+  const teamFilter = searchParams.get("teamId") ?? "all"
+  const divisionFilter = searchParams.get("divisionId") ?? "all"
+  const statusParam = searchParams.get("status")
   const statusFilter =
     statusParam === "active" || statusParam === "inactive" ? statusParam : "all"
-  const sortParam = tablePagination.searchParams.get("sortBy")
-  const sortBy =
-    sortParam === "name" || sortParam === "team" || sortParam === "recent"
+  const sortParam = searchParams.get("sortBy")
+  const sortBy: PlayerSortBy =
+    sortParam === "division" ||
+    sortParam === "jerseyNumber" ||
+    sortParam === "name" ||
+    sortParam === "position" ||
+    sortParam === "recent" ||
+    sortParam === "status" ||
+    sortParam === "team" ||
+    sortParam === "updated"
       ? sortParam
       : "recent"
+  const sortDirectionParam = searchParams.get("sortDirection")
+  const sortDirection =
+    sortDirectionParam === "asc" || sortDirectionParam === "desc"
+      ? sortDirectionParam
+      : sortBy === "recent"
+        ? "desc"
+        : "asc"
+  const urlFilters = React.useMemo<PlayerTableFilters>(
+    () => ({
+      divisionFilter,
+      search,
+      sortBy,
+      sortDirection,
+      statusFilter,
+      teamFilter,
+    }),
+    [divisionFilter, search, sortBy, sortDirection, statusFilter, teamFilter],
+  )
+  const [filters, setFilters] = React.useState<PlayerTableFilters>(urlFilters)
+  const debouncedFilters = useDebouncedValue(filters, 350)
+  const filtersPending = !arePlayerFiltersEqual(filters, debouncedFilters)
+  const debouncedFiltersMatchUrl = arePlayerFiltersEqual(debouncedFilters, urlFilters)
   const playerParams: PlayerListParams = {
-    ...tablePagination.params,
-    divisionId: divisionFilter === "all" ? undefined : divisionFilter,
-    search: search || undefined,
-    sortBy,
-    status: statusFilter === "all" ? undefined : statusFilter,
-    teamId: teamFilter === "all" ? undefined : teamFilter,
+    ...paginationParams,
+    page: debouncedFiltersMatchUrl ? paginationParams.page : 1,
+    divisionId:
+      debouncedFilters.divisionFilter === "all"
+        ? undefined
+        : debouncedFilters.divisionFilter,
+    search: debouncedFilters.search || undefined,
+    sortBy: debouncedFilters.sortBy,
+    sortDirection: debouncedFilters.sortDirection,
+    status:
+      debouncedFilters.statusFilter === "all"
+        ? undefined
+        : debouncedFilters.statusFilter,
+    teamId:
+      debouncedFilters.teamFilter === "all" ? undefined : debouncedFilters.teamFilter,
   }
   const divisionsQuery = useDivisionsQuery(organization?.id, { pageSize: 50 })
   const teamsQuery = useTeamsQuery(organization?.id, { pageSize: 50 })
   const playersQuery = usePlayersQuery(organization?.id, playerParams)
+
+  React.useEffect(() => {
+    setFilters((currentFilters) =>
+      arePlayerFiltersEqual(currentFilters, urlFilters) ? currentFilters : urlFilters,
+    )
+  }, [urlFilters])
+
+  React.useEffect(() => {
+    if (arePlayerFiltersEqual(debouncedFilters, urlFilters)) {
+      return
+    }
+
+    setParams({
+      divisionId:
+        debouncedFilters.divisionFilter === "all"
+          ? null
+          : debouncedFilters.divisionFilter,
+      page: null,
+      search: debouncedFilters.search,
+      sortBy: debouncedFilters.sortBy === "recent" ? null : debouncedFilters.sortBy,
+      sortDirection:
+        debouncedFilters.sortBy === "recent" ||
+        debouncedFilters.sortDirection === "asc"
+          ? null
+          : debouncedFilters.sortDirection,
+      status:
+        debouncedFilters.statusFilter === "all"
+          ? null
+          : debouncedFilters.statusFilter,
+      teamId: debouncedFilters.teamFilter === "all" ? null : debouncedFilters.teamFilter,
+    })
+  }, [debouncedFilters, setParams, urlFilters])
 
   if (
     organizationsQuery.isLoading ||
@@ -151,29 +266,15 @@ export function OrganizationPlayersScreen({ slug }: OrganizationPlayersScreenPro
   return (
     <OrganizationPlayersView
       divisions={divisionsQuery.data?.data ?? []}
-      filters={{
-        divisionFilter,
-        search,
-        sortBy,
-        statusFilter,
-        teamFilter,
-      }}
+      filters={filters}
+      isPlayersTableRefreshing={filtersPending || playersQuery.isFetching}
       organization={organization}
       pagination={playersQuery.data?.pagination ?? getDefaultPaginationMeta()}
       players={playersQuery.data?.data ?? []}
       teams={teamsQuery.data?.data ?? []}
-      onFiltersChange={(updates) =>
-        tablePagination.setParams({
-          divisionId: updates.divisionFilter === "all" ? null : updates.divisionFilter,
-          page: null,
-          search: updates.search,
-          sortBy: updates.sortBy === "recent" ? null : updates.sortBy,
-          status: updates.statusFilter === "all" ? null : updates.statusFilter,
-          teamId: updates.teamFilter === "all" ? null : updates.teamFilter,
-        })
-      }
-      onPageChange={tablePagination.setPage}
-      onPageSizeChange={tablePagination.setPageSize}
+      onFiltersChange={setFilters}
+      onPageChange={setPage}
+      onPageSizeChange={setPageSize}
     />
   )
 }

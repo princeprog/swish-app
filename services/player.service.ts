@@ -23,10 +23,21 @@ export type CreatePlayerPayload = {
 
 export type UpdatePlayerPayload = Partial<CreatePlayerPayload>
 
+export type PlayerSortBy =
+  | "division"
+  | "jerseyNumber"
+  | "name"
+  | "position"
+  | "recent"
+  | "status"
+  | "team"
+  | "updated"
+
 export type PlayerListParams = PaginationParams & {
   divisionId?: string
   search?: string
-  sortBy?: "name" | "recent" | "team"
+  sortBy?: PlayerSortBy
+  sortDirection?: "asc" | "desc"
   status?: "active" | "inactive"
   teamId?: string
 }

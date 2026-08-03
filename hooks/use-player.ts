@@ -22,6 +22,7 @@ export function usePlayersQuery(
 ) {
   return useQuery({
     enabled: Boolean(organizationId),
+    placeholderData: (previousData) => previousData,
     queryFn: () => playerService.list(organizationId!, params),
     queryKey: PLAYER_QUERY_KEYS.listWithParams(organizationId ?? "unknown", params),
     retry: false,
