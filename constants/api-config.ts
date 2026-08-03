@@ -78,6 +78,26 @@ export const API_ENDPOINTS = {
     list: (organizationId: string) =>
       `/organizations/${organizationId}/players`,
   },
+  rosters: {
+    approveTeam: (organizationId: string, teamId: string) =>
+      `/organizations/${organizationId}/teams/${teamId}/roster/approve`,
+    division: (organizationId: string, divisionId: string) =>
+      `/organizations/${organizationId}/divisions/${divisionId}/rosters`,
+    history: (organizationId: string, teamId: string) =>
+      `/organizations/${organizationId}/teams/${teamId}/roster/history`,
+    publishDivision: (organizationId: string, divisionId: string) =>
+      `/organizations/${organizationId}/divisions/${divisionId}/rosters/publish`,
+    returnTeam: (organizationId: string, teamId: string) =>
+      `/organizations/${organizationId}/teams/${teamId}/roster/return`,
+    settings: (organizationId: string, divisionId: string) =>
+      `/organizations/${organizationId}/divisions/${divisionId}/roster-settings`,
+    startAmendment: (organizationId: string, teamId: string) =>
+      `/organizations/${organizationId}/teams/${teamId}/roster/start-amendment`,
+    submitTeam: (organizationId: string, teamId: string) =>
+      `/organizations/${organizationId}/teams/${teamId}/roster/submit`,
+    team: (organizationId: string, teamId: string) =>
+      `/organizations/${organizationId}/teams/${teamId}/roster`,
+  },
   venues: {
     create: (organizationId: string) =>
       `/organizations/${organizationId}/venues`,

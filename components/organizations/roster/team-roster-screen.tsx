@@ -17,7 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { getApiErrorMessage } from "@/hooks/use-auth"
 import { useDivisionsQuery } from "@/hooks/use-division"
 import { useOrganizationsQuery } from "@/hooks/use-organization"
-import { usePlayersQuery } from "@/hooks/use-player"
+import { useTeamRosterQuery } from "@/hooks/use-roster"
 import { useTeamsQuery } from "@/hooks/use-team"
 import { useTablePaginationState } from "@/hooks/use-table-pagination-state"
 import { getDefaultPaginationMeta } from "@/services/pagination"
@@ -74,16 +74,15 @@ export function TeamRosterScreen({ slug, teamId }: TeamRosterScreenProps) {
   const tablePagination = useTablePaginationState()
   const divisionsQuery = useDivisionsQuery(organization?.id, { pageSize: 50 })
   const teamsQuery = useTeamsQuery(organization?.id, { pageSize: 50 })
-  const playersQuery = usePlayersQuery(organization?.id, {
-    ...tablePagination.params,
-    teamId,
-  })
+  const rosterQuery = useTeamRosterQuery(organization?.id, teamId)
   const team = teamsQuery.data?.data.find((item) => item.id === teamId)
+  const rosterPlayers =
+    rosterQuery.data?.visibility === "hidden" ? [] : rosterQuery.data?.players ?? []
 
   if (
     organizationsQuery.isLoading ||
     (organization &&
-      (divisionsQuery.isLoading || teamsQuery.isLoading || playersQuery.isLoading))
+      (divisionsQuery.isLoading || teamsQuery.isLoading || rosterQuery.isLoading))
   ) {
     return <TeamRosterLoadingState />
   }
@@ -124,11 +123,11 @@ export function TeamRosterScreen({ slug, teamId }: TeamRosterScreenProps) {
     )
   }
 
-  if (playersQuery.isError) {
+  if (rosterQuery.isError) {
     return (
       <TeamRosterEmptyShell
-        title="We couldn't load players"
-        description={getApiErrorMessage(playersQuery.error)}
+        title="We couldn't load this roster"
+        description={getApiErrorMessage(rosterQuery.error)}
       />
     )
   }
@@ -146,8 +145,14 @@ export function TeamRosterScreen({ slug, teamId }: TeamRosterScreenProps) {
     <TeamRosterView
       divisions={divisionsQuery.data?.data ?? []}
       organization={organization}
-      pagination={playersQuery.data?.pagination ?? getDefaultPaginationMeta()}
-      players={playersQuery.data?.data ?? []}
+      pagination={{
+        ...getDefaultPaginationMeta(),
+        pageSize: rosterPlayers.length || 10,
+        totalItems: rosterPlayers.length,
+        totalPages: 1,
+      }}
+      players={rosterPlayers}
+      roster={rosterQuery.data}
       team={team}
       onPageChange={tablePagination.setPage}
       onPageSizeChange={tablePagination.setPageSize}

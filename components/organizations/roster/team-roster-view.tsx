@@ -14,6 +14,7 @@ import {
   PencilLine,
   Plus,
   Shield,
+  Send,
   Trash2,
   Users2,
   X,
@@ -74,10 +75,17 @@ import {
   useDeletePlayerMutation,
   useUpdatePlayerMutation,
 } from "@/hooks/use-player"
+import {
+  useApproveRosterMutation,
+  useReturnRosterMutation,
+  useStartAmendmentMutation,
+  useSubmitRosterMutation,
+} from "@/hooks/use-roster"
 import type { Division } from "@/services/division.service"
 import type { Organization } from "@/services/organization.service"
 import type { PageSizeOption, PaginationMeta } from "@/services/pagination"
 import type { Player } from "@/services/player.service"
+import type { TeamRosterResponse } from "@/services/roster.service"
 import type { Team } from "@/services/team.service"
 
 const playerPositionOptions = [
@@ -636,6 +644,20 @@ function RosterPlayerFormModal({
   )
 }
 
+function rosterStatusTone(status: string) {
+  if (status === "approved") return "border-emerald-600 bg-emerald-600 text-white"
+  if (status === "submitted") return "border-amber-600 bg-amber-600 text-white"
+  if (status === "returned") return "border-red-600 bg-red-600 text-white"
+  return "border-zinc-600 bg-zinc-600 text-white"
+}
+
+function formatRosterStatus(status: string) {
+  if (status === "submitted") return "Submitted"
+  if (status === "approved") return "Approved"
+  if (status === "returned") return "Returned"
+  return "Draft"
+}
+
 function DeleteRosterPlayerModal({
   errorMessage,
   onClose,
@@ -763,6 +785,7 @@ function TeamRosterSummaryCards({
 }
 
 function TeamRosterTable({
+  canEditPlayers,
   onPageChange,
   onPageSizeChange,
   onDeletePlayer,
@@ -771,6 +794,7 @@ function TeamRosterTable({
   pagination,
   players,
 }: {
+  canEditPlayers: boolean
   onPageChange: (page: number) => void
   onPageSizeChange: (pageSize: PageSizeOption) => void
   onDeletePlayer: (player: Player) => void
@@ -868,12 +892,23 @@ function TeamRosterTable({
                 </TableCell>
                 <TableCell className="text-right">
                   <div onClick={(event) => event.stopPropagation()}>
-                    <RosterPlayerActionsPopover
-                      onDelete={() => onDeletePlayer(player)}
-                      onEdit={() => onEditPlayer(player)}
-                      onView={() => onViewPlayer(player)}
-                      player={player}
-                    />
+                    {canEditPlayers ? (
+                      <RosterPlayerActionsPopover
+                        onDelete={() => onDeletePlayer(player)}
+                        onEdit={() => onEditPlayer(player)}
+                        onView={() => onViewPlayer(player)}
+                        player={player}
+                      />
+                    ) : (
+                      <Button
+                        aria-label={`View ${player.name}`}
+                        size="icon-sm"
+                        variant="ghost"
+                        onClick={() => onViewPlayer(player)}
+                      >
+                        <Eye className="size-4" />
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>
@@ -897,6 +932,7 @@ export function TeamRosterView({
   organization,
   pagination,
   players,
+  roster,
   team,
 }: {
   divisions: Division[]
@@ -905,20 +941,32 @@ export function TeamRosterView({
   organization: Organization
   pagination: PaginationMeta
   players: Player[]
+  roster?: TeamRosterResponse
   team: Team
 }) {
   const createPlayerMutation = useCreatePlayerMutation(organization.id)
   const updatePlayerMutation = useUpdatePlayerMutation(organization.id)
   const deletePlayerMutation = useDeletePlayerMutation(organization.id)
+  const submitRosterMutation = useSubmitRosterMutation(organization.id, team.id)
+  const approveRosterMutation = useApproveRosterMutation(organization.id, team.id)
+  const returnRosterMutation = useReturnRosterMutation(organization.id, team.id)
+  const startAmendmentMutation = useStartAmendmentMutation(organization.id, team.id)
   const [createModalOpen, setCreateModalOpen] = React.useState(false)
   const [playerToDelete, setPlayerToDelete] = React.useState<Player | null>(null)
   const [playerToEdit, setPlayerToEdit] = React.useState<Player | null>(null)
   const [playerToView, setPlayerToView] = React.useState<Player | null>(null)
   const [playerDetailsOpen, setPlayerDetailsOpen] = React.useState(false)
   const [mountedPlayerDetails, setMountedPlayerDetails] = React.useState<Player | null>(null)
+  const [returnReason, setReturnReason] = React.useState("")
+  const [amendmentReason, setAmendmentReason] = React.useState("")
 
   const division = divisions.find((item) => item.id === team.division_id)
   const rosterPlayers = players
+  const rosterDetails = roster?.visibility === "hidden" ? null : roster?.roster
+  const rosterStatus = rosterDetails?.status ?? "draft"
+  const canEditPlayers = roster?.visibility !== "published" && (rosterStatus === "draft" || rosterStatus === "returned")
+  const isSubmitted = rosterStatus === "submitted"
+  const isApproved = rosterStatus === "approved"
 
   const activePlayers = rosterPlayers.filter((player) => player.status === "active").length
   const inactivePlayers = rosterPlayers.length - activePlayers
@@ -956,6 +1004,54 @@ export function TeamRosterView({
       })
       toast.success(`Added ${player.name} to ${team.name}`)
       setCreateModalOpen(false)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error))
+    }
+  }
+
+  async function handleSubmitRoster() {
+    try {
+      await submitRosterMutation.mutateAsync()
+      toast.success("Roster submitted for review")
+    } catch (error) {
+      toast.error(getApiErrorMessage(error))
+    }
+  }
+
+  async function handleApproveRoster() {
+    try {
+      await approveRosterMutation.mutateAsync()
+      toast.success("Roster approved")
+    } catch (error) {
+      toast.error(getApiErrorMessage(error))
+    }
+  }
+
+  async function handleReturnRoster() {
+    if (!returnReason.trim()) {
+      toast.error("Add a correction note before returning this roster.")
+      return
+    }
+
+    try {
+      await returnRosterMutation.mutateAsync(returnReason.trim())
+      toast.success("Roster returned for corrections")
+      setReturnReason("")
+    } catch (error) {
+      toast.error(getApiErrorMessage(error))
+    }
+  }
+
+  async function handleStartAmendment() {
+    if (!amendmentReason.trim()) {
+      toast.error("Add a reason before starting an amendment.")
+      return
+    }
+
+    try {
+      await startAmendmentMutation.mutateAsync(amendmentReason.trim())
+      toast.success("Roster amendment started")
+      setAmendmentReason("")
     } catch (error) {
       toast.error(getApiErrorMessage(error))
     }
@@ -1011,6 +1107,7 @@ export function TeamRosterView({
           organizationSlug={organization.slug}
           pageTitle={`${team.name} roster`}
           primaryAction={{
+            disabled: !canEditPlayers,
             label: "New player",
             onClick: () => setCreateModalOpen(true),
           }}
@@ -1027,34 +1124,150 @@ export function TeamRosterView({
 
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">People setup</p>
                 <h1 className="text-3xl font-semibold tracking-tight">{team.name} roster</h1>
-                <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-                  Manage the official roster for {team.name}. Players created here stay assigned to this
-                  team, while cross-team transfers continue to live on the main Players page.
-                </p>
                 <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
                   <span className="rounded-full border border-border/70 px-3 py-1">
                     {division?.name ?? "Unknown division"}
                   </span>
-                  <span className="rounded-full border border-border/70 px-3 py-1">
-                    {team.status}
-                  </span>
+                  {rosterDetails ? (
+                    <Badge className={rosterStatusTone(rosterStatus)} variant="outline">
+                      {formatRosterStatus(rosterStatus)}
+                    </Badge>
+                  ) : null}
+                  {rosterDetails?.publishedVersionId ? (
+                    <Badge className="border-sky-600 bg-sky-600 text-white" variant="outline">
+                      Published
+                    </Badge>
+                  ) : null}
                 </div>
               </div>
 
+              {rosterDetails ? (
+                <div className="flex flex-wrap justify-end gap-2">
+                  {canEditPlayers ? (
+                    <Button
+                      disabled={submitRosterMutation.isPending}
+                      onClick={() => void handleSubmitRoster()}
+                    >
+                      {submitRosterMutation.isPending ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        <Send className="size-4" />
+                      )}
+                      Submit roster
+                    </Button>
+                  ) : null}
+                  {isSubmitted ? (
+                    <>
+                      <Button
+                        disabled={approveRosterMutation.isPending}
+                        onClick={() => void handleApproveRoster()}
+                      >
+                        {approveRosterMutation.isPending ? (
+                          <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="size-4" />
+                        )}
+                        Approve
+                      </Button>
+                    </>
+                  ) : null}
+                  {isApproved && rosterDetails.publishedVersionId ? (
+                    <Button variant="outline" onClick={() => setAmendmentReason("Roster update")}>
+                      <PencilLine className="size-4" />
+                      Start amendment
+                    </Button>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           </section>
 
-          <TeamRosterSummaryCards
-            activePlayers={activePlayers}
-            inactivePlayers={inactivePlayers}
-            recentlyUpdatedPlayers={recentlyUpdatedPlayers}
-            totalPlayers={rosterPlayers.length}
-          />
+          {roster?.visibility === "hidden" ? (
+            <Empty className="border bg-card">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <Shield className="size-5" />
+                </EmptyMedia>
+                <EmptyTitle>Roster locked until release</EmptyTitle>
+                <EmptyDescription>{roster.message}</EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          ) : null}
 
-          <section className="space-y-6">
+          {rosterDetails && !canEditPlayers ? (
+            <Card className="border border-border/60 bg-card/95 shadow-none">
+              <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+                <div>
+                  <div className="font-medium">
+                    {isSubmitted
+                      ? "Waiting for admin review"
+                      : roster?.visibility === "published"
+                        ? "Published roster"
+                        : "Roster is locked"}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {isSubmitted
+                      ? "Player changes are paused while this roster is under review."
+                      : "Published player details stay visible while any amendment is reviewed."}
+                  </p>
+                </div>
+                {isSubmitted ? (
+                  <div className="flex min-w-72 flex-1 gap-2 sm:flex-none">
+                    <Input
+                      aria-label="Correction reason"
+                      placeholder="Correction note"
+                      value={returnReason}
+                      onChange={(event) => setReturnReason(event.target.value)}
+                    />
+                    <Button
+                      disabled={returnRosterMutation.isPending}
+                      variant="outline"
+                      onClick={() => void handleReturnRoster()}
+                    >
+                      Return
+                    </Button>
+                  </div>
+                ) : null}
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {amendmentReason ? (
+            <Card className="border border-border/60 bg-card/95 shadow-none">
+              <CardContent className="flex flex-wrap items-center gap-2 p-4">
+                <Input
+                  aria-label="Amendment reason"
+                  className="min-w-72 flex-1"
+                  value={amendmentReason}
+                  onChange={(event) => setAmendmentReason(event.target.value)}
+                />
+                <Button
+                  disabled={startAmendmentMutation.isPending}
+                  onClick={() => void handleStartAmendment()}
+                >
+                  Start amendment
+                </Button>
+                <Button variant="ghost" onClick={() => setAmendmentReason("")}>
+                  Cancel
+                </Button>
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {roster?.visibility !== "hidden" ? (
+            <TeamRosterSummaryCards
+              activePlayers={activePlayers}
+              inactivePlayers={inactivePlayers}
+              recentlyUpdatedPlayers={recentlyUpdatedPlayers}
+              totalPlayers={rosterPlayers.length}
+            />
+          ) : null}
+
+          {roster?.visibility !== "hidden" ? (
+            <section className="space-y-6">
             <TeamRosterTable
+              canEditPlayers={canEditPlayers}
               onPageChange={onPageChange}
               onPageSizeChange={onPageSizeChange}
               onDeletePlayer={setPlayerToDelete}
@@ -1067,11 +1280,12 @@ export function TeamRosterView({
               pagination={pagination}
               players={rosterPlayers}
             />
-          </section>
+            </section>
+          ) : null}
         </main>
       </SidebarInset>
 
-      {createModalOpen ? (
+      {createModalOpen && canEditPlayers ? (
         <RosterPlayerFormModal
           errorMessage={
             createPlayerMutation.isError
@@ -1086,7 +1300,7 @@ export function TeamRosterView({
         />
       ) : null}
 
-      {playerToEdit ? (
+      {playerToEdit && canEditPlayers ? (
         <RosterPlayerFormModal
           errorMessage={
             updatePlayerMutation.isError
@@ -1102,7 +1316,7 @@ export function TeamRosterView({
         />
       ) : null}
 
-      {playerToDelete ? (
+      {playerToDelete && canEditPlayers ? (
         <DeleteRosterPlayerModal
           errorMessage={
             deletePlayerMutation.isError
