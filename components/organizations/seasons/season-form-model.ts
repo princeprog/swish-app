@@ -39,6 +39,15 @@ export const DEFAULT_SEASON_GAME_RULES: SeasonGameRulesForm = {
   timeoutsSecondHalf: 3,
 }
 
+export function slugifySeasonName(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-")
+}
+
 export function createSeasonFormValues(): SeasonFormValues {
   return {
     gameRules: { ...DEFAULT_SEASON_GAME_RULES },
