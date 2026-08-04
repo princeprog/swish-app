@@ -10,7 +10,6 @@ export type ScoringPhase =
   | "reopened";
 
 export type ScoringCommandType =
-  | "game.configure"
   | "game.start"
   | "clocks.start"
   | "clocks.pause"
@@ -41,8 +40,13 @@ export type ScoringState = {
     overtimeDurationMs: number;
     periodDurationMs: number;
     regulationPeriods: number;
+    shotClockEnabled: boolean;
     shotClockFullMs: number;
     shotClockShortMs: number;
+    teamFoulsBeforePenalty: number;
+    timeoutsFirstHalf: number;
+    timeoutsPerOvertime: number;
+    timeoutsSecondHalf: number;
   };
   control: {
     controlledByMe: boolean;

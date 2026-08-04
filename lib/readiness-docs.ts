@@ -4,7 +4,7 @@ export const mvpUserStories = [
     story:
       "As a league admin, I can create an organization, league season, divisions, teams, players, venues, and initial roles so the league has an official setup record.",
     acceptance:
-      "The league has at least one division, teams can be added manually, players have jersey numbers, and the league can be viewed by admins.",
+      "Season creation records game length, overtime, shot-clock use, foul penalty, and timeout rules before divisions or games are added.",
   },
   {
     role: "League Admin",
@@ -186,22 +186,26 @@ export const scoringEvents = [
   },
   {
     type: "clocks.start / clocks.pause",
-    payload: "gameId, period, gameClockRemainingMs, shotClockRemainingMs, actorMemberId",
-    rule: "Game start is allowed only from pregame for scheduled games with active control; primary Start/Pause controls both clocks using server timestamp anchors.",
+    payload:
+      "gameId, period, gameClockRemainingMs, shotClockRemainingMs, actorMemberId",
+    rule: "Game start is allowed only from pregame for scheduled games with active control; primary Start/Pause controls the game clock and the shot clock when that season uses one.",
   },
   {
     type: "shot_clock.reset / shot_clock.adjust",
-    payload: "gameId, resetTo or remainingMs, reason when adjusting, actorMemberId",
+    payload:
+      "gameId, resetTo or remainingMs, reason when adjusting, actorMemberId",
     rule: "Shot clock can be reset independently; manual clock adjustments require a reason.",
   },
   {
     type: "event.reverse",
-    payload: "gameId, correctionOfEventId, reason when not immediate undo, actorMemberId",
+    payload:
+      "gameId, correctionOfEventId, reason when not immediate undo, actorMemberId",
     rule: "Corrections never delete the original event.",
   },
   {
     type: "period.end / period.start",
-    payload: "gameId, fromPeriod, toPeriod, clocks, reason when manually ending early",
+    payload:
+      "gameId, fromPeriod, toPeriod, clocks, reason when manually ending early",
     rule: "Starting the next period resets the game clock, shot clock, current-period team fouls, and timeout usage at Q3 and every overtime.",
   },
   {
@@ -263,6 +267,7 @@ export const scorekeeperWorkspaceFlow = [
   "The console uses serverTime to display running clocks, records FIBA timeouts as append-only events, and queues only genuine network failures.",
   "Finalization writes the official result to competition.games; standings continue to read only finalized results.",
   "The API remains authoritative: unassigned or cross-organization games return 404, and suspended access returns 403.",
+  "Pregame scoring loads the season's latest game rules; starting the game stores a snapshot so later season edits cannot change a live or official game.",
 ];
 
 export const pilotDefinition = [

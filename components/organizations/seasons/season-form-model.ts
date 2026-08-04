@@ -18,6 +18,11 @@ export type SeasonGameRulesForm = {
   timeoutsSecondHalf: number
 }
 
+export type SeasonGameRulesValidationError = {
+  field: keyof SeasonGameRulesForm
+  message: string
+}
+
 export type SeasonFormValues = {
   gameRules: SeasonGameRulesForm
   name: string
@@ -107,41 +112,71 @@ export function validateSeasonDetails(values: SeasonFormValues): string | null {
 export function validateSeasonGameRules(
   rules: SeasonGameRulesForm,
 ): string | null {
+  return getSeasonGameRulesValidationError(rules)?.message ?? null
+}
+
+export function getSeasonGameRulesValidationError(
+  rules: SeasonGameRulesForm,
+): SeasonGameRulesValidationError | null {
   if (!isWholeNumberInRange(rules.regulationPeriods, 1, 8)) {
-    return "The season must have between 1 and 8 quarters."
+    return {
+      field: "regulationPeriods",
+      message: "The season must have between 1 and 8 quarters.",
+    }
   }
 
   if (!isWholeNumberInRange(rules.periodMinutes, 1, 30)) {
-    return "Quarter length must be between 1 and 30 minutes."
+    return {
+      field: "periodMinutes",
+      message: "Quarter length must be between 1 and 30 minutes.",
+    }
   }
 
   if (!isWholeNumberInRange(rules.overtimeMinutes, 1, 30)) {
-    return "Overtime length must be between 1 and 30 minutes."
+    return {
+      field: "overtimeMinutes",
+      message: "Overtime length must be between 1 and 30 minutes.",
+    }
   }
 
   if (!isWholeNumberInRange(rules.shotClockFullSeconds, 1, 99)) {
-    return "The full shot clock must be between 1 and 99 seconds."
+    return {
+      field: "shotClockFullSeconds",
+      message: "The full shot clock must be between 1 and 99 seconds.",
+    }
   }
 
   if (!isWholeNumberInRange(rules.shotClockShortSeconds, 1, 99)) {
-    return "The short reset must be between 1 and 99 seconds."
+    return {
+      field: "shotClockShortSeconds",
+      message: "The short reset must be between 1 and 99 seconds.",
+    }
   }
 
   if (rules.shotClockShortSeconds > rules.shotClockFullSeconds) {
-    return "The short reset cannot be longer than the full shot clock."
+    return {
+      field: "shotClockShortSeconds",
+      message: "The short reset cannot be longer than the full shot clock.",
+    }
   }
 
   if (!isWholeNumberInRange(rules.teamFoulsBeforePenalty, 1, 20)) {
-    return "Team fouls before penalty must be between 1 and 20."
+    return {
+      field: "teamFoulsBeforePenalty",
+      message: "Team fouls before penalty must be between 1 and 20.",
+    }
   }
 
-  for (const allowance of [
-    rules.timeoutsFirstHalf,
-    rules.timeoutsSecondHalf,
-    rules.timeoutsPerOvertime,
-  ]) {
-    if (!isWholeNumberInRange(allowance, 0, 10)) {
-      return "Each timeout allowance must be between 0 and 10."
+  for (const field of [
+    "timeoutsFirstHalf",
+    "timeoutsSecondHalf",
+    "timeoutsPerOvertime",
+  ] as const) {
+    if (!isWholeNumberInRange(rules[field], 0, 10)) {
+      return {
+        field,
+        message: "Each timeout allowance must be between 0 and 10.",
+      }
     }
   }
 

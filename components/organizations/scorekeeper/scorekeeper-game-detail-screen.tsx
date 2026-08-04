@@ -26,7 +26,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import {
   AlertDialog,
@@ -242,7 +241,10 @@ function ClockConsole({
   periodLabel,
   running,
   shotClock,
+  shotClockEnabled,
+  shotClockFullMs,
   shotClockRunning,
+  shotClockShortMs,
   time,
   disabled,
   gameClockExpired,
@@ -256,8 +258,11 @@ function ClockConsole({
   periodLabel: string;
   running: boolean;
   shotClock: number;
+  shotClockEnabled: boolean;
   shotClockExpired: boolean;
+  shotClockFullMs: number;
   shotClockRunning: boolean;
+  shotClockShortMs: number;
   time: string;
 }) {
   const shotClockToggleDisabled =
@@ -269,7 +274,13 @@ function ClockConsole({
   return (
     <Card className="overflow-hidden md:flex md:w-[280px] md:shrink-0 md:flex-col md:justify-center">
       <CardContent className="p-4 md:p-6">
-        <div className="grid grid-cols-[minmax(0,1fr)_94px] items-stretch gap-3 sm:grid-cols-[minmax(0,1fr)_112px] md:block">
+        <div
+          className={cn(
+            "grid items-stretch gap-3 md:block",
+            shotClockEnabled &&
+              "grid-cols-[minmax(0,1fr)_94px] sm:grid-cols-[minmax(0,1fr)_112px]",
+          )}
+        >
           <div className="flex min-w-0 flex-col">
             <p className="text-sm font-medium text-muted-foreground md:text-center md:text-2xl">
               {periodLabel}
@@ -301,49 +312,49 @@ function ClockConsole({
             </Button>
           </div>
 
-          <div className="flex min-w-0 flex-col border-l pl-3 md:mt-8 md:border-l-0 md:border-t md:pl-0 md:pt-6 md:text-center">
-            <p className="text-[0.7rem] font-medium uppercase leading-none text-muted-foreground md:text-base">
-              Shot clock
-            </p>
-            <button
-              aria-label={shotClockLabel}
-              className={cn(
-                "mt-1 flex h-14 w-full items-center justify-center rounded-md font-mono text-4xl font-semibold leading-none tabular-nums transition-colors sm:h-16 sm:text-5xl md:mt-2 md:h-auto md:text-7xl",
-                shotClockToggleDisabled
-                  ? "cursor-not-allowed opacity-70"
-                  : "cursor-pointer hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                shotClockRunning && "bg-primary/10 text-primary",
-                shotClockExpired && "text-destructive",
-              )}
-              disabled={shotClockToggleDisabled}
-              onClick={onShotClockToggle}
-              type="button"
-            >
-              {Math.ceil(shotClock / 1000)}
-            </button>
-            {shotClockExpired ? (
-              <p className="mt-1 text-xs font-semibold uppercase text-destructive">
-                Violation
+          {shotClockEnabled ? (
+            <div className="flex min-w-0 flex-col border-l pl-3 md:mt-8 md:border-l-0 md:border-t md:pl-0 md:pt-6 md:text-center">
+              <p className="text-[0.7rem] font-medium uppercase leading-none text-muted-foreground md:text-base">
+                Shot clock
               </p>
-            ) : null}
-            <div className="mt-2 grid grid-cols-2 gap-2">
               <Button
-                className="h-10 min-w-0 px-0 text-lg font-semibold md:h-16 md:text-3xl"
-                onClick={() => onResetShotClock("full")}
-                disabled={disabled}
+                aria-label={shotClockLabel}
+                className={cn(
+                  "mt-1 h-14 w-full font-mono text-4xl font-semibold leading-none tabular-nums sm:h-16 sm:text-5xl md:mt-2 md:h-auto md:text-7xl",
+                  shotClockRunning && "bg-primary/10 text-primary",
+                  shotClockExpired && "text-destructive",
+                )}
+                disabled={shotClockToggleDisabled}
+                onClick={onShotClockToggle}
+                type="button"
+                variant="ghost"
               >
-                24
+                {Math.ceil(shotClock / 1000)}
               </Button>
-              <Button
-                className="h-10 min-w-0 px-0 text-lg font-semibold md:h-16 md:text-3xl"
-                variant="secondary"
-                onClick={() => onResetShotClock("short")}
-                disabled={disabled}
-              >
-                14
-              </Button>
+              {shotClockExpired ? (
+                <p className="mt-1 text-xs font-semibold uppercase text-destructive">
+                  Violation
+                </p>
+              ) : null}
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <Button
+                  className="h-10 min-w-0 px-0 text-lg font-semibold md:h-16 md:text-3xl"
+                  onClick={() => onResetShotClock("full")}
+                  disabled={disabled}
+                >
+                  {shotClockFullMs / 1000}
+                </Button>
+                <Button
+                  className="h-10 min-w-0 px-0 text-lg font-semibold md:h-16 md:text-3xl"
+                  variant="secondary"
+                  onClick={() => onResetShotClock("short")}
+                  disabled={disabled}
+                >
+                  {shotClockShortMs / 1000}
+                </Button>
+              </div>
             </div>
-          </div>
+          ) : null}
         </div>
       </CardContent>
     </Card>
@@ -376,9 +387,6 @@ function ConsoleMoreSheet({
   state: ScoringState;
   toggleSound: () => void;
 }) {
-  const [periodMinutes, setPeriodMinutes] = React.useState(
-    state.config.periodDurationMs / 60000,
-  );
   const [finalizeDialogOpen, setFinalizeDialogOpen] = React.useState(false);
   const [finalizeError, setFinalizeError] = React.useState<string | null>(null);
   const [isFinalizing, setIsFinalizing] = React.useState(false);
@@ -520,46 +528,20 @@ function ConsoleMoreSheet({
                 <Maximize2 className="size-4" />
                 Fullscreen
               </Button>
-              <Button
-                onClick={() =>
-                  onCommand(
-                    state.clock.shotClockRunning
-                      ? "shot_clock.pause"
-                      : "shot_clock.start",
-                  )
-                }
-                variant="outline"
-              >
-                {state.clock.shotClockRunning ? "Pause shot" : "Start shot"}
-              </Button>
-            </div>
-          </section>
-
-          <section className="space-y-3">
-            <h3 className="text-sm font-bold uppercase text-muted-foreground">
-              Pregame clocks
-            </h3>
-            <div className="flex items-center gap-2">
-              <Input
-                className="w-24"
-                max={30}
-                min={1}
-                type="number"
-                value={periodMinutes}
-                onChange={(event) =>
-                  setPeriodMinutes(Number(event.target.value))
-                }
-              />
-              <Button
-                onClick={() =>
-                  onCommand("game.configure", {
-                    periodDurationMs: periodMinutes * 60000,
-                  })
-                }
-                variant="outline"
-              >
-                Set quarter minutes
-              </Button>
+              {state.config.shotClockEnabled ? (
+                <Button
+                  onClick={() =>
+                    onCommand(
+                      state.clock.shotClockRunning
+                        ? "shot_clock.pause"
+                        : "shot_clock.start",
+                    )
+                  }
+                  variant="outline"
+                >
+                  {state.clock.shotClockRunning ? "Pause shot" : "Start shot"}
+                </Button>
+              ) : null}
             </div>
           </section>
 
@@ -1056,12 +1038,13 @@ export function ScorekeeperGameDetailScreen({
   const periodActionsDisabled = areLivePeriodActionsDisabled(
     displayedState.clock.gameClockRemainingMs,
   );
-  const shotClockExpired = displayedState.clock.shotClockRemainingMs === 0;
+  const shotClockExpired =
+    displayedState.config.shotClockEnabled &&
+    displayedState.clock.shotClockRemainingMs === 0;
 
   if (displayedState.phase === "pregame") {
     const canStart =
-      !scoring.offlineLockActive &&
-      displayedState.control.status !== "claimed";
+      !scoring.offlineLockActive && displayedState.control.status !== "claimed";
 
     return (
       <main className="min-h-screen bg-background p-4 text-foreground md:p-8">
@@ -1080,9 +1063,7 @@ export function ScorekeeperGameDetailScreen({
               <Badge className="w-fit" variant="secondary">
                 Pregame review
               </Badge>
-              <CardTitle className="text-2xl md:text-4xl">
-                {matchup}
-              </CardTitle>
+              <CardTitle className="text-2xl md:text-4xl">{matchup}</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-5 md:grid-cols-2">
               <div className="space-y-3">
@@ -1099,12 +1080,17 @@ export function ScorekeeperGameDetailScreen({
                   <div className="rounded-md border p-3">
                     <p className="text-muted-foreground">Shot clock</p>
                     <p className="font-mono text-2xl">
-                      {displayedState.config.shotClockFullMs / 1000}s
+                      {displayedState.config.shotClockEnabled
+                        ? `${displayedState.config.shotClockFullMs / 1000}s`
+                        : "Not used"}
                     </p>
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Timeouts: 2 per first half, 3 per second half, 1 each OT.
+                  Timeouts: {displayedState.config.timeoutsFirstHalf} in the
+                  first half, {displayedState.config.timeoutsSecondHalf} in the
+                  second half, and {displayedState.config.timeoutsPerOvertime}
+                  each overtime.
                 </p>
               </div>
 
@@ -1147,8 +1133,12 @@ export function ScorekeeperGameDetailScreen({
                       </AlertDialogMedia>
                       <AlertDialogTitle>Start this game?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Once you start, the game clock and shot clock will
-                        begin. Make sure both teams are ready before continuing.
+                        Once you start, the game clock
+                        {displayedState.config.shotClockEnabled
+                          ? " and shot clock"
+                          : ""}{" "}
+                        will begin. Make sure both teams are ready before
+                        continuing.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
 
@@ -1255,7 +1245,10 @@ export function ScorekeeperGameDetailScreen({
             periodLabel={displayedState.period.label}
             running={displayedState.clock.gameClockRunning}
             shotClock={displayedState.clock.shotClockRemainingMs}
+            shotClockEnabled={displayedState.config.shotClockEnabled}
+            shotClockFullMs={displayedState.config.shotClockFullMs}
             shotClockRunning={displayedState.clock.shotClockRunning}
+            shotClockShortMs={displayedState.config.shotClockShortMs}
             time={formatClock(displayedState.clock.gameClockRemainingMs)}
             disabled={clockControlsDisabled}
             gameClockExpired={gameClockExpired}
@@ -1290,7 +1283,10 @@ export function ScorekeeperGameDetailScreen({
             periodLabel={displayedState.period.label}
             running={displayedState.clock.gameClockRunning}
             shotClock={displayedState.clock.shotClockRemainingMs}
+            shotClockEnabled={displayedState.config.shotClockEnabled}
+            shotClockFullMs={displayedState.config.shotClockFullMs}
             shotClockRunning={displayedState.clock.shotClockRunning}
+            shotClockShortMs={displayedState.config.shotClockShortMs}
             time={formatClock(displayedState.clock.gameClockRemainingMs)}
             disabled={clockControlsDisabled}
             gameClockExpired={gameClockExpired}

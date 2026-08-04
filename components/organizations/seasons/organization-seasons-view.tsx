@@ -1,29 +1,29 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { createPortal } from "react-dom"
+import * as React from "react";
+import { createPortal } from "react-dom";
 import {
   CalendarDays,
   Loader2,
   MoreHorizontal,
   PencilLine,
   Trash2,
-} from "lucide-react"
-import { toast } from "sonner"
+} from "lucide-react";
+import { toast } from "sonner";
 
-import { AppSidebar } from "@/components/app-sidebar"
-import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
-import { DataTablePagination } from "@/components/organizations/shared/data-table-pagination"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { AppSidebar } from "@/components/app-sidebar";
+import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header";
+import { DataTablePagination } from "@/components/organizations/shared/data-table-pagination";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Empty,
   EmptyContent,
@@ -31,12 +31,9 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@/components/ui/empty"
-import { FieldError } from "@/components/ui/field"
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/empty";
+import { FieldError } from "@/components/ui/field";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import {
   Table,
   TableBody,
@@ -44,48 +41,48 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { getApiErrorMessage } from "@/hooks/use-auth"
-import { useDeleteLeagueSeasonMutation } from "@/hooks/use-league-season"
-import type { Organization } from "@/services/organization.service"
-import type { LeagueSeason } from "@/services/league-season.service"
-import type { PageSizeOption, PaginationMeta } from "@/services/pagination"
-import { formatSeasonGameRules } from "@/components/organizations/seasons/season-form-model"
+} from "@/components/ui/table";
+import { getApiErrorMessage } from "@/hooks/use-auth";
+import { useDeleteLeagueSeasonMutation } from "@/hooks/use-league-season";
+import type { Organization } from "@/services/organization.service";
+import type { LeagueSeason } from "@/services/league-season.service";
+import type { PageSizeOption, PaginationMeta } from "@/services/pagination";
+import { formatSeasonGameRules } from "@/components/organizations/seasons/season-form-model";
 import {
   SeasonCreateWizardModal,
   SeasonEditWizardModal,
-} from "@/components/organizations/seasons/season-wizard-containers"
+} from "@/components/organizations/seasons/season-wizard-containers";
 
 function statusTone(status: string) {
   if (status === "active") {
-    return "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+    return "border-emerald-500/20 bg-emerald-500/10 text-emerald-300";
   }
 
   if (status === "inactive") {
-    return "border-zinc-500/20 bg-zinc-500/10 text-zinc-300"
+    return "border-zinc-500/20 bg-zinc-500/10 text-zinc-300";
   }
 
-  return "border-amber-500/20 bg-amber-500/10 text-amber-300"
+  return "border-amber-500/20 bg-amber-500/10 text-amber-300";
 }
-
 function SeasonDeleteModal({
   onClose,
   organizationId,
   season,
 }: {
-  onClose: () => void
-  organizationId: string
-  season: LeagueSeason
+  onClose: () => void;
+  organizationId: string;
+  season: LeagueSeason;
 }) {
-  const deleteLeagueSeasonMutation = useDeleteLeagueSeasonMutation(organizationId)
+  const deleteLeagueSeasonMutation =
+    useDeleteLeagueSeasonMutation(organizationId);
 
   async function handleDelete() {
     try {
-      await deleteLeagueSeasonMutation.mutateAsync(season.id)
-      toast.success(`Deleted ${season.name}`)
-      onClose()
+      await deleteLeagueSeasonMutation.mutateAsync(season.id);
+      toast.success(`Deleted ${season.name}`);
+      onClose();
     } catch (error) {
-      toast.error(getApiErrorMessage(error))
+      toast.error(getApiErrorMessage(error));
     }
   }
 
@@ -95,13 +92,16 @@ function SeasonDeleteModal({
         <CardHeader>
           <CardTitle>Delete season</CardTitle>
           <CardDescription>
-            You are about to delete <span className="font-medium">{season.name}</span>.
-            This action cannot be undone.
+            You are about to delete{" "}
+            <span className="font-medium">{season.name}</span>. This action
+            cannot be undone.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
           {deleteLeagueSeasonMutation.isError ? (
-            <FieldError>{getApiErrorMessage(deleteLeagueSeasonMutation.error)}</FieldError>
+            <FieldError>
+              {getApiErrorMessage(deleteLeagueSeasonMutation.error)}
+            </FieldError>
           ) : null}
 
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
@@ -130,7 +130,7 @@ function SeasonDeleteModal({
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
 
 function SeasonActionsPopover({
@@ -138,67 +138,70 @@ function SeasonActionsPopover({
   onEdit,
   season,
 }: {
-  onDelete: () => void
-  onEdit: () => void
-  season: LeagueSeason
+  onDelete: () => void;
+  onEdit: () => void;
+  season: LeagueSeason;
 }) {
-  const [open, setOpen] = React.useState(false)
-  const buttonRef = React.useRef<HTMLButtonElement | null>(null)
+  const [open, setOpen] = React.useState(false);
+  const buttonRef = React.useRef<HTMLButtonElement | null>(null);
   const [menuPosition, setMenuPosition] = React.useState<{
-    top: number
-    left: number
-  } | null>(null)
+    top: number;
+    left: number;
+  } | null>(null);
 
   React.useEffect(() => {
     if (!open) {
-      setMenuPosition(null)
-      return
+      setMenuPosition(null);
+      return;
     }
 
     function updatePosition() {
-      const rect = buttonRef.current?.getBoundingClientRect()
+      const rect = buttonRef.current?.getBoundingClientRect();
 
       if (!rect) {
-        return
+        return;
       }
 
       setMenuPosition({
         top: rect.bottom + 8,
         left: rect.right - 176,
-      })
+      });
     }
 
-    updatePosition()
+    updatePosition();
 
     function handlePointerDown(event: MouseEvent) {
-      const target = event.target as HTMLElement | null
+      const target = event.target as HTMLElement | null;
 
       if (!target?.closest(`[data-season-actions="${season.id}"]`)) {
-        setOpen(false)
+        setOpen(false);
       }
     }
 
     function handleEscape(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        setOpen(false)
+        setOpen(false);
       }
     }
 
-    document.addEventListener("mousedown", handlePointerDown)
-    document.addEventListener("keydown", handleEscape)
-    window.addEventListener("resize", updatePosition)
-    window.addEventListener("scroll", updatePosition, true)
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleEscape);
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
 
     return () => {
-      document.removeEventListener("mousedown", handlePointerDown)
-      document.removeEventListener("keydown", handleEscape)
-      window.removeEventListener("resize", updatePosition)
-      window.removeEventListener("scroll", updatePosition, true)
-    }
-  }, [open, season.id])
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleEscape);
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [open, season.id]);
 
   return (
-    <div className="relative inline-flex justify-end" data-season-actions={season.id}>
+    <div
+      className="relative inline-flex justify-end"
+      data-season-actions={season.id}
+    >
       <Button
         aria-expanded={open}
         aria-haspopup="menu"
@@ -227,8 +230,8 @@ function SeasonActionsPopover({
                   size="sm"
                   variant="ghost"
                   onClick={() => {
-                    setOpen(false)
-                    onEdit()
+                    setOpen(false);
+                    onEdit();
                   }}
                 >
                   <PencilLine className="size-4" />
@@ -239,8 +242,8 @@ function SeasonActionsPopover({
                   size="sm"
                   variant="ghost"
                   onClick={() => {
-                    setOpen(false)
-                    onDelete()
+                    setOpen(false);
+                    onDelete();
                   }}
                 >
                   <Trash2 className="size-4" />
@@ -252,7 +255,7 @@ function SeasonActionsPopover({
           )
         : null}
     </div>
-  )
+  );
 }
 
 function SeasonsTable({
@@ -264,13 +267,13 @@ function SeasonsTable({
   pagination,
   seasons,
 }: {
-  onPageChange: (page: number) => void
-  onPageSizeChange: (pageSize: PageSizeOption) => void
-  onDeleteSeason: (season: LeagueSeason) => void
-  onEditSeason: (season: LeagueSeason) => void
-  organizationSlug: string
-  pagination: PaginationMeta
-  seasons: LeagueSeason[]
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: PageSizeOption) => void;
+  onDeleteSeason: (season: LeagueSeason) => void;
+  onEditSeason: (season: LeagueSeason) => void;
+  organizationSlug: string;
+  pagination: PaginationMeta;
+  seasons: LeagueSeason[];
 }) {
   if (seasons.length === 0) {
     return (
@@ -286,7 +289,7 @@ function SeasonsTable({
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
-    )
+    );
   }
 
   return (
@@ -298,8 +301,12 @@ function SeasonsTable({
               <TableHead className="w-12 px-4">
                 <Checkbox aria-label="Select all seasons" />
               </TableHead>
-              <TableHead className="h-12 text-muted-foreground">Season</TableHead>
-              <TableHead className="text-muted-foreground">Game rules</TableHead>
+              <TableHead className="h-12 text-muted-foreground">
+                Season
+              </TableHead>
+              <TableHead className="text-muted-foreground">
+                Game rules
+              </TableHead>
               <TableHead className="text-muted-foreground">Status</TableHead>
               <TableHead className="text-muted-foreground">Public</TableHead>
               <TableHead className="text-muted-foreground">Updated</TableHead>
@@ -322,7 +329,10 @@ function SeasonsTable({
                   {formatSeasonGameRules(season)}
                 </TableCell>
                 <TableCell>
-                  <Badge className={statusTone(season.status)} variant="outline">
+                  <Badge
+                    className={statusTone(season.status)}
+                    variant="outline"
+                  >
                     {season.status}
                   </Badge>
                 </TableCell>
@@ -340,7 +350,9 @@ function SeasonsTable({
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-col gap-1">
-                    <div>{new Date(season.updated_at).toLocaleDateString()}</div>
+                    <div>
+                      {new Date(season.updated_at).toLocaleDateString()}
+                    </div>
                     <div className="text-xs text-muted-foreground">
                       {new Date(season.updated_at).toLocaleTimeString([], {
                         hour: "numeric",
@@ -367,7 +379,7 @@ function SeasonsTable({
         />
       </CardContent>
     </Card>
-  )
+  );
 }
 
 export function OrganizationSeasonsView({
@@ -377,15 +389,18 @@ export function OrganizationSeasonsView({
   pagination,
   seasons,
 }: {
-  onPageChange: (page: number) => void
-  onPageSizeChange: (pageSize: PageSizeOption) => void
-  organization: Organization
-  pagination: PaginationMeta
-  seasons: LeagueSeason[]
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: PageSizeOption) => void;
+  organization: Organization;
+  pagination: PaginationMeta;
+  seasons: LeagueSeason[];
 }) {
-  const [createModalOpen, setCreateModalOpen] = React.useState(false)
-  const [seasonToDelete, setSeasonToDelete] = React.useState<LeagueSeason | null>(null)
-  const [seasonToEdit, setSeasonToEdit] = React.useState<LeagueSeason | null>(null)
+  const [createModalOpen, setCreateModalOpen] = React.useState(false);
+  const [seasonToDelete, setSeasonToDelete] =
+    React.useState<LeagueSeason | null>(null);
+  const [seasonToEdit, setSeasonToEdit] = React.useState<LeagueSeason | null>(
+    null,
+  );
 
   return (
     <SidebarProvider>
@@ -399,7 +414,6 @@ export function OrganizationSeasonsView({
       />
       <SidebarInset>
         <WorkspaceHeader
-          
           organizationAccess={organization.access}
           organizationName={organization.name}
           organizationSlug={organization.slug}
@@ -454,6 +468,5 @@ export function OrganizationSeasonsView({
         />
       ) : null}
     </SidebarProvider>
-  )
+  );
 }
-

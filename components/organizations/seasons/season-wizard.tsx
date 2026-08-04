@@ -16,9 +16,10 @@ import { FieldError } from "@/components/ui/field"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
 import {
+  getSeasonGameRulesValidationError,
+  type SeasonGameRulesForm,
   type SeasonFormValues,
   validateSeasonDetails,
-  validateSeasonGameRules,
 } from "@/components/organizations/seasons/season-form-model"
 import { SeasonGameRulesStep } from "@/components/organizations/seasons/season-game-rules-step"
 import { SeasonDetailsStep } from "@/components/organizations/seasons/season-details-step"
@@ -47,6 +48,9 @@ export function SeasonWizard({
   const [validationError, setValidationError] = React.useState<string | null>(
     null,
   )
+  const [invalidRuleField, setInvalidRuleField] = React.useState<
+    keyof SeasonGameRulesForm | null
+  >(null)
   const title = mode === "create" ? "Create season" : "Edit season"
 
   function goToRules() {
@@ -64,8 +68,9 @@ export function SeasonWizard({
       return
     }
 
-    const error = validateSeasonGameRules(values.gameRules)
-    setValidationError(error)
+    const error = getSeasonGameRulesValidationError(values.gameRules)
+    setValidationError(error?.message ?? null)
+    setInvalidRuleField(error?.field ?? null)
 
     if (error) return
 
@@ -101,7 +106,11 @@ export function SeasonWizard({
           <Progress value={step * 50} />
         </div>
 
-        <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
+        <form
+          className="flex flex-col gap-6"
+          noValidate
+          onSubmit={handleSubmit}
+        >
           {step === 1 ? (
             <SeasonDetailsStep
               validationError={validationError}
@@ -110,16 +119,22 @@ export function SeasonWizard({
             />
           ) : (
             <SeasonGameRulesStep
+              invalidField={invalidRuleField}
               isEditing={mode === "edit"}
               rules={values.gameRules}
-              onChange={(gameRules) =>
+              validationError={validationError}
+              onChange={(gameRules) => {
+                setValidationError(null)
+                setInvalidRuleField(null)
                 setValues((current) => ({ ...current, gameRules }))
-              }
+              }}
             />
           )}
 
-          {validationError || errorMessage ? (
-            <FieldError>{validationError ?? errorMessage}</FieldError>
+          {(step === 1 && validationError) || errorMessage ? (
+            <FieldError>
+              {step === 1 && validationError ? validationError : errorMessage}
+            </FieldError>
           ) : null}
 
           <DialogFooter>
@@ -134,6 +149,7 @@ export function SeasonWizard({
                 disabled={isPending}
                 onClick={() => {
                   setValidationError(null)
+                  setInvalidRuleField(null)
                   setStep(1)
                 }}
               >

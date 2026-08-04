@@ -18,16 +18,23 @@ import type { SeasonGameRulesForm } from "@/components/organizations/seasons/sea
 import { SeasonRuleNumberField } from "@/components/organizations/seasons/season-rule-number-field"
 
 type SeasonGameRulesStepProps = {
+  invalidField: keyof SeasonGameRulesForm | null
   isEditing: boolean
   onChange: (rules: SeasonGameRulesForm) => void
   rules: SeasonGameRulesForm
+  validationError: string | null
 }
 
 export function SeasonGameRulesStep({
+  invalidField,
   isEditing,
   onChange,
   rules,
+  validationError,
 }: SeasonGameRulesStepProps) {
+  const errorFor = (field: keyof SeasonGameRulesForm) =>
+    invalidField === field ? validationError : null
+
   function update<Key extends keyof SeasonGameRulesForm>(
     key: Key,
     value: SeasonGameRulesForm[Key],
@@ -51,6 +58,7 @@ export function SeasonGameRulesStep({
         <FieldLegend>Game length</FieldLegend>
         <FieldGroup className="grid gap-4 sm:grid-cols-3">
           <SeasonRuleNumberField
+            error={errorFor("regulationPeriods")}
             label="Quarters"
             maximum={8}
             minimum={1}
@@ -59,6 +67,7 @@ export function SeasonGameRulesStep({
             onChange={(value) => update("regulationPeriods", value)}
           />
           <SeasonRuleNumberField
+            error={errorFor("periodMinutes")}
             label="Quarter length"
             maximum={30}
             minimum={1}
@@ -67,6 +76,7 @@ export function SeasonGameRulesStep({
             onChange={(value) => update("periodMinutes", value)}
           />
           <SeasonRuleNumberField
+            error={errorFor("overtimeMinutes")}
             label="Overtime length"
             maximum={30}
             minimum={1}
@@ -100,6 +110,7 @@ export function SeasonGameRulesStep({
           <FieldGroup className="grid gap-4 sm:grid-cols-2">
             <SeasonRuleNumberField
               disabled={!rules.shotClockEnabled}
+              error={errorFor("shotClockFullSeconds")}
               label="Full shot clock"
               maximum={99}
               minimum={1}
@@ -109,6 +120,7 @@ export function SeasonGameRulesStep({
             />
             <SeasonRuleNumberField
               disabled={!rules.shotClockEnabled}
+              error={errorFor("shotClockShortSeconds")}
               label="Short reset"
               maximum={99}
               minimum={1}
@@ -126,6 +138,7 @@ export function SeasonGameRulesStep({
         <FieldLegend>Fouls and timeouts</FieldLegend>
         <FieldGroup className="grid gap-4 sm:grid-cols-2">
           <SeasonRuleNumberField
+            error={errorFor("teamFoulsBeforePenalty")}
             label="Team fouls before penalty"
             maximum={20}
             minimum={1}
@@ -134,6 +147,7 @@ export function SeasonGameRulesStep({
             onChange={(value) => update("teamFoulsBeforePenalty", value)}
           />
           <SeasonRuleNumberField
+            error={errorFor("timeoutsFirstHalf")}
             label="First-half timeouts"
             maximum={10}
             minimum={0}
@@ -142,6 +156,7 @@ export function SeasonGameRulesStep({
             onChange={(value) => update("timeoutsFirstHalf", value)}
           />
           <SeasonRuleNumberField
+            error={errorFor("timeoutsSecondHalf")}
             label="Second-half timeouts"
             maximum={10}
             minimum={0}
@@ -150,6 +165,7 @@ export function SeasonGameRulesStep({
             onChange={(value) => update("timeoutsSecondHalf", value)}
           />
           <SeasonRuleNumberField
+            error={errorFor("timeoutsPerOvertime")}
             label="Overtime timeouts"
             maximum={10}
             minimum={0}

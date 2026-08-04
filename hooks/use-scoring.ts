@@ -167,9 +167,9 @@ function applyOptimisticCommand(
     const now = next.serverTime;
     next.phase = "live";
     next.clock.gameClockRunning = true;
-    next.clock.shotClockRunning = true;
+    next.clock.shotClockRunning = next.config.shotClockEnabled;
     next.clock.gameClockStartedAt = now;
-    next.clock.shotClockStartedAt = now;
+    next.clock.shotClockStartedAt = next.config.shotClockEnabled ? now : null;
   }
 
   if (command.type === "clocks.pause") {
