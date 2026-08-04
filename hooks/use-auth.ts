@@ -66,13 +66,8 @@ export function useRegisterMutation() {
 }
 
 export function useLogoutMutation() {
-  const queryClient = useQueryClient()
-
   return useMutation({
     mutationFn: authService.logout,
-    onSuccess: () => {
-      queryClient.removeQueries()
-    },
   })
 }
 

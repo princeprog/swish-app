@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { LogOutIcon } from "lucide-react";
 
 import {
@@ -28,6 +29,7 @@ export function LogoutConfirmationDialog({
   open,
 }: LogoutConfirmationDialogProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const logoutMutation = useLogoutMutation();
 
   function handleOpenChange(nextOpen: boolean) {
@@ -45,6 +47,10 @@ export function LogoutConfirmationDialog({
   async function handleLogout() {
     try {
       await logoutMutation.mutateAsync();
+      onOpenChange(false);
+      await new Promise((resolve) => window.requestAnimationFrame(resolve));
+      document.body.style.pointerEvents = "";
+      queryClient.removeQueries();
       router.replace("/login");
       router.refresh();
     } catch {
