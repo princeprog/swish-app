@@ -6,7 +6,10 @@ export type Team = {
   color: string | null
   created_at: string
   division_id: string
+  division_name?: string
   id: string
+  league_season_id?: string
+  league_season_name?: string
   name: string
   slug: string
   status: string

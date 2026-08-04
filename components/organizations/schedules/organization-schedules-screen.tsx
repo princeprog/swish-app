@@ -6,6 +6,7 @@ import * as React from "react";
 import { CalendarRange } from "lucide-react";
 
 import { OrganizationSchedulesView } from "@/components/organizations/schedules/organization-schedules-view";
+import { TeamManagerWorkspace } from "@/components/organizations/team-manager/manager-workspace";
 import { canManageOrganizationSchedule } from "@/components/organizations/schedules/schedule-access";
 import { Button } from "@/components/ui/button";
 import {
@@ -79,6 +80,7 @@ export function OrganizationSchedulesScreen({
     (item) => item.slug === slug,
   );
   const isScorekeeper = organization?.access.role === "scorekeeper";
+  const isTeamManager = organization?.access.role === "team_manager";
   const scorekeeperLandingPath = organization
     ? getOrganizationLandingPath(organization)
     : undefined;
@@ -133,6 +135,10 @@ export function OrganizationSchedulesScreen({
 
   if (isScorekeeper) {
     return <SchedulesLoadingState />;
+  }
+
+  if (isTeamManager) {
+    return <TeamManagerWorkspace organization={organization} page="schedule" />;
   }
 
   if (canManageSchedule && leagueSeasonsQuery.isError) {

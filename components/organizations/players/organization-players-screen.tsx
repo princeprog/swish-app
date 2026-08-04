@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Users2 } from "lucide-react"
 
 import { OrganizationPlayersView } from "@/components/organizations/players/organization-players-view"
+import { TeamManagerWorkspace } from "@/components/organizations/team-manager/manager-workspace"
 import { Button } from "@/components/ui/button"
 import {
   Empty,
@@ -109,6 +110,7 @@ function PlayersEmptyShell({
 export function OrganizationPlayersScreen({ slug }: OrganizationPlayersScreenProps) {
   const organizationsQuery = useOrganizationsQuery()
   const organization = organizationsQuery.data?.find((item) => item.slug === slug)
+  const isTeamManager = organization?.access.role === "team_manager"
   const tablePagination = useTablePaginationState()
   const {
     params: paginationParams,
@@ -174,9 +176,10 @@ export function OrganizationPlayersScreen({ slug }: OrganizationPlayersScreenPro
     teamId:
       debouncedFilters.teamFilter === "all" ? undefined : debouncedFilters.teamFilter,
   }
-  const divisionsQuery = useDivisionsQuery(organization?.id, { pageSize: 50 })
-  const teamsQuery = useTeamsQuery(organization?.id, { pageSize: 50 })
-  const playersQuery = usePlayersQuery(organization?.id, playerParams)
+  const adminOrganizationId = isTeamManager ? undefined : organization?.id
+  const divisionsQuery = useDivisionsQuery(adminOrganizationId, { pageSize: 50 })
+  const teamsQuery = useTeamsQuery(adminOrganizationId, { pageSize: 50 })
+  const playersQuery = usePlayersQuery(adminOrganizationId, playerParams)
 
   React.useEffect(() => {
     setFilters((currentFilters) =>
@@ -213,6 +216,7 @@ export function OrganizationPlayersScreen({ slug }: OrganizationPlayersScreenPro
   if (
     organizationsQuery.isLoading ||
     (organization &&
+      !isTeamManager &&
       (divisionsQuery.isLoading || teamsQuery.isLoading || playersQuery.isLoading))
   ) {
     return <PlayersLoadingState />
@@ -234,6 +238,10 @@ export function OrganizationPlayersScreen({ slug }: OrganizationPlayersScreenPro
         description="This workspace does not exist or you do not have access to it."
       />
     )
+  }
+
+  if (isTeamManager) {
+    return <TeamManagerWorkspace organization={organization} page="players" />
   }
 
   if (divisionsQuery.isError) {

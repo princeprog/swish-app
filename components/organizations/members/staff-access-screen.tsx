@@ -16,12 +16,12 @@ import { WorkspaceHeader } from "@/components/organizations/shared/workspace-hea
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { Field, FieldContent, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -41,6 +41,7 @@ import { useTeamsQuery } from "@/hooks/use-team"
 import { STAFF_ACCESS_TABS } from "@/lib/staff-access-tabs"
 import type { OrganizationMember } from "@/services/access.service"
 import type { OrganizationRole } from "@/services/organization.service"
+import type { Team } from "@/services/team.service"
 
 const editableRoles = ["admin", "team_manager", "scorekeeper"] as const
 
@@ -172,7 +173,7 @@ function MemberEditor({
   member: OrganizationMember
   onClose: () => void
   organizationId: string
-  teams: { id: string; name: string }[]
+  teams: Team[]
 }) {
   const updateMember = useUpdateMemberMutation(organizationId)
   const updateTeams = useUpdateTeamAssignmentsMutation(organizationId)
@@ -227,7 +228,12 @@ function MemberEditor({
           </Field>
           {role === "team_manager" ? (
             <AssignmentList
-              items={teams.map((team) => ({ id: team.id, label: team.name }))}
+              items={teams.map((team) => ({
+                id: team.id,
+                label: team.name,
+                seasonId: team.league_season_id ?? team.division_id,
+                seasonLabel: team.league_season_name ?? "Season",
+              }))}
               selectedIds={teamIds}
               title="Assigned teams"
               onChange={setTeamIds}
@@ -249,27 +255,71 @@ function AssignmentList({
   selectedIds,
   title,
 }: {
-  items: { id: string; label: string }[]
+  items: { id: string; label: string; seasonId: string; seasonLabel: string }[]
   onChange: (ids: string[]) => void
   selectedIds: string[]
   title: string
 }) {
+  const groupedItems = items.reduce<
+    Array<{ seasonId: string; seasonLabel: string; teams: typeof items }>
+  >((groups, item) => {
+    const group = groups.find((entry) => entry.seasonId === item.seasonId)
+
+    if (group) {
+      group.teams.push(item)
+    } else {
+      groups.push({
+        seasonId: item.seasonId,
+        seasonLabel: item.seasonLabel,
+        teams: [item],
+      })
+    }
+
+    return groups
+  }, [])
+
   return (
     <div className="rounded-md border p-3">
       <p className="mb-2 text-sm font-medium">{title}</p>
-      <div className="grid max-h-48 gap-2 overflow-auto">
-        {items.map((item) => {
-          const checked = selectedIds.includes(item.id)
+      <p className="mb-3 text-xs text-muted-foreground">
+        Choose one team per season. A manager can still be assigned in multiple seasons.
+      </p>
+      <div className="grid max-h-72 gap-4 overflow-auto">
+        {groupedItems.map((group) => {
+          const selectedTeamId =
+            group.teams.find((team) => selectedIds.includes(team.id))?.id ??
+            "none"
+
           return (
-            <label key={item.id} className="flex items-center gap-2 text-sm">
-              <Checkbox
-                checked={checked}
-                onCheckedChange={(nextChecked) =>
-                  onChange(nextChecked ? [...selectedIds, item.id] : selectedIds.filter((id) => id !== item.id))
-                }
-              />
-              <span>{item.label}</span>
-            </label>
+            <div key={group.seasonId} className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">
+                {group.seasonLabel}
+              </p>
+              <RadioGroup
+                value={selectedTeamId}
+                onValueChange={(teamId) => {
+                  const otherSeasonTeamIds = selectedIds.filter(
+                    (id) => !group.teams.some((team) => team.id === id),
+                  )
+                  onChange(
+                    teamId === "none"
+                      ? otherSeasonTeamIds
+                      : [...otherSeasonTeamIds, teamId],
+                  )
+                }}
+              >
+                <label className="flex items-center gap-2 text-sm">
+                  <RadioGroupItem value="none" />
+                  <span>No team this season</span>
+                </label>
+                {group.teams.map((item) => (
+                  <label key={item.id} className="flex items-center gap-2 text-sm">
+                    <RadioGroupItem value={item.id} />
+                    <span>{item.label}</span>
+                  </label>
+                ))}
+              </RadioGroup>
+            </div>
           )
         })}
       </div>

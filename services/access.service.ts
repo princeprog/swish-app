@@ -4,6 +4,8 @@ import type { OrganizationRole } from "@/services/organization.service"
 
 export type StaffAssignment = {
   id: string
+  leagueSeasonId?: string
+  leagueSeasonName?: string
   name?: string
   slug?: string
   homeTeamName?: string | null

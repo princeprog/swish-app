@@ -4,6 +4,7 @@ import Link from "next/link"
 import { Shield, Users2 } from "lucide-react"
 
 import { OrganizationTeamsView } from "@/components/organizations/teams/organization-teams-view"
+import { TeamManagerWorkspace } from "@/components/organizations/team-manager/manager-workspace"
 import { Button } from "@/components/ui/button"
 import {
   Empty,
@@ -71,6 +72,7 @@ function TeamsEmptyShell({
 export function OrganizationTeamsScreen({ slug }: OrganizationTeamsScreenProps) {
   const organizationsQuery = useOrganizationsQuery()
   const organization = organizationsQuery.data?.find((item) => item.slug === slug)
+  const isTeamManager = organization?.access.role === "team_manager"
   const tablePagination = useTablePaginationState()
   const search = tablePagination.searchParams.get("search") ?? ""
   const divisionFilter = tablePagination.searchParams.get("divisionId") ?? "all"
@@ -89,13 +91,15 @@ export function OrganizationTeamsScreen({ slug }: OrganizationTeamsScreenProps) 
     sortBy,
     status: statusFilter === "all" ? undefined : statusFilter,
   }
-  const divisionsQuery = useDivisionsQuery(organization?.id, { pageSize: 50 })
-  const teamsQuery = useTeamsQuery(organization?.id, teamParams)
-  const playersQuery = usePlayersQuery(organization?.id, { pageSize: 50 })
+  const adminOrganizationId = isTeamManager ? undefined : organization?.id
+  const divisionsQuery = useDivisionsQuery(adminOrganizationId, { pageSize: 50 })
+  const teamsQuery = useTeamsQuery(adminOrganizationId, teamParams)
+  const playersQuery = usePlayersQuery(adminOrganizationId, { pageSize: 50 })
 
   if (
     organizationsQuery.isLoading ||
     (organization &&
+      !isTeamManager &&
       (divisionsQuery.isLoading || teamsQuery.isLoading || playersQuery.isLoading))
   ) {
     return <TeamsLoadingState />
@@ -117,6 +121,10 @@ export function OrganizationTeamsScreen({ slug }: OrganizationTeamsScreenProps) 
         description="This workspace does not exist or you do not have access to it."
       />
     )
+  }
+
+  if (isTeamManager) {
+    return <TeamManagerWorkspace organization={organization} page="team" />
   }
 
   if (divisionsQuery.isError) {

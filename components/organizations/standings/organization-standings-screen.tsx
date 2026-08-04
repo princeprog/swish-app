@@ -4,6 +4,7 @@ import Link from "next/link"
 import { Trophy } from "lucide-react"
 
 import { OrganizationStandingsView } from "@/components/organizations/standings/organization-standings-view"
+import { TeamManagerWorkspace } from "@/components/organizations/team-manager/manager-workspace"
 import { Button } from "@/components/ui/button"
 import {
   Empty,
@@ -69,16 +70,19 @@ export function OrganizationStandingsScreen({
 }: OrganizationStandingsScreenProps) {
   const organizationsQuery = useOrganizationsQuery()
   const organization = organizationsQuery.data?.find((item) => item.slug === slug)
-  const leagueSeasonsQuery = useLeagueSeasonsQuery(organization?.id, {
+  const isTeamManager = organization?.access.role === "team_manager"
+  const adminOrganizationId = isTeamManager ? undefined : organization?.id
+  const leagueSeasonsQuery = useLeagueSeasonsQuery(adminOrganizationId, {
     pageSize: 50,
   })
-  const divisionsQuery = useDivisionsQuery(organization?.id, { pageSize: 50 })
+  const divisionsQuery = useDivisionsQuery(adminOrganizationId, { pageSize: 50 })
   const seasons = leagueSeasonsQuery.data?.data ?? []
   const activeSeason = seasons.find((season) => season.status === "active") ?? seasons[0]
 
   if (
     organizationsQuery.isLoading ||
     (organization &&
+      !isTeamManager &&
       (leagueSeasonsQuery.isLoading ||
         divisionsQuery.isLoading))
   ) {
@@ -101,6 +105,10 @@ export function OrganizationStandingsScreen({
         description="This workspace does not exist or you do not have access to it."
       />
     )
+  }
+
+  if (isTeamManager) {
+    return <TeamManagerWorkspace organization={organization} page="standings" />
   }
 
   if (leagueSeasonsQuery.isError) {
