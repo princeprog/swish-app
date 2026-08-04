@@ -35,9 +35,14 @@ export function useCreatePlayerMutation(organizationId: string) {
   return useMutation<Player, unknown, CreatePlayerPayload>({
     mutationFn: (payload) => playerService.create(organizationId, payload),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: PLAYER_QUERY_KEYS.list(organizationId),
-      })
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: PLAYER_QUERY_KEYS.list(organizationId),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["rosters"],
+        }),
+      ])
     },
   })
 }
@@ -53,9 +58,14 @@ export function useUpdatePlayerMutation(organizationId: string) {
     mutationFn: ({ payload, playerId }) =>
       playerService.update(organizationId, playerId, payload),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: PLAYER_QUERY_KEYS.list(organizationId),
-      })
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: PLAYER_QUERY_KEYS.list(organizationId),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["rosters"],
+        }),
+      ])
     },
   })
 }
@@ -66,9 +76,14 @@ export function useDeletePlayerMutation(organizationId: string) {
   return useMutation<void, unknown, string>({
     mutationFn: (playerId) => playerService.remove(organizationId, playerId),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: PLAYER_QUERY_KEYS.list(organizationId),
-      })
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: PLAYER_QUERY_KEYS.list(organizationId),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["rosters"],
+        }),
+      ])
     },
   })
 }
