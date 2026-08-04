@@ -5,6 +5,7 @@ import type { PaginatedResponse, PaginationParams } from "@/services/pagination"
 export type LeagueSeason = {
   created_at: string
   id: string
+  game_rules: LeagueSeasonGameRules
   name: string
   organization_id: string
   public_enabled: boolean
@@ -13,7 +14,34 @@ export type LeagueSeason = {
   updated_at: string
 }
 
+export type LeagueSeasonGameRules = {
+  overtime_duration_ms: number
+  period_duration_ms: number
+  regulation_periods: number
+  shot_clock_enabled: boolean
+  shot_clock_full_ms: number
+  shot_clock_short_ms: number
+  team_fouls_before_penalty: number
+  timeouts_first_half: number
+  timeouts_per_overtime: number
+  timeouts_second_half: number
+}
+
+export type LeagueSeasonGameRulesInput = {
+  overtimeDurationMs: number
+  periodDurationMs: number
+  regulationPeriods: number
+  shotClockEnabled: boolean
+  shotClockFullMs: number
+  shotClockShortMs: number
+  teamFoulsBeforePenalty: number
+  timeoutsFirstHalf: number
+  timeoutsPerOvertime: number
+  timeoutsSecondHalf: number
+}
+
 export type CreateLeagueSeasonPayload = {
+  gameRules: LeagueSeasonGameRulesInput
   name: string
   organizationId: string
   publicEnabled?: boolean

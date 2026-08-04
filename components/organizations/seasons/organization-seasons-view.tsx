@@ -66,6 +66,10 @@ import {
 import type { Organization } from "@/services/organization.service"
 import type { LeagueSeason } from "@/services/league-season.service"
 import type { PageSizeOption, PaginationMeta } from "@/services/pagination"
+import {
+  DEFAULT_SEASON_GAME_RULES,
+  toGameRulesInput,
+} from "@/components/organizations/seasons/season-form-model"
 
 function slugifyName(name: string): string {
   return name
@@ -120,6 +124,7 @@ function SeasonCreateModal({
 
     try {
       const season = await createLeagueSeasonMutation.mutateAsync({
+        gameRules: toGameRulesInput(DEFAULT_SEASON_GAME_RULES),
         name: name.trim(),
         organizationId: organization.id,
         publicEnabled,
