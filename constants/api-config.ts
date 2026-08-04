@@ -72,6 +72,10 @@ export const API_ENDPOINTS = {
     list: (organizationId: string) =>
       `/organizations/${organizationId}/teams`,
   },
+  teamManagerWorkspace: {
+    get: (organizationId: string) =>
+      `/organizations/${organizationId}/team-manager-workspace`,
+  },
   players: {
     create: (organizationId: string) =>
       `/organizations/${organizationId}/players`,

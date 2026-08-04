@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
@@ -20,6 +21,7 @@ import {
   CalendarDaysIcon,
   ShieldCheckIcon,
   TrophyIcon,
+  UserRoundIcon,
   Users2Icon,
 } from "lucide-react"
 
@@ -37,9 +39,13 @@ export function AppSidebar({
   ...props
 }: AppSidebarProps) {
   const organizationsQuery = useOrganizationsQuery()
+  const searchParams = useSearchParams()
   const workspaceBasePath = organization
     ? `/organizations/${organization.slug}`
     : "/organizations"
+  const managerSeasonQuery = searchParams.get("seasonId")
+    ? `?seasonId=${searchParams.get("seasonId")}`
+    : ""
 
   const fallbackWorkspaceItems = organization
     ? [
@@ -69,6 +75,7 @@ export function AppSidebar({
     : fallbackWorkspaceItems
 
   const permissions = organization?.access?.permissions ?? []
+  const isTeamManager = organization?.access?.role === "team_manager"
   const canManageCompetition = permissions.includes("schedule.manage")
   const canManagePeople =
     permissions.includes("teams.read") ||
@@ -79,7 +86,30 @@ export function AppSidebar({
     permissions.includes("standings.read.assigned_division")
   const canManageAccess = permissions.includes("members.manage")
 
-  const navMain = [
+  const managerNavMain = [
+    {
+      title: "My team",
+      url: `${workspaceBasePath}/teams${managerSeasonQuery}`,
+      icon: <Users2Icon />,
+    },
+    {
+      title: "Players",
+      url: `${workspaceBasePath}/players${managerSeasonQuery}`,
+      icon: <UserRoundIcon />,
+    },
+    {
+      title: "Schedule",
+      url: `${workspaceBasePath}/schedules${managerSeasonQuery}`,
+      icon: <CalendarDaysIcon />,
+    },
+    {
+      title: "Standings",
+      url: `${workspaceBasePath}/standings${managerSeasonQuery}`,
+      icon: <TrophyIcon />,
+    },
+  ]
+
+  const adminNavMain = [
     {
       title: "Overview",
       url: workspaceBasePath,
@@ -172,6 +202,8 @@ export function AppSidebar({
         }
       : null,
   ].filter((item) => item !== null)
+
+  const navMain = isTeamManager ? managerNavMain : adminNavMain
 
   return (
     <Sidebar collapsible="icon" {...props}>

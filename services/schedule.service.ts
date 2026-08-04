@@ -72,6 +72,7 @@ export type UpdateScorekeeperAssignmentPayload = {
 
 export type ScheduleListQuery = {
   divisionId?: string;
+  leagueSeasonId?: string;
   search?: string;
   sortBy?: "date" | "division" | "venue";
   status?: CreateSchedulePayload["status"];

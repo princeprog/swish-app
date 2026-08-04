@@ -11,6 +11,10 @@ export function getOrganizationLandingPathForRole(
     return `/organizations/${slug}/scorekeeper`;
   }
 
+  if (role === "team_manager") {
+    return `/organizations/${slug}/teams`;
+  }
+
   return `/organizations/${slug}`;
 }
 
