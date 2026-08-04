@@ -32,9 +32,10 @@ export function WorkspaceHeader({
     href?: string
     label: string
     onClick?: () => void
-  }
+  } | null
 }) {
   const canManageStaff = organizationAccess?.permissions.includes("members.manage")
+  const canManageSchedule = organizationAccess?.permissions.includes("schedule.manage")
 
   return (
     <header className="sticky top-0 z-20 border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -93,14 +94,14 @@ export function WorkspaceHeader({
               <Plus className="size-4" />
               {primaryAction.label}
             </Button>
-          ) : (
+          ) : canManageSchedule ? (
             <Button size="sm" asChild>
               <Link href={`/organizations/${organizationSlug}/seasons`}>
                 <Plus className="size-4" />
                 New season
               </Link>
             </Button>
-          )}
+          ) : null}
           {canManageStaff ? (
             <Button size="sm" variant="outline" asChild>
               <Link href={`/organizations/${organizationSlug}/members`}>

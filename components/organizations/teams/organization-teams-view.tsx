@@ -69,6 +69,13 @@ import {
 import { cn } from "@/lib/utils"
 import { getApiErrorMessage } from "@/hooks/use-auth"
 import {
+  canCreateTeams as canCreateTeamsForPermissions,
+  canDeleteTeams as canDeleteTeamsForPermissions,
+  canEditTeams as canEditTeamsForPermissions,
+  canManageTeamSetup as canManageTeamSetupForPermissions,
+  isProfileOnlyTeamEdit as isProfileOnlyTeamEditForPermissions,
+} from "@/lib/team-action-permissions"
+import {
   useCreateTeamMutation,
   useDeleteTeamMutation,
   useUpdateTeamMutation,
@@ -113,11 +120,15 @@ function getTeamInitials(name: string) {
 }
 
 function TeamActionsPopover({
+  canDeleteTeam,
+  canEditTeam,
   organizationSlug,
   onDelete,
   onEdit,
   team,
 }: {
+  canDeleteTeam: boolean
+  canEditTeam: boolean
   organizationSlug: string
   onDelete: () => void
   onEdit: () => void
@@ -207,30 +218,34 @@ function TeamActionsPopover({
                     Manage roster
                   </Link>
                 </Button>
-                <Button
-                  className="w-full justify-start"
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    setOpen(false)
-                    onEdit()
-                  }}
-                >
-                  <PencilLine className="size-4" />
-                  Edit team
-                </Button>
-                <Button
-                  className="w-full justify-start text-destructive hover:text-destructive"
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    setOpen(false)
-                    onDelete()
-                  }}
-                >
-                  <Trash2 className="size-4" />
-                  Delete team
-                </Button>
+                {canEditTeam ? (
+                  <Button
+                    className="w-full justify-start"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setOpen(false)
+                      onEdit()
+                    }}
+                  >
+                    <PencilLine className="size-4" />
+                    Edit team
+                  </Button>
+                ) : null}
+                {canDeleteTeam ? (
+                  <Button
+                    className="w-full justify-start text-destructive hover:text-destructive"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setOpen(false)
+                      onDelete()
+                    }}
+                  >
+                    <Trash2 className="size-4" />
+                    Delete team
+                  </Button>
+                ) : null}
               </div>
             </div>,
             document.body,
@@ -242,14 +257,16 @@ function TeamActionsPopover({
 
 function TeamFormModal({
   divisions,
+  errorMessage,
   mode,
   onClose,
   onSubmit,
   pending,
+  profileOnly = false,
   team,
-  errorMessage,
 }: {
   divisions: Division[]
+  errorMessage?: string | null
   mode: "create" | "edit"
   onClose: () => void
   onSubmit: (payload: {
@@ -259,8 +276,8 @@ function TeamFormModal({
     status: "active" | "inactive"
   }) => Promise<void>
   pending: boolean
+  profileOnly?: boolean
   team?: Team | null
-  errorMessage?: string | null
 }) {
   const [name, setName] = React.useState(team?.name ?? "")
   const [divisionId, setDivisionId] = React.useState(
@@ -276,7 +293,7 @@ function TeamFormModal({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!divisionId) {
+    if (!profileOnly && !divisionId) {
       setValidationError("Division is required.")
       return
     }
@@ -304,14 +321,15 @@ function TeamFormModal({
             {mode === "create" ? "Create team" : "Edit team"}
           </DialogTitle>
           <DialogDescription>
-            Add a team to a division and configure how it appears across the
-            league.
+            {profileOnly
+              ? "Update the team name and color used across league pages."
+              : "Add a team to a division and configure how it appears across the league."}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
           <div className="space-y-5 px-6 py-5">
-            <div className="grid gap-5 sm:grid-cols-2">
+            <div className={cn("grid gap-5", profileOnly ? "sm:grid-cols-1" : "sm:grid-cols-2")}>
               <Field>
                 <FieldLabel htmlFor="team-name">Team name</FieldLabel>
                 <FieldContent>
@@ -328,28 +346,30 @@ function TeamFormModal({
                 </FieldContent>
               </Field>
 
-              <Field>
-                <FieldLabel htmlFor="team-division">Division</FieldLabel>
-                <FieldContent>
-                  <NativeSelect
-                    className="w-full"
-                    id="team-division"
-                    required
-                    value={divisionId}
-                    onChange={(event) => setDivisionId(event.target.value)}
-                  >
-                    <NativeSelectOption value="">Select a division</NativeSelectOption>
-                    {divisions.map((division) => (
-                      <NativeSelectOption key={division.id} value={division.id}>
-                        {division.name}
-                      </NativeSelectOption>
-                    ))}
-                  </NativeSelect>
-                  <FieldDescription>
-                    Determines where the team competes.
-                  </FieldDescription>
-                </FieldContent>
-              </Field>
+              {profileOnly ? null : (
+                <Field>
+                  <FieldLabel htmlFor="team-division">Division</FieldLabel>
+                  <FieldContent>
+                    <NativeSelect
+                      className="w-full"
+                      id="team-division"
+                      required
+                      value={divisionId}
+                      onChange={(event) => setDivisionId(event.target.value)}
+                    >
+                      <NativeSelectOption value="">Select a division</NativeSelectOption>
+                      {divisions.map((division) => (
+                        <NativeSelectOption key={division.id} value={division.id}>
+                          {division.name}
+                        </NativeSelectOption>
+                      ))}
+                    </NativeSelect>
+                    <FieldDescription>
+                      Determines where the team competes.
+                    </FieldDescription>
+                  </FieldContent>
+                </Field>
+              )}
             </div>
 
             <Field>
@@ -381,47 +401,49 @@ function TeamFormModal({
               </FieldContent>
             </Field>
 
-            <Field>
-              <FieldLabel>Status</FieldLabel>
-              <FieldContent>
-                <div className="grid grid-cols-2 gap-2">
-                  {([
-                    ["active", "Active"],
-                    ["inactive", "Inactive"],
-                  ] as const).map(([value, label]) => {
-                    const selected = status === value
+            {profileOnly ? null : (
+              <Field>
+                <FieldLabel>Status</FieldLabel>
+                <FieldContent>
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      ["active", "Active"],
+                      ["inactive", "Inactive"],
+                    ] as const).map(([value, label]) => {
+                      const selected = status === value
 
-                    return (
-                      <button
-                        key={value}
-                        aria-pressed={selected}
-                        className={cn(
-                          "flex h-10 items-center gap-2 rounded-md border px-3 text-sm transition-colors",
-                          selected
-                            ? "border-primary/40 bg-primary/10 text-foreground"
-                            : "border-border/70 bg-background text-muted-foreground hover:bg-muted/50",
-                        )}
-                        type="button"
-                        onClick={() => setStatus(value)}
-                      >
-                        <span
-                          aria-hidden="true"
+                      return (
+                        <button
+                          key={value}
+                          aria-pressed={selected}
                           className={cn(
-                            "size-2.5 rounded-full",
-                            value === "active" ? "bg-emerald-500" : "bg-zinc-400",
+                            "flex h-10 items-center gap-2 rounded-md border px-3 text-sm transition-colors",
+                            selected
+                              ? "border-primary/40 bg-primary/10 text-foreground"
+                              : "border-border/70 bg-background text-muted-foreground hover:bg-muted/50",
                           )}
-                        />
-                        <span>{label}</span>
-                        {selected ? <Check className="ml-auto size-4" /> : null}
-                      </button>
-                    )
-                  })}
-                </div>
-                <FieldDescription>
-                  Active teams can be added to schedules and standings.
-                </FieldDescription>
-              </FieldContent>
-            </Field>
+                          type="button"
+                          onClick={() => setStatus(value)}
+                        >
+                          <span
+                            aria-hidden="true"
+                            className={cn(
+                              "size-2.5 rounded-full",
+                              value === "active" ? "bg-emerald-500" : "bg-zinc-400",
+                            )}
+                          />
+                          <span>{label}</span>
+                          {selected ? <Check className="ml-auto size-4" /> : null}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <FieldDescription>
+                    Active teams can be added to schedules and standings.
+                  </FieldDescription>
+                </FieldContent>
+              </Field>
+            )}
 
             {validationError || errorMessage ? (
               <FieldError>{validationError ?? errorMessage}</FieldError>
@@ -513,6 +535,8 @@ function DeleteTeamModal({
 }
 
 function TeamsTable({
+  canDeleteTeams,
+  canEditTeams,
   divisionsById,
   onPageChange,
   onPageSizeChange,
@@ -523,6 +547,8 @@ function TeamsTable({
   playersByTeamId,
   teams,
 }: {
+  canDeleteTeams: boolean
+  canEditTeams: boolean
   divisionsById: Map<string, Division>
   onPageChange: (page: number) => void
   onPageSizeChange: (pageSize: PageSizeOption) => void
@@ -650,6 +676,8 @@ function TeamsTable({
                   </TableCell>
                   <TableCell className="text-right">
                     <TeamActionsPopover
+                      canDeleteTeam={canDeleteTeams}
+                      canEditTeam={canEditTeams}
                       organizationSlug={organizationSlug}
                       onDelete={() => onDeleteTeam(team)}
                       onEdit={() => onEditTeam(team)}
@@ -772,6 +800,12 @@ export function OrganizationTeamsView({
   const [createModalOpen, setCreateModalOpen] = React.useState(false)
   const [teamToDelete, setTeamToDelete] = React.useState<Team | null>(null)
   const [teamToEdit, setTeamToEdit] = React.useState<Team | null>(null)
+  const permissions = organization.access.permissions
+  const canCreateTeams = canCreateTeamsForPermissions(permissions)
+  const canDeleteTeams = canDeleteTeamsForPermissions(permissions)
+  const canUpdateTeams = canEditTeamsForPermissions(permissions)
+  const canManageTeamSetup = canManageTeamSetupForPermissions(permissions)
+  const profileOnlyTeamEdit = isProfileOnlyTeamEditForPermissions(permissions)
   const divisionsById = React.useMemo(
     () => new Map(divisions.map((division) => [division.id, division])),
     [divisions],
@@ -822,11 +856,17 @@ export function OrganizationTeamsView({
     if (!teamToEdit) return
 
     try {
+      const updatePayload = canManageTeamSetup
+        ? {
+            ...payload,
+            slug: slugifyName(payload.name),
+          }
+        : {
+            color: payload.color,
+            name: payload.name,
+          }
       const team = await updateTeamMutation.mutateAsync({
-        payload: {
-          ...payload,
-          slug: slugifyName(payload.name),
-        },
+        payload: updatePayload,
         teamId: teamToEdit.id,
       })
       toast.success(`Updated ${team.name}`)
@@ -865,11 +905,15 @@ export function OrganizationTeamsView({
           organizationName={organization.name}
           organizationSlug={organization.slug}
           pageTitle="Teams"
-          primaryAction={{
-            disabled: divisions.length === 0,
-            label: "New team",
-            onClick: () => setCreateModalOpen(true),
-          }}
+          primaryAction={
+            canCreateTeams
+              ? {
+                  disabled: divisions.length === 0,
+                  label: "New team",
+                  onClick: () => setCreateModalOpen(true),
+                }
+              : null
+          }
         />
 
         <main className="flex flex-1 flex-col gap-4 bg-background px-4 py-4 lg:px-6 lg:py-5">
@@ -960,6 +1004,8 @@ export function OrganizationTeamsView({
             </div>
 
             <TeamsTable
+              canDeleteTeams={canDeleteTeams}
+              canEditTeams={canUpdateTeams}
               divisionsById={divisionsById}
               onPageChange={onPageChange}
               onPageSizeChange={onPageSizeChange}
@@ -974,7 +1020,7 @@ export function OrganizationTeamsView({
         </main>
       </SidebarInset>
 
-      {createModalOpen ? (
+      {createModalOpen && canCreateTeams ? (
         <TeamFormModal
           divisions={divisions}
           errorMessage={
@@ -995,13 +1041,14 @@ export function OrganizationTeamsView({
           }
           mode="edit"
           pending={updateTeamMutation.isPending}
+          profileOnly={profileOnlyTeamEdit}
           team={teamToEdit}
           onClose={() => setTeamToEdit(null)}
           onSubmit={handleUpdateTeam}
         />
       ) : null}
 
-      {teamToDelete ? (
+      {teamToDelete && canDeleteTeams ? (
         <DeleteTeamModal
           errorMessage={
             deleteTeamMutation.isError ? getApiErrorMessage(deleteTeamMutation.error) : null
