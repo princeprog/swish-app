@@ -723,9 +723,6 @@ function PlayersTable({
                       </Avatar>
                       <div className="flex flex-col gap-1">
                         <div className="font-medium">{player.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {player.id.slice(0, 8).toUpperCase()}
-                        </div>
                       </div>
                     </div>
                   </TableCell>
