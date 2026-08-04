@@ -125,7 +125,6 @@ function TeamActionsPopover({
   organizationSlug,
   onDelete,
   onEdit,
-  seasonId,
   team,
 }: {
   canDeleteTeam: boolean
@@ -133,7 +132,6 @@ function TeamActionsPopover({
   organizationSlug: string
   onDelete: () => void
   onEdit: () => void
-  seasonId?: string
   team: Team
 }) {
   const [open, setOpen] = React.useState(false)
@@ -142,9 +140,6 @@ function TeamActionsPopover({
     left: number
     top: number
   } | null>(null)
-  const rosterHref = seasonId
-    ? `/organizations/${organizationSlug}/teams/${team.id}/roster?seasonId=${seasonId}`
-    : `/organizations/${organizationSlug}/teams/${team.id}/roster`
 
   React.useEffect(() => {
     if (!open) {
@@ -218,7 +213,9 @@ function TeamActionsPopover({
                   size="sm"
                   variant="ghost"
                 >
-                  <Link href={rosterHref}>
+                  <Link
+                    href={`/organizations/${organizationSlug}/players?teamId=${team.id}`}
+                  >
                     <Users2 className="size-4" />
                     Manage roster
                   </Link>
@@ -602,7 +599,6 @@ function TeamsTable({
           <TableBody>
             {teams.map((team) => {
               const division = divisionsById.get(team.division_id)
-              const seasonId = team.league_season_id ?? division?.league_season_id
               const rosterPlayers = playersByTeamId.get(team.id) ?? []
               const activeRosterPlayers = rosterPlayers.filter(
                 (player) => player.status === "active",
@@ -687,7 +683,6 @@ function TeamsTable({
                       organizationSlug={organizationSlug}
                       onDelete={() => onDeleteTeam(team)}
                       onEdit={() => onEditTeam(team)}
-                      seasonId={seasonId}
                       team={team}
                     />
                   </TableCell>
