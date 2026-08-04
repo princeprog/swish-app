@@ -8,7 +8,6 @@ import {
   MoreHorizontal,
   PencilLine,
   Trash2,
-  X,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -33,18 +32,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
-import {
-  Field,
-  FieldContent,
-  FieldDescription,
-  FieldError,
-  FieldLabel,
-} from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
-import {
-  NativeSelect,
-  NativeSelectOption,
-} from "@/components/ui/native-select"
+import { FieldError } from "@/components/ui/field"
 import {
   SidebarInset,
   SidebarProvider,
@@ -58,27 +46,15 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { getApiErrorMessage } from "@/hooks/use-auth"
-import {
-  useCreateLeagueSeasonMutation,
-  useDeleteLeagueSeasonMutation,
-  useUpdateLeagueSeasonMutation,
-} from "@/hooks/use-league-season"
+import { useDeleteLeagueSeasonMutation } from "@/hooks/use-league-season"
 import type { Organization } from "@/services/organization.service"
 import type { LeagueSeason } from "@/services/league-season.service"
 import type { PageSizeOption, PaginationMeta } from "@/services/pagination"
+import { formatSeasonGameRules } from "@/components/organizations/seasons/season-form-model"
 import {
-  DEFAULT_SEASON_GAME_RULES,
-  toGameRulesInput,
-} from "@/components/organizations/seasons/season-form-model"
-
-function slugifyName(name: string): string {
-  return name
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .replace(/-{2,}/g, "-")
-}
+  SeasonCreateWizardModal,
+  SeasonEditWizardModal,
+} from "@/components/organizations/seasons/season-wizard-containers"
 
 function statusTone(status: string) {
   if (status === "active") {
@@ -90,331 +66,6 @@ function statusTone(status: string) {
   }
 
   return "border-amber-500/20 bg-amber-500/10 text-amber-300"
-}
-
-function SeasonCreateModal({
-  onClose,
-  organization,
-}: {
-  onClose: () => void
-  organization: Organization
-}) {
-  const createLeagueSeasonMutation = useCreateLeagueSeasonMutation(organization.id)
-  const [name, setName] = React.useState("")
-  const [status, setStatus] = React.useState<"draft" | "active" | "inactive">("draft")
-  const [publicEnabled, setPublicEnabled] = React.useState(false)
-  const [validationError, setValidationError] = React.useState<string | null>(null)
-
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-
-    if (!name.trim()) {
-      setValidationError("Season name is required.")
-      return
-    }
-
-    const slug = slugifyName(name)
-
-    if (!slug) {
-      setValidationError("Season slug is required.")
-      return
-    }
-
-    setValidationError(null)
-
-    try {
-      const season = await createLeagueSeasonMutation.mutateAsync({
-        gameRules: toGameRulesInput(DEFAULT_SEASON_GAME_RULES),
-        name: name.trim(),
-        organizationId: organization.id,
-        publicEnabled,
-        slug,
-        status,
-      })
-
-      toast.success(`Created ${season.name}`)
-      onClose()
-    } catch (error) {
-      toast.error(getApiErrorMessage(error))
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4 py-8 backdrop-blur-sm">
-      <Card className="w-full max-w-2xl border border-border/70 bg-card shadow-2xl">
-        <CardHeader className="gap-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-1">
-              <CardTitle className="text-xl">Create season</CardTitle>
-              <CardDescription>
-                Add a new league season for {organization.name}.
-              </CardDescription>
-            </div>
-            <Button
-              aria-label="Close create season modal"
-              size="icon-sm"
-              variant="ghost"
-              onClick={onClose}
-            >
-              <X className="size-4" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <form className="space-y-5" onSubmit={handleSubmit}>
-            <Field>
-              <FieldLabel htmlFor="new-season-name">Season name</FieldLabel>
-              <FieldContent>
-                <Input
-                  id="new-season-name"
-                  placeholder="2026 Summer League"
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                />
-                <FieldDescription>
-                  The season slug will be generated automatically from this name.
-                </FieldDescription>
-              </FieldContent>
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="new-season-status">Status</FieldLabel>
-              <FieldContent>
-                <NativeSelect
-                  id="new-season-status"
-                  value={status}
-                  onChange={(event) =>
-                    setStatus(event.target.value as "draft" | "active" | "inactive")
-                  }
-                >
-                  <NativeSelectOption value="draft">Draft</NativeSelectOption>
-                  <NativeSelectOption value="active">Active</NativeSelectOption>
-                  <NativeSelectOption value="inactive">Inactive</NativeSelectOption>
-                </NativeSelect>
-              </FieldContent>
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="new-season-public">Public page visibility</FieldLabel>
-              <FieldContent>
-                <label
-                  htmlFor="new-season-public"
-                  className="flex items-center gap-3 rounded-md border border-border/70 bg-background/60 px-3 py-2 text-sm"
-                >
-                  <input
-                    id="new-season-public"
-                    checked={publicEnabled}
-                    className="size-4 accent-primary"
-                    type="checkbox"
-                    onChange={(event) => setPublicEnabled(event.target.checked)}
-                  />
-                  <span>Enable public season pages</span>
-                </label>
-              </FieldContent>
-            </Field>
-
-            {validationError || createLeagueSeasonMutation.isError ? (
-              <FieldError>
-                {validationError ?? getApiErrorMessage(createLeagueSeasonMutation.error)}
-              </FieldError>
-            ) : null}
-
-            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={createLeagueSeasonMutation.isPending}>
-                {createLeagueSeasonMutation.isPending ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" />
-                    Creating
-                  </>
-                ) : (
-                  <>
-                    <CalendarDays className="size-4" />
-                    Create season
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
-
-function SeasonEditModal({
-  onClose,
-  organization,
-  season,
-}: {
-  onClose: () => void
-  organization: Organization
-  season: LeagueSeason
-}) {
-  const updateLeagueSeasonMutation = useUpdateLeagueSeasonMutation(organization.id)
-  const [name, setName] = React.useState(season.name)
-  const [slug, setSlug] = React.useState(season.slug)
-  const [status, setStatus] = React.useState<
-    "draft" | "active" | "inactive"
-  >(season.status as "draft" | "active" | "inactive")
-  const [publicEnabled, setPublicEnabled] = React.useState(season.public_enabled)
-  const [validationError, setValidationError] = React.useState<string | null>(null)
-
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-
-    if (!name.trim()) {
-      setValidationError("Season name is required.")
-      return
-    }
-
-    if (!slug.trim()) {
-      setValidationError("Season slug is required.")
-      return
-    }
-
-    setValidationError(null)
-
-    try {
-      const updatedSeason = await updateLeagueSeasonMutation.mutateAsync({
-        leagueSeasonId: season.id,
-        payload: {
-          name: name.trim(),
-          publicEnabled,
-          slug: slug.trim(),
-          status,
-        },
-      })
-
-      toast.success(`Updated ${updatedSeason.name}`)
-      onClose()
-    } catch (error) {
-      toast.error(getApiErrorMessage(error))
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4 py-8 backdrop-blur-sm">
-      <Card className="w-full max-w-2xl border border-border/70 bg-card shadow-2xl">
-        <CardHeader className="gap-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-1">
-              <CardTitle className="text-xl">Edit season</CardTitle>
-              <CardDescription>
-                Update the season record for {organization.name}.
-              </CardDescription>
-            </div>
-            <Button
-              aria-label="Close edit season modal"
-              size="icon-sm"
-              variant="ghost"
-              onClick={onClose}
-            >
-              <X className="size-4" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <form className="space-y-5" onSubmit={handleSubmit}>
-            <Field>
-              <FieldLabel htmlFor="season-name">Season name</FieldLabel>
-              <FieldContent>
-                <Input
-                  id="season-name"
-                  value={name}
-                  onChange={(event) => {
-                    const nextName = event.target.value
-                    setName(nextName)
-
-                    if (!slug.trim() || slug === slugifyName(name)) {
-                      setSlug(slugifyName(nextName))
-                    }
-                  }}
-                />
-              </FieldContent>
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="season-slug">Season slug</FieldLabel>
-              <FieldContent>
-                <Input
-                  id="season-slug"
-                  value={slug}
-                  onChange={(event) => setSlug(slugifyName(event.target.value))}
-                />
-                <FieldDescription>
-                  Lowercase letters, numbers, and hyphens only.
-                </FieldDescription>
-              </FieldContent>
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="season-status">Status</FieldLabel>
-              <FieldContent>
-                <NativeSelect
-                  id="season-status"
-                  value={status}
-                  onChange={(event) =>
-                    setStatus(event.target.value as "draft" | "active" | "inactive")
-                  }
-                >
-                  <NativeSelectOption value="draft">Draft</NativeSelectOption>
-                  <NativeSelectOption value="active">Active</NativeSelectOption>
-                  <NativeSelectOption value="inactive">Inactive</NativeSelectOption>
-                </NativeSelect>
-              </FieldContent>
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="season-public">Public page visibility</FieldLabel>
-              <FieldContent>
-                <label
-                  htmlFor="season-public"
-                  className="flex items-center gap-3 rounded-md border border-border/70 bg-background/60 px-3 py-2 text-sm"
-                >
-                  <input
-                    id="season-public"
-                    checked={publicEnabled}
-                    className="size-4 accent-primary"
-                    type="checkbox"
-                    onChange={(event) => setPublicEnabled(event.target.checked)}
-                  />
-                  <span>Enable public season pages</span>
-                </label>
-              </FieldContent>
-            </Field>
-
-            {validationError || updateLeagueSeasonMutation.isError ? (
-              <FieldError>
-                {validationError ?? getApiErrorMessage(updateLeagueSeasonMutation.error)}
-              </FieldError>
-            ) : null}
-
-            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={updateLeagueSeasonMutation.isPending}>
-                {updateLeagueSeasonMutation.isPending ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" />
-                    Saving
-                  </>
-                ) : (
-                  <>
-                    <PencilLine className="size-4" />
-                    Save changes
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
-  )
 }
 
 function SeasonDeleteModal({
@@ -648,6 +299,7 @@ function SeasonsTable({
                 <Checkbox aria-label="Select all seasons" />
               </TableHead>
               <TableHead className="h-12 text-muted-foreground">Season</TableHead>
+              <TableHead className="text-muted-foreground">Game rules</TableHead>
               <TableHead className="text-muted-foreground">Status</TableHead>
               <TableHead className="text-muted-foreground">Public</TableHead>
               <TableHead className="text-muted-foreground">Updated</TableHead>
@@ -665,6 +317,9 @@ function SeasonsTable({
                 </TableCell>
                 <TableCell className="whitespace-normal">
                   <div className="font-medium">{season.name}</div>
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-muted-foreground">
+                  {formatSeasonGameRules(season)}
                 </TableCell>
                 <TableCell>
                   <Badge className={statusTone(season.status)} variant="outline">
@@ -777,14 +432,14 @@ export function OrganizationSeasonsView({
       </SidebarInset>
 
       {createModalOpen ? (
-        <SeasonCreateModal
+        <SeasonCreateWizardModal
           organization={organization}
           onClose={() => setCreateModalOpen(false)}
         />
       ) : null}
 
       {seasonToEdit ? (
-        <SeasonEditModal
+        <SeasonEditWizardModal
           organization={organization}
           season={seasonToEdit}
           onClose={() => setSeasonToEdit(null)}
@@ -801,3 +456,4 @@ export function OrganizationSeasonsView({
     </SidebarProvider>
   )
 }
+
