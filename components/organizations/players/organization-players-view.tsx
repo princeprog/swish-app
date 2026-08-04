@@ -263,10 +263,6 @@ function PlayerFormModal({
     (player?.status as "active" | "inactive") ?? "active",
   )
   const [validationError, setValidationError] = React.useState<string | null>(null)
-  const previewName = name.trim() || "Player name"
-  const previewTeam = teams.find((team) => team.id === teamId)?.name ?? "Team"
-  const previewPosition = position ? formatPlayerPosition(position) : "Position"
-  const previewInitials = getInitials(previewName)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -298,11 +294,11 @@ function PlayerFormModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4 py-8 backdrop-blur-sm">
-      <Card className="w-full max-w-5xl border border-border/70 bg-card shadow-2xl">
-        <CardHeader className="gap-4 border-b border-border/60 pb-6">
+      <Card className="max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto border border-border/70 bg-card shadow-2xl">
+        <CardHeader className="gap-4 border-b border-border/60 px-6 py-5">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
-              <CardTitle className="text-xl">
+              <CardTitle className="text-lg">
                 {mode === "create" ? "Create player" : "Edit player"}
               </CardTitle>
               <CardDescription>
@@ -322,12 +318,13 @@ function PlayerFormModal({
         </CardHeader>
         <CardContent className="p-0">
           <form onSubmit={handleSubmit}>
-            <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_360px]">
-              <div className="space-y-5 p-6">
+            <div className="space-y-5 p-6">
+              <div className="grid gap-5 sm:grid-cols-2">
                 <Field>
                   <FieldLabel htmlFor="player-team">Team</FieldLabel>
                   <FieldContent>
                     <NativeSelect
+                      className="h-10 w-full"
                       id="player-team"
                       value={teamId}
                       onChange={(event) => setTeamId(event.target.value)}
@@ -346,6 +343,7 @@ function PlayerFormModal({
                   <FieldLabel htmlFor="player-name">Player name</FieldLabel>
                   <FieldContent>
                     <Input
+                      className="h-10"
                       id="player-name"
                       placeholder="Marcus Dela Cruz"
                       value={name}
@@ -358,6 +356,7 @@ function PlayerFormModal({
                   <FieldLabel htmlFor="player-jersey">Jersey number</FieldLabel>
                   <FieldContent>
                     <Input
+                      className="h-10"
                       id="player-jersey"
                       placeholder="7"
                       value={jerseyNumber}
@@ -373,6 +372,7 @@ function PlayerFormModal({
                   <FieldLabel htmlFor="player-position">Position</FieldLabel>
                   <FieldContent>
                     <NativeSelect
+                      className="h-10 w-full"
                       id="player-position"
                       value={position}
                       onChange={(event) => setPosition(event.target.value)}
@@ -403,7 +403,7 @@ function PlayerFormModal({
                           <button
                             key={value}
                             className={cn(
-                              "flex h-11 items-center gap-2 rounded-md border px-3 text-sm transition-colors",
+                              "flex h-10 items-center gap-2 rounded-md border px-3 text-sm transition-colors",
                               selected
                                 ? "border-primary/40 bg-primary/10 text-foreground"
                                 : "border-border/70 bg-background/60 text-muted-foreground hover:bg-background",
@@ -425,44 +425,11 @@ function PlayerFormModal({
                     </div>
                   </FieldContent>
                 </Field>
-
-                {validationError || errorMessage ? (
-                  <FieldError>{validationError ?? errorMessage}</FieldError>
-                ) : null}
               </div>
 
-              <div className="border-t border-border/60 p-6 lg:border-t-0 lg:border-l">
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold">Player preview</h3>
-                  <p className="text-sm text-muted-foreground">
-                    This is how the player record will appear in the system.
-                  </p>
-                </div>
-
-                <div className="mt-5 rounded-xl border border-border/70 bg-background/60 p-6">
-                  <div className="rounded-xl border border-border/60 bg-gradient-to-b from-background to-card px-6 py-8 text-center">
-                    <div className="mx-auto flex size-24 items-center justify-center rounded-full border border-border/70 bg-background/70 text-xl font-semibold">
-                      {previewInitials}
-                    </div>
-                    <div className="mt-6 space-y-3">
-                      <div className="text-3xl font-semibold tracking-tight">
-                        {previewName}
-                      </div>
-                      <div className="mx-auto inline-flex items-center gap-2 rounded-md border border-border/70 bg-background/70 px-3 py-2 text-sm text-muted-foreground">
-                        <Shield className="size-4" />
-                        <span>{previewTeam}</span>
-                      </div>
-                      <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-                        <span className="rounded-full border border-border/70 px-2 py-1">
-                          #{jerseyNumber.trim() || "--"}
-                        </span>
-                        <span>{previewPosition}</span>
-                        <span>{status}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              {validationError || errorMessage ? (
+                <FieldError>{validationError ?? errorMessage}</FieldError>
+              ) : null}
             </div>
 
             <div className="flex flex-col-reverse gap-3 border-t border-border/60 px-6 py-5 sm:flex-row sm:justify-end">
