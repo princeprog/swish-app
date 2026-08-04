@@ -2,10 +2,10 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Users2 } from "lucide-react"
 
 import { OrganizationPlayersView } from "@/components/organizations/players/organization-players-view"
-import { TeamManagerWorkspace } from "@/components/organizations/team-manager/manager-workspace"
 import { Button } from "@/components/ui/button"
 import {
   Empty,
@@ -21,7 +21,9 @@ import { useDivisionsQuery } from "@/hooks/use-division"
 import { useOrganizationsQuery } from "@/hooks/use-organization"
 import { usePlayersQuery } from "@/hooks/use-player"
 import { useTeamsQuery } from "@/hooks/use-team"
+import { useSelectedManagerAssignment } from "@/hooks/use-team-manager-workspace"
 import { useTablePaginationState } from "@/hooks/use-table-pagination-state"
+import type { Organization } from "@/services/organization.service"
 import { getDefaultPaginationMeta } from "@/services/pagination"
 import type { PlayerListParams, PlayerSortBy } from "@/services/player.service"
 
@@ -105,6 +107,47 @@ function PlayersEmptyShell({
       </div>
     </main>
   )
+}
+
+function TeamManagerPlayersRedirect({
+  organization,
+}: {
+  organization: Organization
+}) {
+  const router = useRouter()
+  const { assignment, selectedSeasonId, workspaceQuery } =
+    useSelectedManagerAssignment(organization.id)
+
+  React.useEffect(() => {
+    if (!assignment) {
+      return
+    }
+
+    const seasonId = selectedSeasonId ?? assignment.season.id
+    router.replace(
+      `/organizations/${organization.slug}/teams/${assignment.team.id}/roster?seasonId=${seasonId}`,
+    )
+  }, [assignment, organization.slug, router, selectedSeasonId])
+
+  if (workspaceQuery.isError) {
+    return (
+      <PlayersEmptyShell
+        title="We couldn't load your team"
+        description={getApiErrorMessage(workspaceQuery.error)}
+      />
+    )
+  }
+
+  if (!workspaceQuery.isLoading && !assignment) {
+    return (
+      <PlayersEmptyShell
+        title="No team assigned"
+        description="Ask a league admin to assign you to a team for this season."
+      />
+    )
+  }
+
+  return <PlayersLoadingState />
 }
 
 export function OrganizationPlayersScreen({ slug }: OrganizationPlayersScreenProps) {
@@ -241,7 +284,7 @@ export function OrganizationPlayersScreen({ slug }: OrganizationPlayersScreenPro
   }
 
   if (isTeamManager) {
-    return <TeamManagerWorkspace organization={organization} page="players" />
+    return <TeamManagerPlayersRedirect organization={organization} />
   }
 
   if (divisionsQuery.isError) {
