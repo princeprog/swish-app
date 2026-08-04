@@ -88,7 +88,7 @@ function RecentResultsForm({
   )
 }
 
-function StandingsTable({ rows }: { rows: StandingsRow[] }) {
+export function StandingsTable({ rows }: { rows: StandingsRow[] }) {
   if (rows.length === 0) {
     return (
       <Card className="border border-border/60 bg-card/95 shadow-none">

@@ -8,6 +8,7 @@ import { toast } from "sonner"
 
 import { AppSidebar } from "@/components/app-sidebar"
 import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
+import { StandingsTable } from "@/components/organizations/standings/organization-standings-view"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -660,51 +661,7 @@ function ManagerStandingsContent({
   }
 
   return (
-    <section className="overflow-hidden rounded-lg border bg-card">
-      <div className="grid grid-cols-[4rem_minmax(12rem,1fr)_4rem_4rem_4rem_9rem_6rem] border-b bg-muted/40 px-4 py-3 text-xs font-medium text-muted-foreground">
-        <span>Rank</span>
-        <span>Team</span>
-        <span>W</span>
-        <span>L</span>
-        <span>GP</span>
-        <span>Last 5</span>
-        <span>Win%</span>
-      </div>
-      {rows.map((row) => (
-        <div
-          key={row.teamId}
-          className={cn(
-            "grid grid-cols-[4rem_minmax(12rem,1fr)_4rem_4rem_4rem_9rem_6rem] items-center border-b px-4 py-3 text-sm last:border-b-0",
-            row.teamId === assignment.team.id && "bg-primary/5",
-          )}
-        >
-          <span>{row.rank}</span>
-          <span className="font-medium">{row.teamName}</span>
-          <span>{row.wins}</span>
-          <span>{row.losses}</span>
-          <span>{row.gamesPlayed}</span>
-          <span className="flex gap-1">
-            {row.recentResults.length ? (
-              row.recentResults.map((result, index) => (
-                <Badge
-                  key={`${row.teamId}-${index}`}
-                  className={
-                    result === "W"
-                      ? "size-5 bg-emerald-600 p-0 text-white"
-                      : "size-5 bg-red-600 p-0 text-white"
-                  }
-                >
-                  {result}
-                </Badge>
-              ))
-            ) : (
-              <span className="text-muted-foreground">-</span>
-            )}
-          </span>
-          <span>{row.winPercentage.toFixed(3)}</span>
-        </div>
-      ))}
-    </section>
+    <StandingsTable rows={rows} />
   )
 }
 
