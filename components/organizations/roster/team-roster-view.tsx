@@ -116,10 +116,10 @@ function getInitials(name: string) {
 
 function statusTone(status: string) {
   if (status === "active") {
-    return "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+    return "border-emerald-600 bg-emerald-600 text-white"
   }
 
-  return "border-zinc-500/20 bg-zinc-500/10 text-zinc-300"
+  return "border-zinc-600 bg-zinc-600 text-white"
 }
 
 function RosterPlayerActionsPopover({
