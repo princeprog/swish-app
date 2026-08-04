@@ -3,10 +3,10 @@
 import Link from "next/link"
 import * as React from "react"
 import { format } from "date-fns"
-import { CalendarDaysIcon, Loader2Icon, TrophyIcon, Users2Icon } from "lucide-react"
-import { toast } from "sonner"
+import { CalendarDaysIcon, TrophyIcon, Users2Icon } from "lucide-react"
 
 import { AppSidebar } from "@/components/app-sidebar"
+import { ManagerTeamOverview } from "@/components/organizations/team-manager/manager-team-overview"
 import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
 import { StandingsTable } from "@/components/organizations/standings/organization-standings-view"
 import { Badge } from "@/components/ui/badge"
@@ -37,7 +37,6 @@ import { useStandingsQuery } from "@/hooks/use-standings"
 import {
   useSelectedManagerAssignment,
 } from "@/hooks/use-team-manager-workspace"
-import { useUpdateTeamMutation } from "@/hooks/use-team"
 import { cn } from "@/lib/utils"
 import type { Organization } from "@/services/organization.service"
 import type { Schedule } from "@/services/schedule.service"
@@ -110,17 +109,23 @@ function ManagerShell({
         <main className="flex flex-1 flex-col gap-5 bg-background px-4 py-4 lg:px-6 lg:py-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="min-w-0">
-              <h1 className="text-2xl font-semibold tracking-tight">
+              <h1
+                className={cn(
+                  "font-semibold tracking-tight",
+                  pageTitle === "My team" ? "text-3xl" : "text-2xl",
+                )}
+              >
                 {pageTitle}
               </h1>
-              {assignment ? (
+              {assignment && pageTitle !== "My team" ? (
                 <p className="mt-1 text-sm text-muted-foreground">
                   {assignment.team.name} · {assignment.division.name}
                 </p>
               ) : null}
             </div>
-            {workspaceAssignments.length > 1 ? (
+            {workspaceAssignments.length ? (
               <Select
+                disabled={workspaceAssignments.length === 1}
                 value={selectedSeasonId ?? undefined}
                 onValueChange={setSelectedSeasonId}
               >
@@ -264,101 +269,6 @@ function RosterStatusPanel({
         </Button>
       </div>
     </section>
-  )
-}
-
-function ManagerTeamContent({
-  assignment,
-  organization,
-}: {
-  assignment: TeamManagerWorkspaceAssignment
-  organization: Organization
-}) {
-  const updateTeamMutation = useUpdateTeamMutation(organization.id)
-  const [name, setName] = React.useState(assignment.team.name)
-  const [color, setColor] = React.useState(assignment.team.color ?? "#111827")
-
-  React.useEffect(() => {
-    setName(assignment.team.name)
-    setColor(assignment.team.color ?? "#111827")
-  }, [assignment])
-
-  const hasChanges =
-    name.trim() !== assignment.team.name ||
-    color.trim() !== (assignment.team.color ?? "#111827")
-
-  async function saveTeamProfile(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-
-    try {
-      await updateTeamMutation.mutateAsync({
-        payload: {
-          color,
-          name: name.trim(),
-        },
-        teamId: assignment.team.id,
-      })
-      toast.success("Team profile updated.")
-    } catch (error) {
-      toast.error(getApiErrorMessage(error))
-    }
-  }
-
-  return (
-    <>
-      <section className="rounded-lg border bg-card p-4">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <span
-                className="size-9 rounded-full border"
-                style={{ backgroundColor: color }}
-                aria-hidden="true"
-              />
-              <div>
-                <h2 className="text-xl font-semibold">{assignment.team.name}</h2>
-                <p className="text-sm text-muted-foreground">
-                  {assignment.season.name} · {assignment.division.name}
-                </p>
-              </div>
-            </div>
-            <Badge className="bg-emerald-600 text-white">
-              {assignment.team.status}
-            </Badge>
-          </div>
-
-          <form
-            className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_8rem_auto]"
-            onSubmit={saveTeamProfile}
-          >
-            <Input
-              aria-label="Team name"
-              className="h-9"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-            />
-            <Input
-              aria-label="Team color"
-              className="h-9"
-              type="color"
-              value={color}
-              onChange={(event) => setColor(event.target.value)}
-            />
-            <Button
-              className="h-9"
-              disabled={!hasChanges || updateTeamMutation.isPending}
-              type="submit"
-            >
-              {updateTeamMutation.isPending ? (
-                <Loader2Icon className="size-4 animate-spin" />
-              ) : null}
-              Save
-            </Button>
-          </form>
-        </div>
-      </section>
-      <RosterStatusPanel assignment={assignment} organization={organization} />
-    </>
   )
 }
 
@@ -712,7 +622,7 @@ export function TeamManagerWorkspace({
       workspaceAssignments={workspaceQuery.data.assignments}
     >
       {page === "team" ? (
-        <ManagerTeamContent assignment={assignment} organization={organization} />
+        <ManagerTeamOverview assignment={assignment} organization={organization} />
       ) : null}
       {page === "players" ? (
         <ManagerPlayersContent assignment={assignment} organization={organization} />

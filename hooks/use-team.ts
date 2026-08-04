@@ -48,9 +48,14 @@ export function useUpdateTeamMutation(organizationId: string) {
     mutationFn: ({ payload, teamId }) =>
       teamService.update(organizationId, teamId, payload),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: TEAM_QUERY_KEYS.list(organizationId),
-      })
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: TEAM_QUERY_KEYS.list(organizationId),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["team-manager-workspace", organizationId],
+        }),
+      ])
     },
   })
 }

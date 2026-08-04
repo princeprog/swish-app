@@ -72,3 +72,45 @@ status/actions group, then recaptured in
   metric row can switch from permission metadata to those operational totals.
 
 final result: passed
+
+---
+
+# My Team Design QA
+
+## Visual Truth
+
+- Reference: `C:\Users\ALPRIN~1\AppData\Local\Temp\codex-clipboard-2f3db57e-bf00-4350-8ae2-7b6ad65b4f66.png`
+- Implementation: `design-qa/my-team-implementation.jpg`
+- Comparison: `design-qa/my-team-comparison.jpg`
+- Viewport: 1487 x 1058 CSS pixels at device scale factor 1
+- State: dark desktop theme with a submitted roster and live workspace data
+
+## Comparison History
+
+### Iteration 1
+
+- P2: The first implementation was vertically denser than the reference.
+- P2: The roster progress treatment read as one continuous bar instead of four clear workflow stages.
+- Fixes: Increased section padding, expanded the roster detail rows, raised the page heading scale, and rebuilt the progress display with four labeled markers and shadcn separators.
+
+### Iteration 2
+
+- The team identity, roster workflow, detail rows, roster totals, and next-game hierarchy now match the reference closely within the existing Swish design system.
+- No unresolved P0, P1, or P2 visual issues remain.
+
+## Interaction Checks
+
+- Edit Team opens a labeled shadcn dialog with team name and color fields.
+- Cancel closes the dialog without saving.
+- Manage/View roster points to the selected team's roster and preserves the season.
+- View schedule points to the manager schedule and preserves the season.
+- No browser console errors were present during verification.
+
+## Expected Differences
+
+- The implementation uses real league data rather than the sample names and counts in the reference.
+- The isolated QA route used the currently authenticated admin shell; the production route continues to use the existing role-aware team-manager sidebar.
+
+## Final Result
+
+passed
