@@ -12,6 +12,10 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
+import {
+  ComponentReveal,
+  RevealGroup,
+} from "@/components/motion/page-motion"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -454,21 +458,29 @@ export function ManagerTeamOverview({
   )
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-5">
-      <TeamIdentityCard assignment={assignment} organization={organization} />
-      <RosterSubmissionCard
-        activePlayers={activePlayersQuery.data?.pagination.totalItems}
-        assignment={assignment}
-        inactivePlayers={inactivePlayersQuery.data?.pagination.totalItems}
-        isLoadingPlayers={activePlayersQuery.isLoading || inactivePlayersQuery.isLoading}
-        organization={organization}
-      />
-      <NextGameCard
-        assignment={assignment}
-        game={nextGame}
-        isLoading={schedulesQuery.isLoading}
-        organization={organization}
-      />
-    </div>
+    <RevealGroup asChild>
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5">
+        <ComponentReveal>
+          <TeamIdentityCard assignment={assignment} organization={organization} />
+        </ComponentReveal>
+        <ComponentReveal>
+          <RosterSubmissionCard
+            activePlayers={activePlayersQuery.data?.pagination.totalItems}
+            assignment={assignment}
+            inactivePlayers={inactivePlayersQuery.data?.pagination.totalItems}
+            isLoadingPlayers={activePlayersQuery.isLoading || inactivePlayersQuery.isLoading}
+            organization={organization}
+          />
+        </ComponentReveal>
+        <ComponentReveal>
+          <NextGameCard
+            assignment={assignment}
+            game={nextGame}
+            isLoading={schedulesQuery.isLoading}
+            organization={organization}
+          />
+        </ComponentReveal>
+      </div>
+    </RevealGroup>
   )
 }

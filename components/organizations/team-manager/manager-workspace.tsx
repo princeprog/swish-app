@@ -6,7 +6,11 @@ import { format } from "date-fns"
 import { CalendarDaysIcon, TrophyIcon, Users2Icon } from "lucide-react"
 
 import { AppSidebar } from "@/components/app-sidebar"
-import { PageEntrance, StaggerReveal } from "@/components/motion/page-motion"
+import {
+  ComponentReveal,
+  PageEntrance,
+  RevealGroup,
+} from "@/components/motion/page-motion"
 import { ManagerTeamOverview } from "@/components/organizations/team-manager/manager-team-overview"
 import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
 import { StandingsTable } from "@/components/organizations/standings/organization-standings-view"
@@ -109,44 +113,46 @@ function ManagerShell({
         />
         <PageEntrance asChild>
           <main className="flex flex-1 flex-col gap-5 bg-background px-4 py-4 lg:px-6 lg:py-5">
-            <StaggerReveal className="contents">
-              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div className="min-w-0">
-              <h1
-                className={cn(
-                  "font-semibold tracking-tight",
-                  pageTitle === "My team" ? "text-3xl" : "text-2xl",
-                )}
-              >
-                {pageTitle}
-              </h1>
-              {assignment && pageTitle !== "My team" ? (
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {assignment.team.name} · {assignment.division.name}
-                </p>
-              ) : null}
-            </div>
-            {workspaceAssignments.length ? (
-              <Select
-                disabled={workspaceAssignments.length === 1}
-                value={selectedSeasonId ?? undefined}
-                onValueChange={setSelectedSeasonId}
-              >
-                <SelectTrigger className="h-9 w-full md:w-64">
-                  <SelectValue placeholder="Select season" />
-                </SelectTrigger>
-                <SelectContent>
-                  {workspaceAssignments.map((item) => (
-                    <SelectItem key={item.assignmentId} value={item.season.id}>
-                      {item.season.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : null}
-          </div>
-              {children}
-            </StaggerReveal>
+            <RevealGroup className="contents">
+              <ComponentReveal asChild>
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div className="min-w-0">
+                    <h1
+                      className={cn(
+                        "font-semibold tracking-tight",
+                        pageTitle === "My team" ? "text-3xl" : "text-2xl",
+                      )}
+                    >
+                      {pageTitle}
+                    </h1>
+                    {assignment && pageTitle !== "My team" ? (
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {assignment.team.name} · {assignment.division.name}
+                      </p>
+                    ) : null}
+                  </div>
+                  {workspaceAssignments.length ? (
+                    <Select
+                      disabled={workspaceAssignments.length === 1}
+                      value={selectedSeasonId ?? undefined}
+                      onValueChange={setSelectedSeasonId}
+                    >
+                      <SelectTrigger className="h-9 w-full md:w-64">
+                        <SelectValue placeholder="Select season" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {workspaceAssignments.map((item) => (
+                          <SelectItem key={item.assignmentId} value={item.season.id}>
+                            {item.season.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : null}
+                </div>
+              </ComponentReveal>
+              <ComponentReveal>{children}</ComponentReveal>
+            </RevealGroup>
           </main>
         </PageEntrance>
       </SidebarInset>
@@ -175,9 +181,13 @@ function ManagerLoadingState({ organization }: { organization: Organization }) {
         />
         <PageEntrance asChild>
           <main className="space-y-4 bg-background px-4 py-4 lg:px-6 lg:py-5">
-            <Skeleton className="h-10 w-72" />
-            <Skeleton className="h-36 rounded-lg" />
-            <Skeleton className="h-72 rounded-lg" />
+            <ComponentReveal asChild>
+              <div className="space-y-4">
+                <Skeleton className="h-10 w-72" />
+                <Skeleton className="h-36 rounded-lg" />
+                <Skeleton className="h-72 rounded-lg" />
+              </div>
+            </ComponentReveal>
           </main>
         </PageEntrance>
       </SidebarInset>
@@ -297,9 +307,12 @@ function ManagerPlayersContent({
   const players = playersQuery.data?.data ?? []
 
   return (
-    <>
-      <RosterStatusPanel assignment={assignment} organization={organization} />
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_12rem]">
+    <RevealGroup className="contents">
+      <ComponentReveal>
+        <RosterStatusPanel assignment={assignment} organization={organization} />
+      </ComponentReveal>
+      <ComponentReveal asChild>
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_12rem]">
         <Input
           aria-label="Search players"
           className="h-9"
@@ -317,25 +330,32 @@ function ManagerPlayersContent({
             <SelectItem value="inactive">Inactive</SelectItem>
           </SelectContent>
         </Select>
-      </div>
-      <section className="overflow-hidden rounded-lg border bg-card">
+        </div>
+      </ComponentReveal>
+      <ComponentReveal asChild>
+        <section className="overflow-hidden rounded-lg border bg-card">
         {playersQuery.isLoading ? (
-          <div className="space-y-3 p-4">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <Skeleton key={index} className="h-12" />
-            ))}
-          </div>
+          <ComponentReveal asChild>
+            <div className="space-y-3 p-4">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <Skeleton key={index} className="h-12" />
+              ))}
+            </div>
+          </ComponentReveal>
         ) : playersQuery.isError ? (
-          <Empty>
-            <EmptyHeader>
-              <EmptyTitle>We couldn't load players</EmptyTitle>
-              <EmptyDescription>
-                {getApiErrorMessage(playersQuery.error)}
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
+          <ComponentReveal>
+            <Empty>
+              <EmptyHeader>
+                <EmptyTitle>We couldn't load players</EmptyTitle>
+                <EmptyDescription>
+                  {getApiErrorMessage(playersQuery.error)}
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          </ComponentReveal>
         ) : players.length ? (
-          <div className="divide-y">
+          <ComponentReveal asChild>
+            <div className="divide-y">
             {players.map((player) => (
               <div
                 key={player.id}
@@ -360,30 +380,34 @@ function ManagerPlayersContent({
                 </Badge>
               </div>
             ))}
-          </div>
+            </div>
+          </ComponentReveal>
         ) : (
-          <Empty>
-            <EmptyHeader>
-              <EmptyTitle>No players found</EmptyTitle>
-              <EmptyDescription>
-                This team does not have matching player records yet.
-              </EmptyDescription>
-            </EmptyHeader>
-            {isRosterEditable(assignment.roster.status) ? (
-              <EmptyContent>
-                <Button asChild>
-                  <Link
-                    href={`/organizations/${organization.slug}/teams/${assignment.team.id}/roster?seasonId=${assignment.season.id}`}
-                  >
-                    Manage roster
-                  </Link>
-                </Button>
-              </EmptyContent>
-            ) : null}
-          </Empty>
+          <ComponentReveal>
+            <Empty>
+              <EmptyHeader>
+                <EmptyTitle>No players found</EmptyTitle>
+                <EmptyDescription>
+                  This team does not have matching player records yet.
+                </EmptyDescription>
+              </EmptyHeader>
+              {isRosterEditable(assignment.roster.status) ? (
+                <EmptyContent>
+                  <Button asChild>
+                    <Link
+                      href={`/organizations/${organization.slug}/teams/${assignment.team.id}/roster?seasonId=${assignment.season.id}`}
+                    >
+                      Manage roster
+                    </Link>
+                  </Button>
+                </EmptyContent>
+              ) : null}
+            </Empty>
+          </ComponentReveal>
         )}
-      </section>
-    </>
+        </section>
+      </ComponentReveal>
+    </RevealGroup>
   )
 }
 
@@ -413,22 +437,25 @@ function ManagerGameList({
 
   if (!games.length) {
     return (
-      <Empty className="border bg-card">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <CalendarDaysIcon className="size-5" />
-          </EmptyMedia>
-          <EmptyTitle>{title}</EmptyTitle>
-          <EmptyDescription>
-            The schedule will appear here once games are available.
-          </EmptyDescription>
-        </EmptyHeader>
-      </Empty>
+      <ComponentReveal>
+        <Empty className="border bg-card">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <CalendarDaysIcon className="size-5" />
+            </EmptyMedia>
+            <EmptyTitle>{title}</EmptyTitle>
+            <EmptyDescription>
+              The schedule will appear here once games are available.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      </ComponentReveal>
     )
   }
 
   return (
-    <div className="space-y-5">
+    <ComponentReveal>
+      <div className="space-y-5">
       {dates.map((date) => (
         <section key={date} className="space-y-2">
           <h2 className="text-sm font-medium">
@@ -487,7 +514,8 @@ function ManagerGameList({
           </div>
         </section>
       ))}
-    </div>
+      </div>
+    </ComponentReveal>
   )
 }
 
@@ -507,43 +535,55 @@ function ManagerScheduleContent({
   const resultGames = games.filter(gameIsResult)
 
   if (schedulesQuery.isLoading) {
-    return <Skeleton className="h-96 rounded-lg" />
+    return (
+      <ComponentReveal>
+        <Skeleton className="h-96 rounded-lg" />
+      </ComponentReveal>
+    )
   }
 
   if (schedulesQuery.isError) {
     return (
-      <Empty className="border bg-card">
-        <EmptyHeader>
-          <EmptyTitle>We couldn't load your schedule</EmptyTitle>
-          <EmptyDescription>
-            {getApiErrorMessage(schedulesQuery.error)}
-          </EmptyDescription>
-        </EmptyHeader>
-      </Empty>
+      <ComponentReveal>
+        <Empty className="border bg-card">
+          <EmptyHeader>
+            <EmptyTitle>We couldn't load your schedule</EmptyTitle>
+            <EmptyDescription>
+              {getApiErrorMessage(schedulesQuery.error)}
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      </ComponentReveal>
     )
   }
 
   return (
-    <Tabs defaultValue="upcoming">
-      <TabsList>
-        <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-        <TabsTrigger value="results">Results</TabsTrigger>
-      </TabsList>
-      <TabsContent value="upcoming">
-        <ManagerGameList
-          assignment={assignment}
-          games={upcomingGames}
-          title="No upcoming games"
-        />
-      </TabsContent>
-      <TabsContent value="results">
-        <ManagerGameList
-          assignment={assignment}
-          games={resultGames}
-          title="No completed games"
-        />
-      </TabsContent>
-    </Tabs>
+    <ComponentReveal>
+      <Tabs defaultValue="upcoming">
+        <TabsList>
+          <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+          <TabsTrigger value="results">Results</TabsTrigger>
+        </TabsList>
+        <ComponentReveal asChild trigger="active">
+          <TabsContent value="upcoming">
+            <ManagerGameList
+              assignment={assignment}
+              games={upcomingGames}
+              title="No upcoming games"
+            />
+          </TabsContent>
+        </ComponentReveal>
+        <ComponentReveal asChild trigger="active">
+          <TabsContent value="results">
+            <ManagerGameList
+              assignment={assignment}
+              games={resultGames}
+              title="No completed games"
+            />
+          </TabsContent>
+        </ComponentReveal>
+      </Tabs>
+    </ComponentReveal>
   )
 }
 
@@ -561,24 +601,32 @@ function ManagerStandingsContent({
   const rows = standingsQuery.data?.rows ?? []
 
   if (standingsQuery.isLoading) {
-    return <Skeleton className="h-96 rounded-lg" />
+    return (
+      <ComponentReveal>
+        <Skeleton className="h-96 rounded-lg" />
+      </ComponentReveal>
+    )
   }
 
   if (standingsQuery.isError) {
     return (
-      <Empty className="border bg-card">
-        <EmptyHeader>
-          <EmptyTitle>We couldn't load standings</EmptyTitle>
-          <EmptyDescription>
-            {getApiErrorMessage(standingsQuery.error)}
-          </EmptyDescription>
-        </EmptyHeader>
-      </Empty>
+      <ComponentReveal>
+        <Empty className="border bg-card">
+          <EmptyHeader>
+            <EmptyTitle>We couldn't load standings</EmptyTitle>
+            <EmptyDescription>
+              {getApiErrorMessage(standingsQuery.error)}
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      </ComponentReveal>
     )
   }
 
   return (
-    <StandingsTable rows={rows} />
+    <ComponentReveal>
+      <StandingsTable rows={rows} />
+    </ComponentReveal>
   )
 }
 

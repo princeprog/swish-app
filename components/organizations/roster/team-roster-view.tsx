@@ -22,7 +22,11 @@ import {
 import { toast } from "sonner"
 
 import { AppSidebar } from "@/components/app-sidebar"
-import { PageEntrance, StaggerReveal } from "@/components/motion/page-motion"
+import {
+  ComponentReveal,
+  PageEntrance,
+  RevealGroup,
+} from "@/components/motion/page-motion"
 import { DataTablePagination } from "@/components/organizations/shared/data-table-pagination"
 import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -754,34 +758,37 @@ function TeamRosterSummaryCards({
   ]
 
   return (
-    <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+    <RevealGroup asChild pace="compact">
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
       {cards.map((card) => {
         const Icon = card.icon
 
         return (
-          <Card
-            key={card.title}
-            size="sm"
-            className="rounded-lg border border-border/60 bg-card/90 py-3 shadow-none"
-          >
-            <CardHeader className="px-4 pb-2">
-              <div className="flex items-center gap-3">
-                <div className="flex size-7 items-center justify-center rounded-md border border-border/70 bg-background/70">
-                  <Icon className="size-3.5 text-muted-foreground" />
+          <ComponentReveal asChild key={card.title}>
+            <Card
+              size="sm"
+              className="rounded-lg border border-border/60 bg-card/90 py-3 shadow-none"
+            >
+              <CardHeader className="px-4 pb-2">
+                <div className="flex items-center gap-3">
+                  <div className="flex size-7 items-center justify-center rounded-md border border-border/70 bg-background/70">
+                    <Icon className="size-3.5 text-muted-foreground" />
+                  </div>
+                  <CardDescription className="text-xs font-medium text-foreground/85">
+                    {card.title}
+                  </CardDescription>
                 </div>
-                <CardDescription className="text-xs font-medium text-foreground/85">
-                  {card.title}
-                </CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-1 px-4 pt-0">
-              <div className="text-2xl font-semibold tracking-tight">{card.value}</div>
-              <p className="text-xs leading-5 text-muted-foreground">{card.description}</p>
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent className="space-y-1 px-4 pt-0">
+                <div className="text-2xl font-semibold tracking-tight">{card.value}</div>
+                <p className="text-xs leading-5 text-muted-foreground">{card.description}</p>
+              </CardContent>
+            </Card>
+          </ComponentReveal>
         )
       })}
-    </section>
+      </section>
+    </RevealGroup>
   )
 }
 
@@ -1113,14 +1120,15 @@ export function TeamRosterView({
 
         <PageEntrance asChild>
           <main className="flex flex-1 flex-col gap-6 bg-background px-4 py-4 lg:px-6 lg:py-5">
-            <StaggerReveal className="contents">
-              <section className="space-y-4">
-            <Button asChild variant="ghost" className="w-fit">
-              <Link href={`/organizations/${organization.slug}/teams`}>
-                <ArrowLeft className="size-4" />
-                Back to teams
-              </Link>
-            </Button>
+            <RevealGroup className="contents">
+              <ComponentReveal asChild>
+                <section className="space-y-4">
+                  <Button asChild variant="ghost" className="w-fit">
+                    <Link href={`/organizations/${organization.slug}/teams`}>
+                      <ArrowLeft className="size-4" />
+                      Back to teams
+                    </Link>
+                  </Button>
 
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="space-y-2">
@@ -1181,108 +1189,119 @@ export function TeamRosterView({
                 </div>
               ) : null}
             </div>
-          </section>
+                </section>
+              </ComponentReveal>
 
-          {roster?.visibility === "hidden" ? (
-            <Empty className="border bg-card">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <Shield className="size-5" />
-                </EmptyMedia>
-                <EmptyTitle>Roster locked until release</EmptyTitle>
-                <EmptyDescription>{roster.message}</EmptyDescription>
-              </EmptyHeader>
-            </Empty>
-          ) : null}
+              {roster?.visibility === "hidden" ? (
+                <ComponentReveal>
+                  <Empty className="border bg-card">
+                    <EmptyHeader>
+                      <EmptyMedia variant="icon">
+                        <Shield className="size-5" />
+                      </EmptyMedia>
+                      <EmptyTitle>Roster locked until release</EmptyTitle>
+                      <EmptyDescription>{roster.message}</EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
+                </ComponentReveal>
+              ) : null}
 
-          {rosterDetails && !canEditPlayers ? (
-            <Card className="border border-border/60 bg-card/95 shadow-none">
-              <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
-                <div>
-                  <div className="font-medium">
-                    {isSubmitted
-                      ? "Waiting for admin review"
-                      : roster?.visibility === "published"
-                        ? "Published roster"
-                        : "Roster is locked"}
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {isSubmitted
-                      ? "Player changes are paused while this roster is under review."
-                      : "Published player details stay visible while any amendment is reviewed."}
-                  </p>
-                </div>
-                {isSubmitted ? (
-                  <div className="flex min-w-72 flex-1 gap-2 sm:flex-none">
-                    <Input
-                      aria-label="Correction reason"
-                      placeholder="Correction note"
-                      value={returnReason}
-                      onChange={(event) => setReturnReason(event.target.value)}
+              {rosterDetails && !canEditPlayers ? (
+                <ComponentReveal asChild>
+                  <Card className="border border-border/60 bg-card/95 shadow-none">
+                    <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+                      <div>
+                        <div className="font-medium">
+                          {isSubmitted
+                            ? "Waiting for admin review"
+                            : roster?.visibility === "published"
+                              ? "Published roster"
+                              : "Roster is locked"}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {isSubmitted
+                            ? "Player changes are paused while this roster is under review."
+                            : "Published player details stay visible while any amendment is reviewed."}
+                        </p>
+                      </div>
+                      {isSubmitted ? (
+                        <div className="flex min-w-72 flex-1 gap-2 sm:flex-none">
+                          <Input
+                            aria-label="Correction reason"
+                            placeholder="Correction note"
+                            value={returnReason}
+                            onChange={(event) => setReturnReason(event.target.value)}
+                          />
+                          <Button
+                            disabled={returnRosterMutation.isPending}
+                            variant="outline"
+                            onClick={() => void handleReturnRoster()}
+                          >
+                            Return
+                          </Button>
+                        </div>
+                      ) : null}
+                    </CardContent>
+                  </Card>
+                </ComponentReveal>
+              ) : null}
+
+              {amendmentReason ? (
+                <ComponentReveal asChild>
+                  <Card className="border border-border/60 bg-card/95 shadow-none">
+                    <CardContent className="flex flex-wrap items-center gap-2 p-4">
+                      <Input
+                        aria-label="Amendment reason"
+                        className="min-w-72 flex-1"
+                        value={amendmentReason}
+                        onChange={(event) => setAmendmentReason(event.target.value)}
+                      />
+                      <Button
+                        disabled={startAmendmentMutation.isPending}
+                        onClick={() => void handleStartAmendment()}
+                      >
+                        Start amendment
+                      </Button>
+                      <Button variant="ghost" onClick={() => setAmendmentReason("")}>
+                        Cancel
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </ComponentReveal>
+              ) : null}
+
+              {roster?.visibility !== "hidden" ? (
+                <ComponentReveal>
+                  <TeamRosterSummaryCards
+                    activePlayers={activePlayers}
+                    inactivePlayers={inactivePlayers}
+                    recentlyUpdatedPlayers={recentlyUpdatedPlayers}
+                    totalPlayers={rosterPlayers.length}
+                  />
+                </ComponentReveal>
+              ) : null}
+
+              {roster?.visibility !== "hidden" ? (
+                <ComponentReveal asChild>
+                  <section className="space-y-6">
+                    <TeamRosterTable
+                      canEditPlayers={canEditPlayers}
+                      onPageChange={onPageChange}
+                      onPageSizeChange={onPageSizeChange}
+                      onDeletePlayer={setPlayerToDelete}
+                      onEditPlayer={setPlayerToEdit}
+                      onViewPlayer={(player) => {
+                        setPlayerToView(player)
+                        setMountedPlayerDetails(player)
+                        setPlayerDetailsOpen(true)
+                      }}
+                      pagination={pagination}
+                      players={rosterPlayers}
                     />
-                    <Button
-                      disabled={returnRosterMutation.isPending}
-                      variant="outline"
-                      onClick={() => void handleReturnRoster()}
-                    >
-                      Return
-                    </Button>
-                  </div>
-                ) : null}
-              </CardContent>
-            </Card>
-          ) : null}
-
-          {amendmentReason ? (
-            <Card className="border border-border/60 bg-card/95 shadow-none">
-              <CardContent className="flex flex-wrap items-center gap-2 p-4">
-                <Input
-                  aria-label="Amendment reason"
-                  className="min-w-72 flex-1"
-                  value={amendmentReason}
-                  onChange={(event) => setAmendmentReason(event.target.value)}
-                />
-                <Button
-                  disabled={startAmendmentMutation.isPending}
-                  onClick={() => void handleStartAmendment()}
-                >
-                  Start amendment
-                </Button>
-                <Button variant="ghost" onClick={() => setAmendmentReason("")}>
-                  Cancel
-                </Button>
-              </CardContent>
-            </Card>
-          ) : null}
-
-          {roster?.visibility !== "hidden" ? (
-            <TeamRosterSummaryCards
-              activePlayers={activePlayers}
-              inactivePlayers={inactivePlayers}
-              recentlyUpdatedPlayers={recentlyUpdatedPlayers}
-              totalPlayers={rosterPlayers.length}
-            />
-          ) : null}
-
-          {roster?.visibility !== "hidden" ? (
-            <section className="space-y-6">
-            <TeamRosterTable
-              canEditPlayers={canEditPlayers}
-              onPageChange={onPageChange}
-              onPageSizeChange={onPageSizeChange}
-              onDeletePlayer={setPlayerToDelete}
-              onEditPlayer={setPlayerToEdit}
-              onViewPlayer={(player) => {
-                setPlayerToView(player)
-                setMountedPlayerDetails(player)
-                setPlayerDetailsOpen(true)
-              }}
-              pagination={pagination}
-              players={rosterPlayers}
-            />
-              </section>
-            ) : null}
-            </StaggerReveal>
+                  </section>
+                </ComponentReveal>
+              ) : null}
+            </RevealGroup>
           </main>
         </PageEntrance>
       </SidebarInset>
