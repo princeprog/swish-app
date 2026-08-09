@@ -11,7 +11,6 @@ import {
 
 import { HeaderAccountMenu } from "@/components/auth/header-account-menu";
 import {
-  ComponentReveal,
   PageEntrance,
 } from "@/components/motion/page-motion";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -104,7 +103,7 @@ export function ScorekeeperShell({
 
       <PageEntrance asChild variant="subtle">
         <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-          <ComponentReveal variant="subtle">{children}</ComponentReveal>
+          {children}
         </div>
       </PageEntrance>
     </main>
