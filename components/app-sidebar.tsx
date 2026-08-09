@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation"
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
+import { NotificationBell } from "@/components/notifications/notification-bell"
 import { TeamSwitcher } from "@/components/team-switcher"
 import {
   Sidebar,
@@ -221,6 +222,9 @@ export function AppSidebar({
         ) : null}
       </SidebarContent>
       <SidebarFooter>
+        <div className="flex justify-end px-1 group-data-[collapsible=icon]:justify-center">
+          <NotificationBell />
+        </div>
         <NavUser />
       </SidebarFooter>
       <SidebarRail />

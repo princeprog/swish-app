@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { HeaderAccountMenu } from "@/components/auth/header-account-menu";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import {
   PageEntrance,
 } from "@/components/motion/page-motion";
@@ -95,6 +96,7 @@ export function ScorekeeperShell({
               </DropdownMenuContent>
             </DropdownMenu>
 
+            <NotificationBell />
             <ThemeToggle />
             <HeaderAccountMenu />
           </div>
