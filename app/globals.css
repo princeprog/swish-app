@@ -131,7 +131,17 @@ body {
 @keyframes swish-page-entrance {
   from {
     opacity: 0;
-    transform: translate3d(0, 12px, 0);
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes swish-component-reveal {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
   }
 
   to {
@@ -140,10 +150,10 @@ body {
   }
 }
 
-@keyframes swish-component-reveal {
+@keyframes swish-component-reveal-subtle {
   from {
     opacity: 0;
-    transform: translate3d(0, 8px, 0);
+    transform: translate3d(0, 4px, 0);
   }
 
   to {
@@ -153,71 +163,178 @@ body {
 }
 
 .page-entrance {
-  animation: swish-page-entrance 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: swish-page-entrance 140ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .page-entrance-subtle {
-  animation-duration: 180ms;
+  animation-duration: 100ms;
   animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
 }
 
 .component-reveal[data-motion-trigger="mount"],
 .component-reveal[data-motion-trigger="active"][data-state="active"] {
-  animation: swish-component-reveal 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: swish-component-reveal 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 60ms;
 }
 
 .component-reveal.component-reveal-subtle[data-motion-trigger="mount"],
 .component-reveal.component-reveal-subtle[data-motion-trigger="active"][data-state="active"] {
-  animation-duration: 160ms;
+  animation-name: swish-component-reveal-subtle;
+  animation-duration: 180ms;
   animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+  animation-delay: 40ms;
 }
 
-.reveal-group > [data-motion="component-reveal"] {
-  animation-delay: 0ms;
+.reveal-group:not(.reveal-group-compact)[data-motion-phase="primary"] > [data-motion="component-reveal"] {
+  animation-delay: 60ms;
 }
 
-.reveal-group > :nth-child(2)[data-motion="component-reveal"] {
-  animation-delay: 45ms;
+.reveal-group:not(.reveal-group-compact)[data-motion-phase="primary"] > :nth-child(2)[data-motion="component-reveal"] {
+  animation-delay: 105ms;
 }
 
-.reveal-group > :nth-child(3)[data-motion="component-reveal"] {
-  animation-delay: 90ms;
+.reveal-group:not(.reveal-group-compact)[data-motion-phase="primary"] > :nth-child(3)[data-motion="component-reveal"] {
+  animation-delay: 150ms;
 }
 
-.reveal-group > :nth-child(4)[data-motion="component-reveal"] {
-  animation-delay: 135ms;
+.reveal-group:not(.reveal-group-compact)[data-motion-phase="primary"] > :nth-child(4)[data-motion="component-reveal"] {
+  animation-delay: 195ms;
 }
 
-.reveal-group > :nth-child(5)[data-motion="component-reveal"] {
+.reveal-group:not(.reveal-group-compact)[data-motion-phase="primary"] > :nth-child(5)[data-motion="component-reveal"] {
+  animation-delay: 240ms;
+}
+
+.reveal-group:not(.reveal-group-compact)[data-motion-phase="primary"] > :nth-child(n + 6)[data-motion="component-reveal"] {
+  animation-delay: 285ms;
+}
+
+.reveal-group:not(.reveal-group-compact)[data-motion-phase="secondary"] > [data-motion="component-reveal"] {
+  animation-delay: 120ms;
+}
+
+.reveal-group:not(.reveal-group-compact)[data-motion-phase="secondary"] > :nth-child(2)[data-motion="component-reveal"] {
+  animation-delay: 165ms;
+}
+
+.reveal-group:not(.reveal-group-compact)[data-motion-phase="secondary"] > :nth-child(3)[data-motion="component-reveal"] {
+  animation-delay: 210ms;
+}
+
+.reveal-group:not(.reveal-group-compact)[data-motion-phase="secondary"] > :nth-child(4)[data-motion="component-reveal"] {
+  animation-delay: 255ms;
+}
+
+.reveal-group:not(.reveal-group-compact)[data-motion-phase="secondary"] > :nth-child(5)[data-motion="component-reveal"] {
+  animation-delay: 300ms;
+}
+
+.reveal-group:not(.reveal-group-compact)[data-motion-phase="secondary"] > :nth-child(n + 6)[data-motion="component-reveal"] {
+  animation-delay: 345ms;
+}
+
+.reveal-group:not(.reveal-group-compact)[data-motion-phase="tertiary"] > [data-motion="component-reveal"] {
   animation-delay: 180ms;
 }
 
-.reveal-group > :nth-child(n + 6)[data-motion="component-reveal"] {
+.reveal-group:not(.reveal-group-compact)[data-motion-phase="tertiary"] > :nth-child(2)[data-motion="component-reveal"] {
   animation-delay: 225ms;
 }
 
-.reveal-group-compact > [data-motion="component-reveal"] {
+.reveal-group:not(.reveal-group-compact)[data-motion-phase="tertiary"] > :nth-child(3)[data-motion="component-reveal"] {
+  animation-delay: 270ms;
+}
+
+.reveal-group:not(.reveal-group-compact)[data-motion-phase="tertiary"] > :nth-child(4)[data-motion="component-reveal"] {
+  animation-delay: 315ms;
+}
+
+.reveal-group:not(.reveal-group-compact)[data-motion-phase="tertiary"] > :nth-child(5)[data-motion="component-reveal"] {
+  animation-delay: 360ms;
+}
+
+.reveal-group:not(.reveal-group-compact)[data-motion-phase="tertiary"] > :nth-child(n + 6)[data-motion="component-reveal"] {
+  animation-delay: 405ms;
+}
+
+.reveal-group-compact[data-motion-phase="primary"] > [data-motion="component-reveal"] {
+  animation-delay: 40ms;
+}
+
+.reveal-group-compact[data-motion-phase="primary"] > :nth-child(2)[data-motion="component-reveal"] {
+  animation-delay: 65ms;
+}
+
+.reveal-group-compact[data-motion-phase="primary"] > :nth-child(3)[data-motion="component-reveal"] {
+  animation-delay: 90ms;
+}
+
+.reveal-group-compact[data-motion-phase="primary"] > :nth-child(4)[data-motion="component-reveal"] {
+  animation-delay: 115ms;
+}
+
+.reveal-group-compact[data-motion-phase="primary"] > :nth-child(5)[data-motion="component-reveal"] {
+  animation-delay: 140ms;
+}
+
+.reveal-group-compact[data-motion-phase="primary"] > :nth-child(n + 6)[data-motion="component-reveal"] {
+  animation-delay: 165ms;
+}
+
+.reveal-group-compact[data-motion-phase="secondary"] > [data-motion="component-reveal"] {
+  animation-delay: 80ms;
+}
+
+.reveal-group-compact[data-motion-phase="secondary"] > :nth-child(2)[data-motion="component-reveal"] {
+  animation-delay: 105ms;
+}
+
+.reveal-group-compact[data-motion-phase="secondary"] > :nth-child(3)[data-motion="component-reveal"] {
+  animation-delay: 130ms;
+}
+
+.reveal-group-compact[data-motion-phase="secondary"] > :nth-child(4)[data-motion="component-reveal"] {
+  animation-delay: 155ms;
+}
+
+.reveal-group-compact[data-motion-phase="secondary"] > :nth-child(5)[data-motion="component-reveal"] {
+  animation-delay: 180ms;
+}
+
+.reveal-group-compact[data-motion-phase="secondary"] > :nth-child(n + 6)[data-motion="component-reveal"] {
+  animation-delay: 205ms;
+}
+
+.reveal-group-compact[data-motion-phase="tertiary"] > [data-motion="component-reveal"] {
+  animation-delay: 120ms;
+}
+
+.reveal-group-compact[data-motion-phase="tertiary"] > :nth-child(2)[data-motion="component-reveal"] {
+  animation-delay: 145ms;
+}
+
+.reveal-group-compact[data-motion-phase="tertiary"] > :nth-child(3)[data-motion="component-reveal"] {
+  animation-delay: 170ms;
+}
+
+.reveal-group-compact[data-motion-phase="tertiary"] > :nth-child(4)[data-motion="component-reveal"] {
+  animation-delay: 195ms;
+}
+
+.reveal-group-compact[data-motion-phase="tertiary"] > :nth-child(5)[data-motion="component-reveal"] {
+  animation-delay: 220ms;
+}
+
+.reveal-group-compact[data-motion-phase="tertiary"] > :nth-child(n + 6)[data-motion="component-reveal"] {
+  animation-delay: 245ms;
+}
+
+.component-reveal[data-motion-trigger="active"][data-state="active"] {
   animation-delay: 0ms;
 }
 
-.reveal-group-compact > :nth-child(2)[data-motion="component-reveal"] {
-  animation-delay: 25ms;
-}
-
-.reveal-group-compact > :nth-child(3)[data-motion="component-reveal"] {
-  animation-delay: 50ms;
-}
-
-.reveal-group-compact > :nth-child(4)[data-motion="component-reveal"] {
-  animation-delay: 75ms;
-}
-
-.reveal-group-compact > :nth-child(5)[data-motion="component-reveal"] {
-  animation-delay: 100ms;
-}
-
-.reveal-group-compact > :nth-child(n + 6)[data-motion="component-reveal"] {
-  animation-delay: 125ms;
+.component-reveal.component-reveal-subtle[data-motion-trigger="active"][data-state="active"] {
+  animation-delay: 0ms;
 }
 
 @media (prefers-reduced-motion: reduce) {

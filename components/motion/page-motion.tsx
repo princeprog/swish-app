@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 type PageMotionVariant = "standard" | "subtle"
 type ComponentRevealTrigger = "mount" | "active"
 type RevealGroupPace = "standard" | "compact"
+type RevealGroupPhase = "primary" | "secondary" | "tertiary"
 
 type PageEntranceProps = React.ComponentProps<"div"> & {
   asChild?: boolean
@@ -21,6 +22,7 @@ type ComponentRevealProps = React.ComponentProps<"div"> & {
 type RevealGroupProps = React.ComponentProps<"div"> & {
   asChild?: boolean
   pace?: RevealGroupPace
+  phase?: RevealGroupPhase
 }
 
 type StaggerRevealProps = React.ComponentProps<"div"> & {
@@ -94,6 +96,7 @@ export function RevealGroup({
   asChild = false,
   className,
   pace = "standard",
+  phase = "primary",
   ...props
 }: RevealGroupProps) {
   const Comp = asChild ? Slot.Root : "div"
@@ -103,6 +106,7 @@ export function RevealGroup({
       {...props}
       data-motion="reveal-group"
       data-motion-pace={pace}
+      data-motion-phase={phase}
       className={cn(
         "reveal-group",
         pace === "compact" && "reveal-group-compact",
