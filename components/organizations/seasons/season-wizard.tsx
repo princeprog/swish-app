@@ -157,11 +157,7 @@ export function SeasonWizard({
                 Back
               </Button>
             )}
-            <Button
-              type={step === 1 ? "button" : "submit"}
-              disabled={isPending}
-              onClick={step === 1 ? goToRules : undefined}
-            >
+            <Button type="submit" disabled={isPending}>
               {isPending ? (
                 <Loader2 className="animate-spin" data-icon="inline-start" />
               ) : step === 1 ? (
