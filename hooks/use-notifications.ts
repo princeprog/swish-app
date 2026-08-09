@@ -15,8 +15,12 @@ export const NOTIFICATION_QUERY_KEYS = {
   unreadCount: ["notifications", "unread-count"] as const,
 } as const
 
-export function useNotificationsQuery(query: NotificationListQuery = {}) {
+export function useNotificationsQuery(
+  query: NotificationListQuery = {},
+  enabled = true,
+) {
   return useQuery({
+    enabled,
     queryFn: () => notificationService.list(query),
     queryKey: NOTIFICATION_QUERY_KEYS.list(query),
     placeholderData: (previous) => previous,
@@ -125,7 +129,7 @@ export function useNotificationRealtime(enabled: boolean) {
 }
 
 export function useRecentNotificationsQuery(enabled = true) {
-  return useNotificationsQuery({ limit: 8, status: "all" })
+  return useNotificationsQuery({ limit: 8, status: "all" }, enabled)
 }
 
 export type NotificationQueryData = NotificationListResponse
