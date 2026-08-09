@@ -23,7 +23,11 @@ import {
   ScorekeeperFocusedState,
   ScorekeeperLoadingState,
 } from "@/components/organizations/scorekeeper/scorekeeper-states";
-import { PageEntrance } from "@/components/motion/page-motion";
+import {
+  ComponentReveal,
+  PageEntrance,
+  RevealGroup,
+} from "@/components/motion/page-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -970,14 +974,16 @@ export function ScorekeeperGameDetailScreen({
     return (
       <PageEntrance asChild variant="subtle">
         <main className="min-h-screen bg-background p-6 text-foreground">
-        <div className="mx-auto max-w-3xl">
-          <ScorekeeperFocusedState
-            description={state.description}
-            icon={state.icon}
-            title="We couldn't load this organization"
-            onRetry={() => organizationsQuery.refetch()}
-          />
-        </div>
+          <ComponentReveal asChild variant="subtle">
+            <div className="mx-auto max-w-3xl">
+              <ScorekeeperFocusedState
+                description={state.description}
+                icon={state.icon}
+                title="We couldn't load this organization"
+                onRetry={() => organizationsQuery.refetch()}
+              />
+            </div>
+          </ComponentReveal>
         </main>
       </PageEntrance>
     );
@@ -987,15 +993,17 @@ export function ScorekeeperGameDetailScreen({
     return (
       <PageEntrance asChild variant="subtle">
         <main className="min-h-screen bg-background p-6 text-foreground">
-        <div className="mx-auto max-w-3xl">
-          <ScorekeeperFocusedState
-            description="This workspace does not exist or you do not have access to it."
-            icon="not-found"
-            title="Organization not found"
-            actionHref="/organizations"
-            actionLabel="Back to organizations"
-          />
-        </div>
+          <ComponentReveal asChild variant="subtle">
+            <div className="mx-auto max-w-3xl">
+              <ScorekeeperFocusedState
+                description="This workspace does not exist or you do not have access to it."
+                icon="not-found"
+                title="Organization not found"
+                actionHref="/organizations"
+                actionLabel="Back to organizations"
+              />
+            </div>
+          </ComponentReveal>
         </main>
       </PageEntrance>
     );
@@ -1011,15 +1019,17 @@ export function ScorekeeperGameDetailScreen({
     return (
       <PageEntrance asChild variant="subtle">
         <main className="min-h-screen bg-background p-6 text-foreground">
-        <div className="mx-auto max-w-3xl">
-          <ScorekeeperFocusedState
-            description={state.description}
-            icon={state.icon}
-            title={state.title}
-            actionHref={`/organizations/${slug}/scorekeeper`}
-            actionLabel="Back to assignments"
-          />
-        </div>
+          <ComponentReveal asChild variant="subtle">
+            <div className="mx-auto max-w-3xl">
+              <ScorekeeperFocusedState
+                description={state.description}
+                icon={state.icon}
+                title={state.title}
+                actionHref={`/organizations/${slug}/scorekeeper`}
+                actionLabel="Back to assignments"
+              />
+            </div>
+          </ComponentReveal>
         </main>
       </PageEntrance>
     );
@@ -1056,7 +1066,8 @@ export function ScorekeeperGameDetailScreen({
     return (
       <PageEntrance asChild variant="subtle">
         <main className="min-h-screen bg-background p-4 text-foreground md:p-8">
-        <div className="mx-auto grid max-w-4xl gap-4">
+          <ComponentReveal asChild variant="subtle">
+            <div className="mx-auto grid max-w-4xl gap-4">
           <Button
             className="w-fit"
             variant="ghost"
@@ -1170,7 +1181,8 @@ export function ScorekeeperGameDetailScreen({
               </div>
             </CardContent>
           </Card>
-        </div>
+            </div>
+          </ComponentReveal>
         </main>
       </PageEntrance>
     );
@@ -1179,7 +1191,9 @@ export function ScorekeeperGameDetailScreen({
   return (
     <PageEntrance asChild variant="subtle">
       <main className="min-h-screen bg-background text-foreground">
-      <header className="flex h-16 items-center justify-between border-b bg-background px-4 md:h-20 md:px-8">
+        <RevealGroup className="contents" pace="compact">
+          <ComponentReveal asChild variant="subtle">
+            <header className="flex h-16 items-center justify-between border-b bg-background px-4 md:h-20 md:px-8">
         <Button
           aria-label="Back to assignments"
           size="icon"
@@ -1224,30 +1238,39 @@ export function ScorekeeperGameDetailScreen({
             toggleSound={() => setSoundEnabled((value) => !value)}
           />
         </div>
-      </header>
+            </header>
+          </ComponentReveal>
 
       {scoring.isSendingCommand || scoring.local.lastConfirmedAction ? (
-        <div
-          className="border-b bg-muted/40 px-4 py-2 text-sm md:px-8"
-          role="status"
-        >
-          <div className="mx-auto flex max-w-6xl items-center gap-2 font-medium">
-            {scoring.isSendingCommand ? (
-              <Loader2 className="size-4 animate-spin text-primary" />
-            ) : (
-              <CheckCircle2 className="size-4 text-primary" />
-            )}
-            <span>
-              {scoring.isSendingCommand
-                ? "Saving scoring update…"
-                : scoring.local.lastConfirmedAction}
-            </span>
+        <ComponentReveal asChild variant="subtle">
+          <div
+            className="border-b bg-muted/40 px-4 py-2 text-sm md:px-8"
+            role="status"
+          >
+            <div className="mx-auto flex max-w-6xl items-center gap-2 font-medium">
+              {scoring.isSendingCommand ? (
+                <Loader2 className="size-4 animate-spin text-primary" />
+              ) : (
+                <CheckCircle2 className="size-4 text-primary" />
+              )}
+              <span>
+                {scoring.isSendingCommand
+                  ? "Saving scoring update…"
+                  : scoring.local.lastConfirmedAction}
+              </span>
+            </div>
           </div>
-        </div>
+        </ComponentReveal>
       ) : null}
 
-      <div className="grid gap-3 p-3 md:min-h-[calc(100vh-5rem)] md:grid-cols-[minmax(0,1fr)_280px_minmax(0,1fr)] md:items-stretch">
-        <div className="md:hidden">
+      <RevealGroup
+        asChild
+        className="grid gap-3 p-3 md:min-h-[calc(100vh-5rem)] md:grid-cols-[minmax(0,1fr)_280px_minmax(0,1fr)] md:items-stretch"
+        pace="compact"
+      >
+        <div>
+          <ComponentReveal asChild variant="subtle">
+            <div className="md:hidden">
           <ClockConsole
             onClockToggle={toggleClock}
             onResetShotClock={resetShotClock}
@@ -1264,9 +1287,11 @@ export function ScorekeeperGameDetailScreen({
             gameClockExpired={gameClockExpired}
             shotClockExpired={shotClockExpired}
           />
-        </div>
+            </div>
+          </ComponentReveal>
 
-        <TeamScorePanel
+          <ComponentReveal variant="subtle">
+            <TeamScorePanel
           fouls={displayedState.fouls.home}
           name={displayedState.game.homeTeam.name}
           onFoul={() => foulTeam("home")}
@@ -1283,10 +1308,12 @@ export function ScorekeeperGameDetailScreen({
             displayedState.timeouts.home.remaining <= 0
           }
           timeoutsRemaining={displayedState.timeouts.home.remaining}
-        />
+            />
+          </ComponentReveal>
 
-        <div className="hidden md:block">
-          <ClockConsole
+          <ComponentReveal asChild variant="subtle">
+            <div className="hidden md:block">
+              <ClockConsole
             onClockToggle={toggleClock}
             onResetShotClock={resetShotClock}
             onShotClockToggle={toggleShotClock}
@@ -1301,10 +1328,12 @@ export function ScorekeeperGameDetailScreen({
             disabled={clockControlsDisabled}
             gameClockExpired={gameClockExpired}
             shotClockExpired={shotClockExpired}
-          />
-        </div>
+              />
+            </div>
+          </ComponentReveal>
 
-        <TeamScorePanel
+          <ComponentReveal variant="subtle">
+            <TeamScorePanel
           fouls={displayedState.fouls.away}
           name={displayedState.game.awayTeam.name}
           onFoul={() => foulTeam("away")}
@@ -1321,8 +1350,10 @@ export function ScorekeeperGameDetailScreen({
             displayedState.timeouts.away.remaining <= 0
           }
           timeoutsRemaining={displayedState.timeouts.away.remaining}
-        />
-      </div>
+            />
+          </ComponentReveal>
+        </div>
+      </RevealGroup>
 
       <AlertDialog
         open={timeoutDialogSide !== null}
@@ -1426,6 +1457,7 @@ export function ScorekeeperGameDetailScreen({
           Undo {displayedState.latestReversibleEvent?.summary ?? ""}
         </Button>
       </div>
+        </RevealGroup>
       </main>
     </PageEntrance>
   );

@@ -10,7 +10,10 @@ import {
 } from "lucide-react";
 
 import { HeaderAccountMenu } from "@/components/auth/header-account-menu";
-import { PageEntrance } from "@/components/motion/page-motion";
+import {
+  ComponentReveal,
+  PageEntrance,
+} from "@/components/motion/page-motion";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -101,7 +104,7 @@ export function ScorekeeperShell({
 
       <PageEntrance asChild variant="subtle">
         <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-          {children}
+          <ComponentReveal variant="subtle">{children}</ComponentReveal>
         </div>
       </PageEntrance>
     </main>

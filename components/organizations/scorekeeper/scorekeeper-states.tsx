@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { AlertCircle, CalendarOff, Lock, SearchX } from "lucide-react";
 
-import { PageEntrance } from "@/components/motion/page-motion";
+import {
+  ComponentReveal,
+  PageEntrance,
+} from "@/components/motion/page-motion";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -50,26 +53,28 @@ export function ScorekeeperFocusedState({
   title,
 }: FocusedStateProps) {
   return (
-    <Empty className="border bg-card">
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <StateIcon icon={icon} />
-        </EmptyMedia>
-        <EmptyTitle>{title}</EmptyTitle>
-        <EmptyDescription>{description}</EmptyDescription>
-      </EmptyHeader>
-      {onRetry || actionHref ? (
-        <EmptyContent>
-          {onRetry ? (
-            <Button onClick={onRetry}>Try again</Button>
-          ) : actionHref && actionLabel ? (
-            <Button asChild>
-              <Link href={actionHref}>{actionLabel}</Link>
-            </Button>
-          ) : null}
-        </EmptyContent>
-      ) : null}
-    </Empty>
+    <ComponentReveal variant="subtle">
+      <Empty className="border bg-card">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <StateIcon icon={icon} />
+          </EmptyMedia>
+          <EmptyTitle>{title}</EmptyTitle>
+          <EmptyDescription>{description}</EmptyDescription>
+        </EmptyHeader>
+        {onRetry || actionHref ? (
+          <EmptyContent>
+            {onRetry ? (
+              <Button onClick={onRetry}>Try again</Button>
+            ) : actionHref && actionLabel ? (
+              <Button asChild>
+                <Link href={actionHref}>{actionLabel}</Link>
+              </Button>
+            ) : null}
+          </EmptyContent>
+        ) : null}
+      </Empty>
+    </ComponentReveal>
   );
 }
 
@@ -77,24 +82,26 @@ export function ScorekeeperLoadingState() {
   return (
     <PageEntrance asChild variant="subtle">
       <main className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Skeleton className="size-10 rounded-lg" />
-            <div className="space-y-2">
-              <Skeleton className="h-5 w-48" />
-              <Skeleton className="h-4 w-32" />
+        <ComponentReveal asChild variant="subtle">
+          <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <Skeleton className="size-10 rounded-lg" />
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-48" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+              </div>
+              <Skeleton className="h-9 w-32" />
+            </div>
+            <Skeleton className="h-24 rounded-lg" />
+            <div className="grid gap-3 md:grid-cols-2">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <Skeleton key={index} className="h-36 rounded-lg" />
+              ))}
             </div>
           </div>
-          <Skeleton className="h-9 w-32" />
-        </div>
-        <Skeleton className="h-24 rounded-lg" />
-        <div className="grid gap-3 md:grid-cols-2">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <Skeleton key={index} className="h-36 rounded-lg" />
-          ))}
-        </div>
-      </div>
+        </ComponentReveal>
       </main>
     </PageEntrance>
   );

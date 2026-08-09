@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { CalendarClock, MapPin, Trophy } from "lucide-react";
 
+import {
+  ComponentReveal,
+  RevealGroup,
+} from "@/components/motion/page-motion";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -193,52 +197,63 @@ export function ScorekeeperGameList({
   const groups = groupScorekeeperGames(games);
 
   return (
-    <div className="space-y-8">
-      <section className="rounded-lg border bg-muted/20 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">
-              Assigned games
-            </p>
-            <h2 className="text-2xl font-semibold tracking-tight">
-              {games.length} {games.length === 1 ? "game" : "games"}
-            </h2>
+    <RevealGroup className="space-y-8" pace="compact">
+      <ComponentReveal asChild variant="subtle">
+        <section className="rounded-lg border bg-muted/20 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">
+                Assigned games
+              </p>
+              <h2 className="text-2xl font-semibold tracking-tight">
+                {games.length} {games.length === 1 ? "game" : "games"}
+              </h2>
+            </div>
+            <Badge variant="outline">Read only</Badge>
           </div>
-          <Badge variant="outline">Read only</Badge>
-        </div>
-      </section>
+        </section>
+      </ComponentReveal>
 
       {groups.map((group) => (
-        <section key={group.title} className="space-y-3">
-          <div className="space-y-1">
-            <h3 className="text-lg font-semibold">{group.title}</h3>
-            <p className="text-sm text-muted-foreground">{group.description}</p>
-          </div>
+        <ComponentReveal asChild key={group.title} variant="subtle">
+          <section className="space-y-3">
+            <div className="space-y-1">
+              <h3 className="text-lg font-semibold">{group.title}</h3>
+              <p className="text-sm text-muted-foreground">{group.description}</p>
+            </div>
 
-          {group.games.length > 0 ? (
-            <div
-              className={cn(
-                "grid gap-3",
-                group.title === "Needs attention"
-                  ? "lg:grid-cols-2"
-                  : "md:grid-cols-2",
-              )}
-            >
-              {group.games.map((game) => (
-                <ScorekeeperGameCard
-                  key={game.id}
-                  game={game}
-                  organization={organization}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-lg border border-dashed bg-card/60 px-4 py-5 text-sm text-muted-foreground">
-              No assigned games in this section.
-            </div>
-          )}
-        </section>
+            {group.games.length > 0 ? (
+              <RevealGroup
+                asChild
+                className={cn(
+                  "grid gap-3",
+                  group.title === "Needs attention"
+                    ? "lg:grid-cols-2"
+                    : "md:grid-cols-2",
+                )}
+                pace="compact"
+              >
+                <div>
+                  {group.games.map((game) => (
+                    <ComponentReveal key={game.id} variant="subtle">
+                      <ScorekeeperGameCard
+                        game={game}
+                        organization={organization}
+                      />
+                    </ComponentReveal>
+                  ))}
+                </div>
+              </RevealGroup>
+            ) : (
+              <ComponentReveal asChild variant="subtle">
+                <div className="rounded-lg border border-dashed bg-card/60 px-4 py-5 text-sm text-muted-foreground">
+                  No assigned games in this section.
+                </div>
+              </ComponentReveal>
+            )}
+          </section>
+        </ComponentReveal>
       ))}
-    </div>
+    </RevealGroup>
   );
 }

@@ -5,7 +5,10 @@ import * as React from "react";
 
 import { ScorekeeperGameList } from "@/components/organizations/scorekeeper/scorekeeper-game-list";
 import { ScorekeeperShell } from "@/components/organizations/scorekeeper/scorekeeper-shell";
-import { PageEntrance } from "@/components/motion/page-motion";
+import {
+  ComponentReveal,
+  PageEntrance,
+} from "@/components/motion/page-motion";
 import {
   getScorekeeperErrorState,
   ScorekeeperFocusedState,
@@ -46,14 +49,16 @@ export function ScorekeeperWorkspaceScreen({
     return (
       <PageEntrance asChild variant="subtle">
         <main className="min-h-screen bg-background p-6 text-foreground">
-        <div className="mx-auto max-w-3xl">
-          <ScorekeeperFocusedState
-            description={state.description}
-            icon={state.icon}
-            title="We couldn't load this organization"
-            onRetry={() => organizationsQuery.refetch()}
-          />
-        </div>
+          <ComponentReveal asChild variant="subtle">
+            <div className="mx-auto max-w-3xl">
+              <ScorekeeperFocusedState
+                description={state.description}
+                icon={state.icon}
+                title="We couldn't load this organization"
+                onRetry={() => organizationsQuery.refetch()}
+              />
+            </div>
+          </ComponentReveal>
         </main>
       </PageEntrance>
     );
@@ -63,15 +68,17 @@ export function ScorekeeperWorkspaceScreen({
     return (
       <PageEntrance asChild variant="subtle">
         <main className="min-h-screen bg-background p-6 text-foreground">
-        <div className="mx-auto max-w-3xl">
-          <ScorekeeperFocusedState
-            description="This workspace does not exist or you do not have access to it."
-            icon="not-found"
-            title="Organization not found"
-            actionHref="/organizations"
-            actionLabel="Back to organizations"
-          />
-        </div>
+          <ComponentReveal asChild variant="subtle">
+            <div className="mx-auto max-w-3xl">
+              <ScorekeeperFocusedState
+                description="This workspace does not exist or you do not have access to it."
+                icon="not-found"
+                title="Organization not found"
+                actionHref="/organizations"
+                actionLabel="Back to organizations"
+              />
+            </div>
+          </ComponentReveal>
         </main>
       </PageEntrance>
     );

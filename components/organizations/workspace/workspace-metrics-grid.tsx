@@ -42,7 +42,7 @@ export function WorkspaceMetricsGrid({
     <RevealGroup asChild pace="compact">
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
         {metrics.map((metric) => (
-          <ComponentReveal asChild key={metric.label}>
+          <ComponentReveal key={metric.label}>
             <MetricCard metric={metric} />
           </ComponentReveal>
         ))}
