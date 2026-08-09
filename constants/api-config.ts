@@ -41,6 +41,8 @@ export const API_ENDPOINTS = {
       `/organizations/${organizationId}/invitations`,
     resend: (organizationId: string, invitationId: string) =>
       `/organizations/${organizationId}/invitations/${invitationId}/resend`,
+    update: (organizationId: string, invitationId: string) =>
+      `/organizations/${organizationId}/invitations/${invitationId}`,
     revoke: (organizationId: string, invitationId: string) =>
       `/organizations/${organizationId}/invitations/${invitationId}`,
   },

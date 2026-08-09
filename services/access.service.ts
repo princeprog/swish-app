@@ -34,6 +34,7 @@ export type OrganizationInvitation = {
   revoked_at: string | null
   role: Exclude<OrganizationRole, "owner">
   status: "pending" | "accepted" | "expired" | "revoked"
+  teamAssignments: StaffAssignment[]
   updated_at: string
 }
 
@@ -50,6 +51,18 @@ export type InvitationPreview = {
   }
   role: OrganizationRole
   status: string
+  teamAssignments: StaffAssignment[]
+}
+
+export type CreateInvitationInput = {
+  email: string
+  role: Exclude<OrganizationRole, "owner">
+  teamIds?: string[]
+}
+
+export type UpdateInvitationAccessInput = {
+  role: Exclude<OrganizationRole, "owner">
+  teamIds: string[]
 }
 
 export const accessService = {
@@ -61,10 +74,20 @@ export const accessService = {
     ),
   createInvitation: (
     organizationId: string,
-    data: { email: string; role: Exclude<OrganizationRole, "owner"> },
+    data: CreateInvitationInput,
   ) =>
     apiService.post<InvitationMutationResult, typeof data>(
       API_ENDPOINTS.organizationInvitations.create(organizationId),
+      data,
+      { credentials: "include" },
+    ),
+  updateInvitation: (
+    organizationId: string,
+    invitationId: string,
+    data: UpdateInvitationAccessInput,
+  ) =>
+    apiService.patch<OrganizationInvitation, UpdateInvitationAccessInput>(
+      API_ENDPOINTS.organizationInvitations.update(organizationId, invitationId),
       data,
       { credentials: "include" },
     ),

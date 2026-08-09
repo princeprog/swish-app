@@ -47,6 +47,24 @@ export const teamService = {
       credentials: "include",
       query: params,
     }),
+  listAll: async (organizationId: string) => {
+    const firstPage = await teamService.list(organizationId, {
+      page: 1,
+      pageSize: 50,
+    })
+    const remainingPages = await Promise.all(
+      Array.from(
+        { length: Math.max(0, firstPage.pagination.totalPages - 1) },
+        (_, index) =>
+          teamService.list(organizationId, {
+            page: index + 2,
+            pageSize: 50,
+          }),
+      ),
+    )
+
+    return [firstPage, ...remainingPages].flatMap((page) => page.data)
+  },
   remove: (organizationId: string, teamId: string) =>
     apiService.delete<void>(`${API_ENDPOINTS.teams.list(organizationId)}/${teamId}`, {
       credentials: "include",

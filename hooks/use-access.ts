@@ -2,11 +2,19 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
-import { accessService, type InvitationMutationResult, type OrganizationMember } from "@/services/access.service"
+import {
+  accessService,
+  type InvitationMutationResult,
+  type OrganizationMember,
+  type OrganizationInvitation,
+  type UpdateInvitationAccessInput,
+} from "@/services/access.service"
+import { teamService } from "@/services/team.service"
 
 export const ACCESS_QUERY_KEYS = {
   invitations: (organizationId: string) => ["access", organizationId, "invitations"] as const,
   members: (organizationId: string) => ["access", organizationId, "members"] as const,
+  teamOptions: (organizationId: string) => ["access", organizationId, "team-options"] as const,
 }
 
 export function useOrganizationMembersQuery(organizationId?: string) {
@@ -23,6 +31,18 @@ export function useOrganizationInvitationsQuery(organizationId?: string) {
     enabled: Boolean(organizationId),
     queryFn: () => accessService.listInvitations(organizationId!),
     queryKey: ACCESS_QUERY_KEYS.invitations(organizationId ?? "unknown"),
+    retry: false,
+  })
+}
+
+export function useAssignableTeamsQuery(
+  organizationId?: string,
+  enabled = true,
+) {
+  return useQuery({
+    enabled: Boolean(organizationId) && enabled,
+    queryFn: () => teamService.listAll(organizationId!),
+    queryKey: ACCESS_QUERY_KEYS.teamOptions(organizationId ?? "unknown"),
     retry: false,
   })
 }
@@ -45,6 +65,24 @@ export function useResendInvitationMutation(organizationId: string) {
     mutationFn: (invitationId) => accessService.resendInvitation(organizationId, invitationId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ACCESS_QUERY_KEYS.invitations(organizationId) })
+    },
+  })
+}
+
+export function useUpdateInvitationMutation(organizationId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation<
+    OrganizationInvitation,
+    unknown,
+    UpdateInvitationAccessInput & { invitationId: string }
+  >({
+    mutationFn: ({ invitationId, ...payload }) =>
+      accessService.updateInvitation(organizationId, invitationId, payload),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ACCESS_QUERY_KEYS.invitations(organizationId),
+      })
     },
   })
 }
