@@ -829,7 +829,7 @@ function PlayersSummaryCards({
   ]
 
   return (
-    <RevealGroup asChild pace="compact">
+    <RevealGroup asChild pace="compact" phase="secondary">
       <section className="grid gap-4 xl:grid-cols-4">
       {cards.map((card) => {
         const Icon = card.icon
@@ -1012,14 +1012,12 @@ export function OrganizationPlayersView({
                 </section>
               </ComponentReveal>
 
-              <ComponentReveal>
-                <PlayersSummaryCards
-                  activePlayers={activePlayers}
-                  recentlyUpdatedPlayers={recentlyUpdatedPlayers}
-                  teamsWithCompleteRosters={teamsWithCompleteRosters}
-                  totalPlayers={totalPlayers}
-                />
-              </ComponentReveal>
+              <PlayersSummaryCards
+                activePlayers={activePlayers}
+                recentlyUpdatedPlayers={recentlyUpdatedPlayers}
+                teamsWithCompleteRosters={teamsWithCompleteRosters}
+                totalPlayers={totalPlayers}
+              />
 
               {teams.length === 0 ? (
                 <ComponentReveal asChild>

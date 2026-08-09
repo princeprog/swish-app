@@ -246,7 +246,7 @@ function UpcomingGamesCard({ games }: { games: UpcomingGame[] }) {
 
 export function WorkspaceMainPanels() {
   return (
-    <RevealGroup className="grid gap-6">
+    <RevealGroup className="grid gap-6" phase="tertiary">
       <ComponentReveal asChild>
         <div className="grid gap-6 xl:grid-cols-[minmax(320px,0.82fr)_minmax(0,1.18fr)]">
           <ActiveSeasonCard />

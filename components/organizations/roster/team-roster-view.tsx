@@ -758,7 +758,7 @@ function TeamRosterSummaryCards({
   ]
 
   return (
-    <RevealGroup asChild pace="compact">
+    <RevealGroup asChild pace="compact" phase="secondary">
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
       {cards.map((card) => {
         const Icon = card.icon
@@ -1271,14 +1271,12 @@ export function TeamRosterView({
               ) : null}
 
               {roster?.visibility !== "hidden" ? (
-                <ComponentReveal>
-                  <TeamRosterSummaryCards
-                    activePlayers={activePlayers}
-                    inactivePlayers={inactivePlayers}
-                    recentlyUpdatedPlayers={recentlyUpdatedPlayers}
-                    totalPlayers={rosterPlayers.length}
-                  />
-                </ComponentReveal>
+                <TeamRosterSummaryCards
+                  activePlayers={activePlayers}
+                  inactivePlayers={inactivePlayers}
+                  recentlyUpdatedPlayers={recentlyUpdatedPlayers}
+                  totalPlayers={rosterPlayers.length}
+                />
               ) : null}
 
               {roster?.visibility !== "hidden" ? (

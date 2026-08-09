@@ -426,8 +426,7 @@ export function StaffAccessScreen({ slug }: { slug: string }) {
                 </ComponentReveal>
               ) : null}
 
-              <ComponentReveal>
-                <Tabs defaultValue="members">
+              <Tabs defaultValue="members">
             <TabsList>
               {STAFF_ACCESS_TABS.map((tab) => (
                 <TabsTrigger key={tab.value} value={tab.value}>
@@ -517,7 +516,6 @@ export function StaffAccessScreen({ slug }: { slug: string }) {
               </TabsContent>
             </ComponentReveal>
               </Tabs>
-              </ComponentReveal>
             </RevealGroup>
           </main>
         </PageEntrance>

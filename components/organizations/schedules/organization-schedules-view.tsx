@@ -385,7 +385,7 @@ function ScheduleSummaryCards({ schedules }: { schedules: Schedule[] }) {
   ]
 
   return (
-    <RevealGroup asChild pace="compact">
+    <RevealGroup asChild pace="compact" phase="secondary">
       <section className="grid gap-4 xl:grid-cols-4">
       {cards.map((card) => {
         const Icon = card.icon
@@ -2337,9 +2337,7 @@ export function OrganizationSchedulesView({
                 </section>
               </ComponentReveal>
 
-              <ComponentReveal>
-                <ScheduleSummaryCards schedules={schedules} />
-              </ComponentReveal>
+              <ScheduleSummaryCards schedules={schedules} />
 
               {canManageSchedule && !canCreateSchedule ? (
                 <ComponentReveal asChild>
@@ -2355,12 +2353,10 @@ export function OrganizationSchedulesView({
                 </ComponentReveal>
               ) : null}
 
-              <ComponentReveal asChild>
-                <section className="space-y-6">
+              <section className="space-y-6">
+                <RevealGroup className="contents" phase="tertiary">
                   <ComponentReveal asChild>
-                    <div className="space-y-6">
-                      <ComponentReveal asChild>
-                        <div className="space-y-4">
+                    <div className="space-y-4">
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_minmax(160px,180px)_minmax(150px,170px)_minmax(190px,210px)]">
                   <div className="relative md:col-span-2 xl:col-span-1">
                     <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -2454,24 +2450,22 @@ export function OrganizationSchedulesView({
                     {getApiErrorMessage(schedulesQuery.error)}
                   </FieldError>
                 ) : null}
-                        </div>
-                      </ComponentReveal>
-
-                      <ComponentReveal>
-                        <ScheduleBoard
-                          canManageSchedule={canManageSchedule}
-                          games={schedules}
-                          onAssignScorekeeper={setGameToAssign}
-                          onDeleteGame={setGameToDelete}
-                          onEditGame={setGameToEdit}
-                          onFinalizeGame={setGameToFinalize}
-                          onViewFinalSummary={setGameToSummarize}
-                        />
-                      </ComponentReveal>
                     </div>
                   </ComponentReveal>
-                </section>
-              </ComponentReveal>
+
+                  <ComponentReveal>
+                    <ScheduleBoard
+                      canManageSchedule={canManageSchedule}
+                      games={schedules}
+                      onAssignScorekeeper={setGameToAssign}
+                      onDeleteGame={setGameToDelete}
+                      onEditGame={setGameToEdit}
+                      onFinalizeGame={setGameToFinalize}
+                      onViewFinalSummary={setGameToSummarize}
+                    />
+                  </ComponentReveal>
+                </RevealGroup>
+              </section>
             </RevealGroup>
           </main>
         </PageEntrance>

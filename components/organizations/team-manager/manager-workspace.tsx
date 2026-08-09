@@ -332,8 +332,7 @@ function ManagerPlayersContent({
         </Select>
         </div>
       </ComponentReveal>
-      <ComponentReveal asChild>
-        <section className="overflow-hidden rounded-lg border bg-card">
+      <section className="overflow-hidden rounded-lg border bg-card">
         {playersQuery.isLoading ? (
           <ComponentReveal asChild>
             <div className="space-y-3 p-4">
@@ -405,8 +404,7 @@ function ManagerPlayersContent({
             </Empty>
           </ComponentReveal>
         )}
-        </section>
-      </ComponentReveal>
+      </section>
     </RevealGroup>
   )
 }
@@ -437,25 +435,22 @@ function ManagerGameList({
 
   if (!games.length) {
     return (
-      <ComponentReveal>
-        <Empty className="border bg-card">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <CalendarDaysIcon className="size-5" />
-            </EmptyMedia>
-            <EmptyTitle>{title}</EmptyTitle>
-            <EmptyDescription>
-              The schedule will appear here once games are available.
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
-      </ComponentReveal>
+      <Empty className="border bg-card">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <CalendarDaysIcon className="size-5" />
+          </EmptyMedia>
+          <EmptyTitle>{title}</EmptyTitle>
+          <EmptyDescription>
+            The schedule will appear here once games are available.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     )
   }
 
   return (
-    <ComponentReveal>
-      <div className="space-y-5">
+    <div className="space-y-5">
       {dates.map((date) => (
         <section key={date} className="space-y-2">
           <h2 className="text-sm font-medium">
@@ -514,8 +509,7 @@ function ManagerGameList({
           </div>
         </section>
       ))}
-      </div>
-    </ComponentReveal>
+    </div>
   )
 }
 
@@ -558,32 +552,30 @@ function ManagerScheduleContent({
   }
 
   return (
-    <ComponentReveal>
-      <Tabs defaultValue="upcoming">
-        <TabsList>
-          <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-          <TabsTrigger value="results">Results</TabsTrigger>
-        </TabsList>
-        <ComponentReveal asChild trigger="active">
-          <TabsContent value="upcoming">
-            <ManagerGameList
-              assignment={assignment}
-              games={upcomingGames}
-              title="No upcoming games"
-            />
-          </TabsContent>
-        </ComponentReveal>
-        <ComponentReveal asChild trigger="active">
-          <TabsContent value="results">
-            <ManagerGameList
-              assignment={assignment}
-              games={resultGames}
-              title="No completed games"
-            />
-          </TabsContent>
-        </ComponentReveal>
-      </Tabs>
-    </ComponentReveal>
+    <Tabs defaultValue="upcoming">
+      <TabsList>
+        <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+        <TabsTrigger value="results">Results</TabsTrigger>
+      </TabsList>
+      <ComponentReveal asChild trigger="active">
+        <TabsContent value="upcoming">
+          <ManagerGameList
+            assignment={assignment}
+            games={upcomingGames}
+            title="No upcoming games"
+          />
+        </TabsContent>
+      </ComponentReveal>
+      <ComponentReveal asChild trigger="active">
+        <TabsContent value="results">
+          <ManagerGameList
+            assignment={assignment}
+            games={resultGames}
+            title="No completed games"
+          />
+        </TabsContent>
+      </ComponentReveal>
+    </Tabs>
   )
 }
 

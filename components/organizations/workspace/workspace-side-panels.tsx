@@ -93,7 +93,7 @@ function StaffPermissionsCard() {
 
 export function WorkspaceSidePanels() {
   return (
-    <RevealGroup className="grid gap-6">
+    <RevealGroup className="grid gap-6" phase="tertiary">
       <ComponentReveal>
         <ReadinessList
           title="Operations readiness"

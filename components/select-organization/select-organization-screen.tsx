@@ -78,11 +78,10 @@ export function SelectOrganizationScreen() {
               />
             </ComponentReveal>
 
-            <ComponentReveal asChild>
-              <section
-                className="flex flex-col gap-4"
-                aria-labelledby="your-orgs"
-              >
+            <section
+              className="flex flex-col gap-4"
+              aria-labelledby="your-orgs"
+            >
                 <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
                   <h2 id="your-orgs" className="text-xl font-semibold">
                     Your organizations
@@ -218,8 +217,7 @@ export function SelectOrganizationScreen() {
                     </div>
                   </ComponentReveal>
                 )}
-              </section>
-            </ComponentReveal>
+            </section>
 
             <ComponentReveal>
               <OrganizationInvitationCard />

@@ -56,16 +56,12 @@ export function OrganizationWorkspaceView({
               <ComponentReveal>
                 <WorkspaceHeroCard organization={organization} />
               </ComponentReveal>
-              <ComponentReveal>
-                <WorkspaceMetricsGrid metrics={workspaceMetrics} />
-              </ComponentReveal>
+              <WorkspaceMetricsGrid metrics={workspaceMetrics} />
 
-              <ComponentReveal asChild>
-                <section className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.85fr)]">
-                  <WorkspaceMainPanels />
-                  <WorkspaceSidePanels />
-                </section>
-              </ComponentReveal>
+              <section className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.85fr)]">
+                <WorkspaceMainPanels />
+                <WorkspaceSidePanels />
+              </section>
             </RevealGroup>
           </main>
         </PageEntrance>

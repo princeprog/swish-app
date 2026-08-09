@@ -215,44 +215,45 @@ export function ScorekeeperGameList({
       </ComponentReveal>
 
       {groups.map((group) => (
-        <ComponentReveal asChild key={group.title} variant="subtle">
-          <section className="space-y-3">
+        <section key={group.title} className="space-y-3">
+          <ComponentReveal asChild variant="subtle">
             <div className="space-y-1">
               <h3 className="text-lg font-semibold">{group.title}</h3>
               <p className="text-sm text-muted-foreground">{group.description}</p>
             </div>
+          </ComponentReveal>
 
-            {group.games.length > 0 ? (
-              <RevealGroup
-                asChild
-                className={cn(
-                  "grid gap-3",
-                  group.title === "Needs attention"
-                    ? "lg:grid-cols-2"
-                    : "md:grid-cols-2",
-                )}
-                pace="compact"
-              >
-                <div>
-                  {group.games.map((game) => (
-                    <ComponentReveal key={game.id} variant="subtle">
-                      <ScorekeeperGameCard
-                        game={game}
-                        organization={organization}
-                      />
-                    </ComponentReveal>
-                  ))}
-                </div>
-              </RevealGroup>
-            ) : (
-              <ComponentReveal asChild variant="subtle">
-                <div className="rounded-lg border border-dashed bg-card/60 px-4 py-5 text-sm text-muted-foreground">
-                  No assigned games in this section.
-                </div>
-              </ComponentReveal>
-            )}
-          </section>
-        </ComponentReveal>
+          {group.games.length > 0 ? (
+            <RevealGroup
+              asChild
+              className={cn(
+                "grid gap-3",
+                group.title === "Needs attention"
+                  ? "lg:grid-cols-2"
+                  : "md:grid-cols-2",
+              )}
+              pace="compact"
+              phase="secondary"
+            >
+              <div>
+                {group.games.map((game) => (
+                  <ComponentReveal key={game.id} variant="subtle">
+                    <ScorekeeperGameCard
+                      game={game}
+                      organization={organization}
+                    />
+                  </ComponentReveal>
+                ))}
+              </div>
+            </RevealGroup>
+          ) : (
+            <ComponentReveal asChild variant="subtle">
+              <div className="rounded-lg border border-dashed bg-card/60 px-4 py-5 text-sm text-muted-foreground">
+                No assigned games in this section.
+              </div>
+            </ComponentReveal>
+          )}
+        </section>
       ))}
     </RevealGroup>
   );
