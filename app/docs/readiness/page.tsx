@@ -20,6 +20,9 @@ import {
   gameLifecycle,
   invitationFlow,
   mvpUserStories,
+  notificationDeliveryRules,
+  notificationEventCatalog,
+  notificationRoleRules,
   permissionMatrix,
   pilotDefinition,
   publicDataBoundary,
@@ -121,6 +124,89 @@ export default function ReadinessPage() {
               </li>
             ))}
           </ul>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Notification Roles</CardTitle>
+            <CardDescription>
+              The launch inbox follows authenticated staff while preserving
+              email-matched invitations before membership exists.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3">
+            {notificationRoleRules.map((item) => (
+              <div key={item.role} className="rounded-md border p-3">
+                <Badge variant="secondary">{item.role}</Badge>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  {item.rule}
+                </p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Notification Delivery Rules</CardTitle>
+            <CardDescription>
+              Durable rows remain authoritative while SSE keeps the inbox
+              feeling current.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="grid gap-3">
+              {notificationDeliveryRules.map((rule) => (
+                <li
+                  key={rule}
+                  className="rounded-md border bg-card p-3 text-sm leading-6"
+                >
+                  {rule}
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>In-App Notification Event Catalog</CardTitle>
+          <CardDescription>
+            Launch events are wired to access, roster, schedule, and scoring
+            workflows. Reserved events keep stable names for later standings
+            and playoff work without expanding that scope today.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="overflow-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Event</TableHead>
+                <TableHead>Recipients</TableHead>
+                <TableHead>Priority</TableHead>
+                <TableHead>Phase</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {notificationEventCatalog.map((item) => (
+                <TableRow key={item.event}>
+                  <TableCell className="min-w-64 font-mono text-xs">
+                    {item.event}
+                  </TableCell>
+                  <TableCell className="min-w-64 text-sm">
+                    {item.recipients}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{item.priority}</Badge>
+                  </TableCell>
+                  <TableCell>{item.phase}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
