@@ -208,6 +208,7 @@ function canAssignScorekeeper(status: string) {
 const scheduleActionsMenuWidth = 224
 const scheduleActionsMenuOffset = 8
 const scheduleActionsViewportGutter = 12
+const scheduleFilterControlClassName = "h-9 w-full"
 
 function formatScheduleDateTime(value: string) {
   return new Date(value).toLocaleString([], {
@@ -2362,7 +2363,7 @@ export function OrganizationSchedulesView({
                     <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       aria-label="Search games"
-                      className="h-10 w-full pl-9"
+                      className={`${scheduleFilterControlClassName} pl-9`}
                       placeholder="Search games..."
                       value={search}
                       onChange={(event) => setSearch(event.target.value)}
@@ -2374,7 +2375,7 @@ export function OrganizationSchedulesView({
                   >
                     <SelectTrigger
                       aria-label="Filter by division"
-                      className="h-10 w-full"
+                      className={scheduleFilterControlClassName}
                     >
                       <SelectValue placeholder="All divisions" />
                     </SelectTrigger>
@@ -2395,7 +2396,7 @@ export function OrganizationSchedulesView({
                   >
                     <SelectTrigger
                       aria-label="Filter by status"
-                      className="h-10 w-full"
+                      className={scheduleFilterControlClassName}
                     >
                       <SelectValue placeholder="All status" />
                     </SelectTrigger>
@@ -2430,7 +2431,7 @@ export function OrganizationSchedulesView({
                   >
                     <SelectTrigger
                       aria-label="Sort schedule"
-                      className="h-10 w-full"
+                      className={scheduleFilterControlClassName}
                     >
                       <SelectValue placeholder="Sort schedule" />
                     </SelectTrigger>
@@ -2453,7 +2454,7 @@ export function OrganizationSchedulesView({
                     </div>
                   </ComponentReveal>
 
-                  <ComponentReveal>
+                  <ComponentReveal className="mt-4">
                     <ScheduleBoard
                       canManageSchedule={canManageSchedule}
                       games={schedules}
