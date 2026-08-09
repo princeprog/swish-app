@@ -1,6 +1,10 @@
 "use client"
 
 import {
+  ComponentReveal,
+  RevealGroup,
+} from "@/components/motion/page-motion"
+import {
   operationsReadinessItems,
   publicPortalItems,
   staffPermissionRows,
@@ -89,36 +93,42 @@ function StaffPermissionsCard() {
 
 export function WorkspaceSidePanels() {
   return (
-    <div className="grid gap-6">
-      <ReadinessList
-        title="Operations readiness"
-        items={operationsReadinessItems}
-        footer={
-          <Button variant="ghost" className="w-full">
-            View setup guide
-          </Button>
-        }
-      />
-
-      <ReadinessList
-        title="Public portal health"
-        items={publicPortalItems}
-        footer={
-          <div className="space-y-3">
-            <div className="rounded-lg border border-border/50 bg-background/50 px-3 py-3 text-sm text-muted-foreground">
-              <div>Last published</div>
-              <div className="mt-1 font-medium text-foreground">
-                May 14, 2026 8:30 AM
-              </div>
-            </div>
-            <Button variant="outline" className="w-full">
-              View public page
+    <RevealGroup className="grid gap-6">
+      <ComponentReveal>
+        <ReadinessList
+          title="Operations readiness"
+          items={operationsReadinessItems}
+          footer={
+            <Button variant="ghost" className="w-full">
+              View setup guide
             </Button>
-          </div>
-        }
-      />
+          }
+        />
+      </ComponentReveal>
 
-      <StaffPermissionsCard />
-    </div>
+      <ComponentReveal>
+        <ReadinessList
+          title="Public portal health"
+          items={publicPortalItems}
+          footer={
+            <div className="space-y-3">
+              <div className="rounded-lg border border-border/50 bg-background/50 px-3 py-3 text-sm text-muted-foreground">
+                <div>Last published</div>
+                <div className="mt-1 font-medium text-foreground">
+                  May 14, 2026 8:30 AM
+                </div>
+              </div>
+              <Button variant="outline" className="w-full">
+                View public page
+              </Button>
+            </div>
+          }
+        />
+      </ComponentReveal>
+
+      <ComponentReveal>
+        <StaffPermissionsCard />
+      </ComponentReveal>
+    </RevealGroup>
   )
 }

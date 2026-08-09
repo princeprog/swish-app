@@ -2,6 +2,10 @@
 
 import { ArrowRight } from "lucide-react"
 
+import {
+  ComponentReveal,
+  RevealGroup,
+} from "@/components/motion/page-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import type { Metric } from "@/components/organizations/workspace/organization-workspace-data"
 
@@ -35,10 +39,14 @@ export function WorkspaceMetricsGrid({
   metrics: Metric[]
 }) {
   return (
-    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
-      {metrics.map((metric) => (
-        <MetricCard key={metric.label} metric={metric} />
-      ))}
-    </section>
+    <RevealGroup asChild pace="compact">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+        {metrics.map((metric) => (
+          <ComponentReveal asChild key={metric.label}>
+            <MetricCard metric={metric} />
+          </ComponentReveal>
+        ))}
+      </section>
+    </RevealGroup>
   )
 }

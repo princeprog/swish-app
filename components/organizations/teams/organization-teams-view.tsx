@@ -20,7 +20,11 @@ import {
 import { toast } from "sonner"
 
 import { AppSidebar } from "@/components/app-sidebar"
-import { PageEntrance, StaggerReveal } from "@/components/motion/page-motion"
+import {
+  ComponentReveal,
+  PageEntrance,
+  RevealGroup,
+} from "@/components/motion/page-motion"
 import { DataTablePagination } from "@/components/organizations/shared/data-table-pagination"
 import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -741,38 +745,41 @@ function TeamsSummaryCards({
   ]
 
   return (
-    <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+    <RevealGroup asChild pace="compact">
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
       {cards.map((card) => {
         const Icon = card.icon
 
         return (
-          <Card
-            key={card.title}
-            size="sm"
-            className="rounded-lg border border-border/60 bg-card/90 py-3 shadow-none"
-          >
-            <CardHeader className="px-4 pb-2">
-              <div className="flex items-center gap-2.5">
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border/70 bg-background/70">
-                  <Icon className="size-3.5 text-muted-foreground" />
+          <ComponentReveal asChild key={card.title}>
+            <Card
+              size="sm"
+              className="rounded-lg border border-border/60 bg-card/90 py-3 shadow-none"
+            >
+              <CardHeader className="px-4 pb-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border/70 bg-background/70">
+                    <Icon className="size-3.5 text-muted-foreground" />
+                  </div>
+                  <CardDescription className="text-sm font-medium leading-5 text-foreground/80">
+                    {card.title}
+                  </CardDescription>
                 </div>
-                <CardDescription className="text-sm font-medium leading-5 text-foreground/80">
-                  {card.title}
-                </CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-1 px-4 pt-0">
-              <div className="text-2xl font-semibold leading-none tracking-tight">
-                {card.value}
-              </div>
-              <p className="text-xs leading-5 text-muted-foreground">
-                {card.description}
-              </p>
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent className="space-y-1 px-4 pt-0">
+                <div className="text-2xl font-semibold leading-none tracking-tight">
+                  {card.value}
+                </div>
+                <p className="text-xs leading-5 text-muted-foreground">
+                  {card.description}
+                </p>
+              </CardContent>
+            </Card>
+          </ComponentReveal>
         )
       })}
-    </section>
+      </section>
+    </RevealGroup>
   )
 }
 
@@ -921,33 +928,42 @@ export function OrganizationTeamsView({
 
         <PageEntrance asChild>
           <main className="flex flex-1 flex-col gap-4 bg-background px-4 py-4 lg:px-6 lg:py-5">
-            <StaggerReveal className="contents">
-              <section className="flex flex-wrap items-start justify-between gap-4">
-            <div className="space-y-2">
-              <h1 className="text-3xl font-semibold tracking-tight">Teams</h1>
-            </div>
-          </section>
+            <RevealGroup className="contents">
+              <ComponentReveal asChild>
+                <section className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="space-y-2">
+                    <h1 className="text-3xl font-semibold tracking-tight">
+                      Teams
+                    </h1>
+                  </div>
+                </section>
+              </ComponentReveal>
 
-          <TeamsSummaryCards
-            activeTeams={activeTeams}
-            divisionsWithTeams={divisionsWithTeams}
-            recentlyUpdatedTeams={recentlyUpdatedTeams}
-            totalTeams={totalTeams}
-          />
+              <ComponentReveal>
+                <TeamsSummaryCards
+                  activeTeams={activeTeams}
+                  divisionsWithTeams={divisionsWithTeams}
+                  recentlyUpdatedTeams={recentlyUpdatedTeams}
+                  totalTeams={totalTeams}
+                />
+              </ComponentReveal>
 
-          {divisions.length === 0 ? (
-            <Card className="border border-dashed border-border/70 bg-card/70 shadow-none">
-              <CardHeader className="p-4">
-                <CardTitle className="text-base">Create a division first</CardTitle>
-                <CardDescription className="text-sm">
-                  Teams belong to a division. Add a division before creating team
-                  records for this organization.
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          ) : null}
+              {divisions.length === 0 ? (
+                <ComponentReveal asChild>
+                  <Card className="border border-dashed border-border/70 bg-card/70 shadow-none">
+                    <CardHeader className="p-4">
+                      <CardTitle className="text-base">Create a division first</CardTitle>
+                      <CardDescription className="text-sm">
+                        Teams belong to a division. Add a division before creating team
+                        records for this organization.
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                </ComponentReveal>
+              ) : null}
 
-          <section className="space-y-4">
+              <ComponentReveal asChild>
+                <section className="space-y-4">
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(260px,1fr)_minmax(160px,180px)_minmax(140px,160px)_minmax(190px,210px)_minmax(140px,160px)]">
               <div className="relative md:col-span-2 xl:col-span-1">
                 <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -1008,21 +1024,22 @@ export function OrganizationTeamsView({
               </Button>
             </div>
 
-            <TeamsTable
-              canDeleteTeams={canDeleteTeams}
-              canEditTeams={canUpdateTeams}
-              divisionsById={divisionsById}
-              onPageChange={onPageChange}
-              onPageSizeChange={onPageSizeChange}
-              organizationSlug={organization.slug}
-              onDeleteTeam={setTeamToDelete}
-              onEditTeam={setTeamToEdit}
-              pagination={pagination}
-              playersByTeamId={playersByTeamId}
-              teams={teams}
-            />
-              </section>
-            </StaggerReveal>
+                  <TeamsTable
+                    canDeleteTeams={canDeleteTeams}
+                    canEditTeams={canUpdateTeams}
+                    divisionsById={divisionsById}
+                    onPageChange={onPageChange}
+                    onPageSizeChange={onPageSizeChange}
+                    organizationSlug={organization.slug}
+                    onDeleteTeam={setTeamToDelete}
+                    onEditTeam={setTeamToEdit}
+                    pagination={pagination}
+                    playersByTeamId={playersByTeamId}
+                    teams={teams}
+                  />
+                </section>
+              </ComponentReveal>
+            </RevealGroup>
           </main>
         </PageEntrance>
       </SidebarInset>

@@ -1,7 +1,11 @@
 "use client"
 
 import { AppSidebar } from "@/components/app-sidebar"
-import { PageEntrance, StaggerReveal } from "@/components/motion/page-motion"
+import {
+  ComponentReveal,
+  PageEntrance,
+  RevealGroup,
+} from "@/components/motion/page-motion"
 import {
   workspaceMetrics,
 } from "@/components/organizations/workspace/organization-workspace-data"
@@ -48,15 +52,21 @@ export function OrganizationWorkspaceView({
 
         <PageEntrance asChild>
           <main className="flex flex-1 flex-col gap-4 bg-background px-4 py-4 lg:px-6 lg:py-5">
-            <StaggerReveal className="contents">
-              <WorkspaceHeroCard organization={organization} />
-              <WorkspaceMetricsGrid metrics={workspaceMetrics} />
+            <RevealGroup className="contents">
+              <ComponentReveal>
+                <WorkspaceHeroCard organization={organization} />
+              </ComponentReveal>
+              <ComponentReveal>
+                <WorkspaceMetricsGrid metrics={workspaceMetrics} />
+              </ComponentReveal>
 
-              <section className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.85fr)]">
-                <WorkspaceMainPanels />
-                <WorkspaceSidePanels />
-              </section>
-            </StaggerReveal>
+              <ComponentReveal asChild>
+                <section className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.85fr)]">
+                  <WorkspaceMainPanels />
+                  <WorkspaceSidePanels />
+                </section>
+              </ComponentReveal>
+            </RevealGroup>
           </main>
         </PageEntrance>
       </SidebarInset>

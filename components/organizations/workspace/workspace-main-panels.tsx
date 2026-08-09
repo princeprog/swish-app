@@ -3,6 +3,10 @@
 import { ChevronRight, CircleDot, Trophy } from "lucide-react"
 
 import {
+  ComponentReveal,
+  RevealGroup,
+} from "@/components/motion/page-motion"
+import {
   workspaceActivity,
   workspaceDivisions,
   workspaceUpcomingGames,
@@ -242,16 +246,20 @@ function UpcomingGamesCard({ games }: { games: UpcomingGame[] }) {
 
 export function WorkspaceMainPanels() {
   return (
-    <div className="grid gap-6">
-      <div className="grid gap-6 xl:grid-cols-[minmax(320px,0.82fr)_minmax(0,1.18fr)]">
-        <ActiveSeasonCard />
-        <DivisionOverviewCard divisions={workspaceDivisions} />
-      </div>
+    <RevealGroup className="grid gap-6">
+      <ComponentReveal asChild>
+        <div className="grid gap-6 xl:grid-cols-[minmax(320px,0.82fr)_minmax(0,1.18fr)]">
+          <ActiveSeasonCard />
+          <DivisionOverviewCard divisions={workspaceDivisions} />
+        </div>
+      </ComponentReveal>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(280px,0.7fr)_minmax(0,1.3fr)]">
-        <RecentActivityCard activity={workspaceActivity} />
-        <UpcomingGamesCard games={workspaceUpcomingGames} />
-      </div>
-    </div>
+      <ComponentReveal asChild>
+        <div className="grid gap-6 xl:grid-cols-[minmax(280px,0.7fr)_minmax(0,1.3fr)]">
+          <RecentActivityCard activity={workspaceActivity} />
+          <UpcomingGamesCard games={workspaceUpcomingGames} />
+        </div>
+      </ComponentReveal>
+    </RevealGroup>
   )
 }

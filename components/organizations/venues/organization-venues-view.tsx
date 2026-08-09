@@ -14,7 +14,11 @@ import {
 import { toast } from "sonner"
 
 import { AppSidebar } from "@/components/app-sidebar"
-import { PageEntrance, StaggerReveal } from "@/components/motion/page-motion"
+import {
+  ComponentReveal,
+  PageEntrance,
+  RevealGroup,
+} from "@/components/motion/page-motion"
 import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
 import { DataTablePagination } from "@/components/organizations/shared/data-table-pagination"
 import { Badge } from "@/components/ui/badge"
@@ -652,37 +656,45 @@ export function OrganizationVenuesView({
 
         <PageEntrance asChild>
           <main className="flex flex-1 flex-col gap-6 bg-background px-4 py-4 lg:px-6 lg:py-5">
-            <StaggerReveal className="contents">
-              <section className="flex flex-wrap items-start justify-between gap-4">
-            <div className="space-y-2">
-              <h1 className="text-3xl font-semibold tracking-tight">Venues</h1>
-            </div>
-          </section>
+            <RevealGroup className="contents">
+              <ComponentReveal asChild>
+                <section className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="space-y-2">
+                    <h1 className="text-3xl font-semibold tracking-tight">
+                      Venues
+                    </h1>
+                  </div>
+                </section>
+              </ComponentReveal>
 
-          {seasons.length === 0 ? (
-            <Card className="border border-dashed border-border/70 bg-card/70 shadow-none">
-              <CardHeader>
-                <CardTitle>Create a season first</CardTitle>
-                <CardDescription>
-                  Venues belong to a league season. Add a season before creating
-                  venue records for this organization.
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          ) : null}
+              {seasons.length === 0 ? (
+                <ComponentReveal asChild>
+                  <Card className="border border-dashed border-border/70 bg-card/70 shadow-none">
+                    <CardHeader>
+                      <CardTitle>Create a season first</CardTitle>
+                      <CardDescription>
+                        Venues belong to a league season. Add a season before creating
+                        venue records for this organization.
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                </ComponentReveal>
+              ) : null}
 
-          <section className="grid gap-6">
-            <VenuesTable
-              onPageChange={onPageChange}
-              onPageSizeChange={onPageSizeChange}
-              onDeleteVenue={setVenueToDelete}
-              onEditVenue={setVenueToEdit}
-              pagination={pagination}
-              seasonsById={seasonsById}
-              venues={venues}
-            />
-              </section>
-            </StaggerReveal>
+              <ComponentReveal asChild>
+                <section className="grid gap-6">
+                  <VenuesTable
+                    onPageChange={onPageChange}
+                    onPageSizeChange={onPageSizeChange}
+                    onDeleteVenue={setVenueToDelete}
+                    onEditVenue={setVenueToEdit}
+                    pagination={pagination}
+                    seasonsById={seasonsById}
+                    venues={venues}
+                  />
+                </section>
+              </ComponentReveal>
+            </RevealGroup>
           </main>
         </PageEntrance>
       </SidebarInset>

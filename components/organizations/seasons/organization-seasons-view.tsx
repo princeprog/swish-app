@@ -12,7 +12,11 @@ import {
 import { toast } from "sonner";
 
 import { AppSidebar } from "@/components/app-sidebar";
-import { PageEntrance, StaggerReveal } from "@/components/motion/page-motion";
+import {
+  ComponentReveal,
+  PageEntrance,
+  RevealGroup,
+} from "@/components/motion/page-motion";
 import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header";
 import { DataTablePagination } from "@/components/organizations/shared/data-table-pagination";
 import { Badge } from "@/components/ui/badge";
@@ -427,25 +431,31 @@ export function OrganizationSeasonsView({
 
         <PageEntrance asChild>
           <main className="flex flex-1 flex-col gap-6 bg-background px-4 py-4 lg:px-6 lg:py-5">
-            <StaggerReveal className="contents">
-              <section className="flex flex-wrap items-start justify-between gap-4">
-            <div className="space-y-2">
-              <h1 className="text-3xl font-semibold tracking-tight">Seasons</h1>
-            </div>
-          </section>
+            <RevealGroup className="contents">
+              <ComponentReveal asChild>
+                <section className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="space-y-2">
+                    <h1 className="text-3xl font-semibold tracking-tight">
+                      Seasons
+                    </h1>
+                  </div>
+                </section>
+              </ComponentReveal>
 
-          <section className="grid gap-6">
-            <SeasonsTable
-              onPageChange={onPageChange}
-              onPageSizeChange={onPageSizeChange}
-              onDeleteSeason={setSeasonToDelete}
-              onEditSeason={setSeasonToEdit}
-              organizationSlug={organization.slug}
-              pagination={pagination}
-              seasons={seasons}
-            />
-              </section>
-            </StaggerReveal>
+              <ComponentReveal asChild>
+                <section className="grid gap-6">
+                  <SeasonsTable
+                    onPageChange={onPageChange}
+                    onPageSizeChange={onPageSizeChange}
+                    onDeleteSeason={setSeasonToDelete}
+                    onEditSeason={setSeasonToEdit}
+                    organizationSlug={organization.slug}
+                    pagination={pagination}
+                    seasons={seasons}
+                  />
+                </section>
+              </ComponentReveal>
+            </RevealGroup>
           </main>
         </PageEntrance>
       </SidebarInset>
