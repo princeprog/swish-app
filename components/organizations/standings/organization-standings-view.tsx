@@ -5,7 +5,11 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Trophy } from "lucide-react"
 
 import { AppSidebar } from "@/components/app-sidebar"
-import { PageEntrance, StaggerReveal } from "@/components/motion/page-motion"
+import {
+  ComponentReveal,
+  PageEntrance,
+  RevealGroup,
+} from "@/components/motion/page-motion"
 import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -332,45 +336,57 @@ export function OrganizationStandingsView({
 
         <PageEntrance asChild>
           <main className="flex flex-1 flex-col gap-6 bg-background px-4 py-4 lg:px-6 lg:py-5">
-            <StaggerReveal className="contents">
-              <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div className="space-y-2">
-              <h1 className="text-3xl font-semibold tracking-tight">Standings</h1>
-            </div>
-            {standingsFilters}
-          </section>
+            <RevealGroup className="contents">
+              <ComponentReveal asChild>
+                <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                  <div className="space-y-2">
+                    <h1 className="text-3xl font-semibold tracking-tight">
+                      Standings
+                    </h1>
+                  </div>
+                  {standingsFilters}
+                </section>
+              </ComponentReveal>
 
-          {seasons.length === 0 ? (
-            <Empty className="border border-dashed bg-card/70">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <Trophy className="size-5" />
-                </EmptyMedia>
-                <EmptyTitle>Create a season first</EmptyTitle>
-                <EmptyDescription>
-                  Standings are grouped by season, so create one before reading
-                  official records.
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
-          ) : standingsQuery.isLoading ? (
-            <Card className="h-[420px] border border-border/60 bg-card/95 shadow-none" />
-          ) : standingsQuery.isError ? (
-            <Empty className="border border-dashed bg-card/70">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <Trophy className="size-5" />
-                </EmptyMedia>
-                <EmptyTitle>We couldn't load standings</EmptyTitle>
-                <EmptyDescription>
-                  {getApiErrorMessage(standingsQuery.error)}
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
-          ) : (
-            <StandingsTable rows={rows} />
+              {seasons.length === 0 ? (
+                <ComponentReveal>
+                  <Empty className="border border-dashed bg-card/70">
+                    <EmptyHeader>
+                      <EmptyMedia variant="icon">
+                        <Trophy className="size-5" />
+                      </EmptyMedia>
+                      <EmptyTitle>Create a season first</EmptyTitle>
+                      <EmptyDescription>
+                        Standings are grouped by season, so create one before reading
+                        official records.
+                      </EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
+                </ComponentReveal>
+              ) : standingsQuery.isLoading ? (
+                <ComponentReveal asChild>
+                  <Card className="h-[420px] border border-border/60 bg-card/95 shadow-none" />
+                </ComponentReveal>
+              ) : standingsQuery.isError ? (
+                <ComponentReveal>
+                  <Empty className="border border-dashed bg-card/70">
+                    <EmptyHeader>
+                      <EmptyMedia variant="icon">
+                        <Trophy className="size-5" />
+                      </EmptyMedia>
+                      <EmptyTitle>We couldn't load standings</EmptyTitle>
+                      <EmptyDescription>
+                        {getApiErrorMessage(standingsQuery.error)}
+                      </EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
+                </ComponentReveal>
+              ) : (
+                <ComponentReveal>
+                  <StandingsTable rows={rows} />
+                </ComponentReveal>
               )}
-            </StaggerReveal>
+            </RevealGroup>
           </main>
         </PageEntrance>
       </SidebarInset>

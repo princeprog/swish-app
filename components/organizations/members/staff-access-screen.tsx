@@ -12,7 +12,11 @@ import {
 import { toast } from "sonner"
 
 import { AppSidebar } from "@/components/app-sidebar"
-import { PageEntrance, StaggerReveal } from "@/components/motion/page-motion"
+import {
+  ComponentReveal,
+  PageEntrance,
+  RevealGroup,
+} from "@/components/motion/page-motion"
 import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -54,11 +58,13 @@ function LoadingState() {
   return (
     <PageEntrance asChild>
       <main className="min-h-screen bg-background p-6 text-foreground">
-      <div className="mx-auto max-w-7xl space-y-4">
-        <Skeleton className="h-10 w-80" />
-        <Skeleton className="h-40" />
-        <Skeleton className="h-96" />
-      </div>
+        <ComponentReveal asChild>
+          <div className="mx-auto max-w-7xl space-y-4">
+            <Skeleton className="h-10 w-80" />
+            <Skeleton className="h-40" />
+            <Skeleton className="h-96" />
+          </div>
+        </ComponentReveal>
       </main>
     </PageEntrance>
   )
@@ -68,22 +74,24 @@ function EmptyShell({ description, title }: { description: string; title: string
   return (
     <PageEntrance asChild>
       <main className="min-h-screen bg-background p-6 text-foreground">
-      <div className="mx-auto max-w-3xl">
-        <Empty className="border bg-card">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <ShieldCheck className="size-5" />
-            </EmptyMedia>
-            <EmptyTitle>{title}</EmptyTitle>
-            <EmptyDescription>{description}</EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent>
-            <Button asChild>
-              <Link href="/organizations">Back to organizations</Link>
-            </Button>
-          </EmptyContent>
-        </Empty>
-      </div>
+        <ComponentReveal asChild>
+          <div className="mx-auto max-w-3xl">
+            <Empty className="border bg-card">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <ShieldCheck className="size-5" />
+                </EmptyMedia>
+                <EmptyTitle>{title}</EmptyTitle>
+                <EmptyDescription>{description}</EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <Button asChild>
+                  <Link href="/organizations">Back to organizations</Link>
+                </Button>
+              </EmptyContent>
+            </Empty>
+          </div>
+        </ComponentReveal>
       </main>
     </PageEntrance>
   )
@@ -391,28 +399,35 @@ export function StaffAccessScreen({ slug }: { slug: string }) {
           organizationName={organization.name} organizationSlug={organization.slug} pageTitle="Staff & access" primaryAction={{ label: "Invite staff", onClick: () => setInviteOpen(true) }} />
         <PageEntrance asChild>
           <main className="flex flex-1 flex-col gap-4 bg-background px-4 py-4 lg:px-6 lg:py-5">
-            <StaggerReveal className="contents">
-              <section className="flex flex-wrap items-start justify-between gap-4">
-            <h1 className="text-3xl font-semibold tracking-tight">Staff & access</h1>
-            <Button onClick={() => setInviteOpen(true)}>
-              <UserPlus className="size-4" />
-              Invite staff
-            </Button>
-          </section>
+            <RevealGroup className="contents">
+              <ComponentReveal asChild>
+                <section className="flex flex-wrap items-start justify-between gap-4">
+                  <h1 className="text-3xl font-semibold tracking-tight">
+                    Staff & access
+                  </h1>
+                  <Button onClick={() => setInviteOpen(true)}>
+                    <UserPlus className="size-4" />
+                    Invite staff
+                  </Button>
+                </section>
+              </ComponentReveal>
 
-          {lastLink ? (
-            <Card className="border-border/60 shadow-none">
-              <CardContent className="flex flex-wrap items-center gap-2 p-3">
-                <Input readOnly className="min-w-64 flex-1" value={lastLink} />
-                <Button variant="outline" onClick={() => navigator.clipboard.writeText(lastLink)}>
-                  <Clipboard className="size-4" />
-                  Copy link
-                </Button>
-              </CardContent>
-            </Card>
-          ) : null}
+              {lastLink ? (
+                <ComponentReveal asChild>
+                  <Card className="border-border/60 shadow-none">
+                    <CardContent className="flex flex-wrap items-center gap-2 p-3">
+                      <Input readOnly className="min-w-64 flex-1" value={lastLink} />
+                      <Button variant="outline" onClick={() => navigator.clipboard.writeText(lastLink)}>
+                        <Clipboard className="size-4" />
+                        Copy link
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </ComponentReveal>
+              ) : null}
 
-          <Tabs defaultValue="members">
+              <ComponentReveal>
+                <Tabs defaultValue="members">
             <TabsList>
               {STAFF_ACCESS_TABS.map((tab) => (
                 <TabsTrigger key={tab.value} value={tab.value}>
@@ -420,7 +435,8 @@ export function StaffAccessScreen({ slug }: { slug: string }) {
                 </TabsTrigger>
               ))}
             </TabsList>
-            <TabsContent value="members">
+            <ComponentReveal asChild trigger="active">
+              <TabsContent value="members">
               <Card className="border-border/60 shadow-none">
                 <CardHeader>
                   <CardTitle>Members</CardTitle>
@@ -456,8 +472,10 @@ export function StaffAccessScreen({ slug }: { slug: string }) {
                   </Table>
                 </CardContent>
               </Card>
-            </TabsContent>
-            <TabsContent value="invitations">
+              </TabsContent>
+            </ComponentReveal>
+            <ComponentReveal asChild trigger="active">
+              <TabsContent value="invitations">
               <Card className="border-border/60 shadow-none">
                 <CardHeader>
                   <CardTitle>Invitations</CardTitle>
@@ -496,9 +514,11 @@ export function StaffAccessScreen({ slug }: { slug: string }) {
                   </Table>
                 </CardContent>
               </Card>
-            </TabsContent>
+              </TabsContent>
+            </ComponentReveal>
               </Tabs>
-            </StaggerReveal>
+              </ComponentReveal>
+            </RevealGroup>
           </main>
         </PageEntrance>
       </SidebarInset>

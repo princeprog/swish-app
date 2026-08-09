@@ -4,7 +4,7 @@ import Link from "next/link"
 import { Trophy } from "lucide-react"
 
 import { OrganizationStandingsView } from "@/components/organizations/standings/organization-standings-view"
-import { PageEntrance } from "@/components/motion/page-motion"
+import { ComponentReveal, PageEntrance } from "@/components/motion/page-motion"
 import { TeamManagerWorkspace } from "@/components/organizations/team-manager/manager-workspace"
 import { Button } from "@/components/ui/button"
 import {
@@ -29,11 +29,13 @@ function StandingsLoadingState() {
   return (
     <PageEntrance asChild>
       <main className="min-h-screen bg-background p-6 text-foreground">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <Skeleton className="h-10 w-80 rounded-xl" />
-        <Skeleton className="h-36 rounded-2xl" />
-        <Skeleton className="h-[420px] rounded-2xl" />
-      </div>
+        <ComponentReveal asChild>
+          <div className="mx-auto max-w-7xl space-y-6">
+            <Skeleton className="h-10 w-80 rounded-xl" />
+            <Skeleton className="h-36 rounded-2xl" />
+            <Skeleton className="h-[420px] rounded-2xl" />
+          </div>
+        </ComponentReveal>
       </main>
     </PageEntrance>
   )
@@ -49,22 +51,24 @@ function StandingsEmptyShell({
   return (
     <PageEntrance asChild>
       <main className="min-h-screen bg-background p-6 text-foreground">
-      <div className="mx-auto max-w-3xl">
-        <Empty className="border bg-card">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <Trophy className="size-5" />
-            </EmptyMedia>
-            <EmptyTitle>{title}</EmptyTitle>
-            <EmptyDescription>{description}</EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent>
-            <Button asChild>
-              <Link href="/organizations">Back to organizations</Link>
-            </Button>
-          </EmptyContent>
-        </Empty>
-      </div>
+        <ComponentReveal asChild>
+          <div className="mx-auto max-w-3xl">
+            <Empty className="border bg-card">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <Trophy className="size-5" />
+                </EmptyMedia>
+                <EmptyTitle>{title}</EmptyTitle>
+                <EmptyDescription>{description}</EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <Button asChild>
+                  <Link href="/organizations">Back to organizations</Link>
+                </Button>
+              </EmptyContent>
+            </Empty>
+          </div>
+        </ComponentReveal>
       </main>
     </PageEntrance>
   )
