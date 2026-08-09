@@ -227,12 +227,27 @@ export function useNotificationRealtime(enabled: boolean) {
     }
 
     const onFocus = () => invalidate()
+    const onOnline = () => {
+      attempts = 0
+      if (retryTimer) {
+        clearTimeout(retryTimer)
+        retryTimer = undefined
+      }
+      if (source) {
+        source.onerror = null
+        source.close()
+      }
+      invalidate()
+      connect()
+    }
     window.addEventListener("focus", onFocus)
+    window.addEventListener("online", onOnline)
     connect()
 
     return () => {
       closed = true
       window.removeEventListener("focus", onFocus)
+      window.removeEventListener("online", onOnline)
       source?.close()
       if (retryTimer) {
         clearTimeout(retryTimer)
