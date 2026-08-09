@@ -6,6 +6,7 @@ import * as React from "react";
 import { Building2 } from "lucide-react";
 
 import { OrganizationWorkspaceView } from "@/components/organizations/workspace/organization-workspace-view";
+import { PageEntrance } from "@/components/motion/page-motion";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -26,7 +27,8 @@ type OrganizationWorkspaceScreenProps = {
 
 function WorkspaceLoadingState() {
   return (
-    <main className="min-h-screen bg-background p-6 text-foreground">
+    <PageEntrance asChild>
+      <main className="min-h-screen bg-background p-6 text-foreground">
       <div className="mx-auto max-w-7xl space-y-6">
         <Skeleton className="h-12 w-80 rounded-xl" />
         <Skeleton className="h-40 rounded-2xl" />
@@ -43,7 +45,8 @@ function WorkspaceLoadingState() {
           </div>
         </div>
       </div>
-    </main>
+      </main>
+    </PageEntrance>
   );
 }
 
@@ -55,7 +58,8 @@ function WorkspaceEmptyState({
   description: string;
 }) {
   return (
-    <main className="min-h-screen bg-background p-6 text-foreground">
+    <PageEntrance asChild>
+      <main className="min-h-screen bg-background p-6 text-foreground">
       <div className="mx-auto max-w-3xl">
         <Empty className="border bg-card">
           <EmptyHeader>
@@ -72,7 +76,8 @@ function WorkspaceEmptyState({
           </EmptyContent>
         </Empty>
       </div>
-    </main>
+      </main>
+    </PageEntrance>
   );
 }
 

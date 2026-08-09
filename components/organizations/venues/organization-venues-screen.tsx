@@ -4,6 +4,7 @@ import Link from "next/link"
 import { MapPin } from "lucide-react"
 
 import { OrganizationVenuesView } from "@/components/organizations/venues/organization-venues-view"
+import { PageEntrance } from "@/components/motion/page-motion"
 import { Button } from "@/components/ui/button"
 import {
   Empty,
@@ -27,13 +28,15 @@ type OrganizationVenuesScreenProps = {
 
 function VenuesLoadingState() {
   return (
-    <main className="min-h-screen bg-background p-6 text-foreground">
+    <PageEntrance asChild>
+      <main className="min-h-screen bg-background p-6 text-foreground">
       <div className="mx-auto max-w-7xl space-y-6">
         <Skeleton className="h-10 w-80 rounded-xl" />
         <Skeleton className="h-36 rounded-2xl" />
         <Skeleton className="h-[420px] rounded-2xl" />
       </div>
-    </main>
+      </main>
+    </PageEntrance>
   )
 }
 
@@ -45,7 +48,8 @@ function VenuesEmptyShell({
   title: string
 }) {
   return (
-    <main className="min-h-screen bg-background p-6 text-foreground">
+    <PageEntrance asChild>
+      <main className="min-h-screen bg-background p-6 text-foreground">
       <div className="mx-auto max-w-3xl">
         <Empty className="border bg-card">
           <EmptyHeader>
@@ -62,7 +66,8 @@ function VenuesEmptyShell({
           </EmptyContent>
         </Empty>
       </div>
-    </main>
+      </main>
+    </PageEntrance>
   )
 }
 

@@ -25,6 +25,7 @@ import {
 import { toast } from "sonner"
 
 import { AppSidebar } from "@/components/app-sidebar"
+import { PageEntrance, StaggerReveal } from "@/components/motion/page-motion"
 import { canManageOrganizationSchedule } from "@/components/organizations/schedules/schedule-access"
 import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
 import { Badge } from "@/components/ui/badge"
@@ -2316,8 +2317,10 @@ export function OrganizationSchedulesView({
           }}
         />
 
-        <main className="flex flex-1 flex-col gap-6 bg-background px-4 py-4 lg:px-6 lg:py-5">
-          <section className="flex flex-wrap items-start justify-between gap-4">
+        <PageEntrance asChild>
+          <main className="flex flex-1 flex-col gap-6 bg-background px-4 py-4 lg:px-6 lg:py-5">
+            <StaggerReveal className="contents">
+              <section className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-2">
               <h1 className="text-3xl font-semibold tracking-tight">
                 Schedules
@@ -2447,8 +2450,10 @@ export function OrganizationSchedulesView({
                 onViewFinalSummary={setGameToSummarize}
               />
             </div>
-          </section>
-        </main>
+              </section>
+            </StaggerReveal>
+          </main>
+        </PageEntrance>
       </SidebarInset>
 
       {createModalOpen ? (

@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Trophy } from "lucide-react"
 
 import { AppSidebar } from "@/components/app-sidebar"
+import { PageEntrance, StaggerReveal } from "@/components/motion/page-motion"
 import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -329,8 +330,10 @@ export function OrganizationStandingsView({
           pageTitle="Standings"
         />
 
-        <main className="flex flex-1 flex-col gap-6 bg-background px-4 py-4 lg:px-6 lg:py-5">
-          <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <PageEntrance asChild>
+          <main className="flex flex-1 flex-col gap-6 bg-background px-4 py-4 lg:px-6 lg:py-5">
+            <StaggerReveal className="contents">
+              <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="space-y-2">
               <h1 className="text-3xl font-semibold tracking-tight">Standings</h1>
             </div>
@@ -366,8 +369,10 @@ export function OrganizationStandingsView({
             </Empty>
           ) : (
             <StandingsTable rows={rows} />
-          )}
-        </main>
+              )}
+            </StaggerReveal>
+          </main>
+        </PageEntrance>
       </SidebarInset>
     </SidebarProvider>
   )

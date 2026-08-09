@@ -12,6 +12,7 @@ import {
 import { toast } from "sonner";
 
 import { AppSidebar } from "@/components/app-sidebar";
+import { PageEntrance, StaggerReveal } from "@/components/motion/page-motion";
 import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header";
 import { DataTablePagination } from "@/components/organizations/shared/data-table-pagination";
 import { Badge } from "@/components/ui/badge";
@@ -424,8 +425,10 @@ export function OrganizationSeasonsView({
           }}
         />
 
-        <main className="flex flex-1 flex-col gap-6 bg-background px-4 py-4 lg:px-6 lg:py-5">
-          <section className="flex flex-wrap items-start justify-between gap-4">
+        <PageEntrance asChild>
+          <main className="flex flex-1 flex-col gap-6 bg-background px-4 py-4 lg:px-6 lg:py-5">
+            <StaggerReveal className="contents">
+              <section className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-2">
               <h1 className="text-3xl font-semibold tracking-tight">Seasons</h1>
             </div>
@@ -441,8 +444,10 @@ export function OrganizationSeasonsView({
               pagination={pagination}
               seasons={seasons}
             />
-          </section>
-        </main>
+              </section>
+            </StaggerReveal>
+          </main>
+        </PageEntrance>
       </SidebarInset>
 
       {createModalOpen ? (

@@ -4,6 +4,7 @@ import Link from "next/link"
 import { Shield, Users2 } from "lucide-react"
 
 import { OrganizationTeamsView } from "@/components/organizations/teams/organization-teams-view"
+import { PageEntrance } from "@/components/motion/page-motion"
 import { TeamManagerWorkspace } from "@/components/organizations/team-manager/manager-workspace"
 import { Button } from "@/components/ui/button"
 import {
@@ -30,13 +31,15 @@ type OrganizationTeamsScreenProps = {
 
 function TeamsLoadingState() {
   return (
-    <main className="min-h-screen bg-background p-6 text-foreground">
+    <PageEntrance asChild>
+      <main className="min-h-screen bg-background p-6 text-foreground">
       <div className="mx-auto max-w-7xl space-y-6">
         <Skeleton className="h-10 w-80 rounded-xl" />
         <Skeleton className="h-36 rounded-2xl" />
         <Skeleton className="h-[420px] rounded-2xl" />
       </div>
-    </main>
+      </main>
+    </PageEntrance>
   )
 }
 
@@ -48,7 +51,8 @@ function TeamsEmptyShell({
   title: string
 }) {
   return (
-    <main className="min-h-screen bg-background p-6 text-foreground">
+    <PageEntrance asChild>
+      <main className="min-h-screen bg-background p-6 text-foreground">
       <div className="mx-auto max-w-3xl">
         <Empty className="border bg-card">
           <EmptyHeader>
@@ -65,7 +69,8 @@ function TeamsEmptyShell({
           </EmptyContent>
         </Empty>
       </div>
-    </main>
+      </main>
+    </PageEntrance>
   )
 }
 

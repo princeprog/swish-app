@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { Users2 } from "lucide-react"
 
 import { OrganizationPlayersView } from "@/components/organizations/players/organization-players-view"
+import { PageEntrance } from "@/components/motion/page-motion"
 import { Button } from "@/components/ui/button"
 import {
   Empty,
@@ -70,13 +71,15 @@ function useDebouncedValue<T>(value: T, delayMs: number) {
 
 function PlayersLoadingState() {
   return (
-    <main className="min-h-screen bg-background p-6 text-foreground">
+    <PageEntrance asChild>
+      <main className="min-h-screen bg-background p-6 text-foreground">
       <div className="mx-auto max-w-7xl space-y-6">
         <Skeleton className="h-10 w-80 rounded-xl" />
         <Skeleton className="h-36 rounded-2xl" />
         <Skeleton className="h-[420px] rounded-2xl" />
       </div>
-    </main>
+      </main>
+    </PageEntrance>
   )
 }
 
@@ -88,7 +91,8 @@ function PlayersEmptyShell({
   title: string
 }) {
   return (
-    <main className="min-h-screen bg-background p-6 text-foreground">
+    <PageEntrance asChild>
+      <main className="min-h-screen bg-background p-6 text-foreground">
       <div className="mx-auto max-w-3xl">
         <Empty className="border bg-card">
           <EmptyHeader>
@@ -105,7 +109,8 @@ function PlayersEmptyShell({
           </EmptyContent>
         </Empty>
       </div>
-    </main>
+      </main>
+    </PageEntrance>
   )
 }
 

@@ -12,6 +12,7 @@ import {
 import { toast } from "sonner"
 
 import { AppSidebar } from "@/components/app-sidebar"
+import { PageEntrance, StaggerReveal } from "@/components/motion/page-motion"
 import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -51,19 +52,22 @@ function roleLabel(role: string) {
 
 function LoadingState() {
   return (
-    <main className="min-h-screen bg-background p-6 text-foreground">
+    <PageEntrance asChild>
+      <main className="min-h-screen bg-background p-6 text-foreground">
       <div className="mx-auto max-w-7xl space-y-4">
         <Skeleton className="h-10 w-80" />
         <Skeleton className="h-40" />
         <Skeleton className="h-96" />
       </div>
-    </main>
+      </main>
+    </PageEntrance>
   )
 }
 
 function EmptyShell({ description, title }: { description: string; title: string }) {
   return (
-    <main className="min-h-screen bg-background p-6 text-foreground">
+    <PageEntrance asChild>
+      <main className="min-h-screen bg-background p-6 text-foreground">
       <div className="mx-auto max-w-3xl">
         <Empty className="border bg-card">
           <EmptyHeader>
@@ -80,7 +84,8 @@ function EmptyShell({ description, title }: { description: string; title: string
           </EmptyContent>
         </Empty>
       </div>
-    </main>
+      </main>
+    </PageEntrance>
   )
 }
 
@@ -384,8 +389,10 @@ export function StaffAccessScreen({ slug }: { slug: string }) {
         <WorkspaceHeader 
           organizationAccess={organization.access}
           organizationName={organization.name} organizationSlug={organization.slug} pageTitle="Staff & access" primaryAction={{ label: "Invite staff", onClick: () => setInviteOpen(true) }} />
-        <main className="flex flex-1 flex-col gap-4 bg-background px-4 py-4 lg:px-6 lg:py-5">
-          <section className="flex flex-wrap items-start justify-between gap-4">
+        <PageEntrance asChild>
+          <main className="flex flex-1 flex-col gap-4 bg-background px-4 py-4 lg:px-6 lg:py-5">
+            <StaggerReveal className="contents">
+              <section className="flex flex-wrap items-start justify-between gap-4">
             <h1 className="text-3xl font-semibold tracking-tight">Staff & access</h1>
             <Button onClick={() => setInviteOpen(true)}>
               <UserPlus className="size-4" />
@@ -490,8 +497,10 @@ export function StaffAccessScreen({ slug }: { slug: string }) {
                 </CardContent>
               </Card>
             </TabsContent>
-          </Tabs>
-        </main>
+              </Tabs>
+            </StaggerReveal>
+          </main>
+        </PageEntrance>
       </SidebarInset>
       {inviteOpen ? <InviteDialog organizationId={organization.id} onClose={() => setInviteOpen(false)} /> : null}
       {memberToEdit ? (
