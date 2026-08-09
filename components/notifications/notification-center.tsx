@@ -52,7 +52,11 @@ export function NotificationCenter() {
   })
   const [cursor, setCursor] = React.useState<string | null>(null)
   const [items, setItems] = React.useState<NotificationItem[]>([])
-  const query = useNotificationsQuery(buildNotificationQuery(filters, cursor))
+  const userReady = Boolean(meQuery.data?.user)
+  const query = useNotificationsQuery(
+    buildNotificationQuery(filters, cursor),
+    userReady,
+  )
   const setReadMutation = useSetNotificationReadMutation()
   const markAllMutation = useMarkAllNotificationsReadMutation()
 
@@ -83,8 +87,6 @@ export function NotificationCenter() {
       router.push(item.actionUrl!)
     }
   }
-
-  const userReady = Boolean(meQuery.data?.user)
 
   return (
     <main className="min-h-screen bg-background text-foreground">
