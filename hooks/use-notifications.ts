@@ -112,7 +112,7 @@ export function useMarkAllNotificationsReadMutation() {
   return useMutation({
     mutationFn: (organizationId?: string) =>
       notificationService.markAllRead(organizationId),
-    onMutate: async () => {
+    onMutate: async (organizationId) => {
       await Promise.all([
         queryClient.cancelQueries({ queryKey: ["notifications", "list"] }),
         queryClient.cancelQueries({ queryKey: NOTIFICATION_QUERY_KEYS.unreadCount }),
@@ -125,6 +125,16 @@ export function useMarkAllNotificationsReadMutation() {
         NOTIFICATION_QUERY_KEYS.unreadCount,
       )
       const readAt = new Date().toISOString()
+      const changedIds = new Set(
+        previousLists
+          .flatMap(([, data]) => data?.items ?? [])
+          .filter(
+            (item) =>
+              !item.readAt &&
+              (!organizationId || item.organization?.id === organizationId),
+          )
+          .map((item) => item.id),
+      )
 
       queryClient.setQueriesData<NotificationListResponse>(
         { queryKey: ["notifications", "list"] },
@@ -132,14 +142,23 @@ export function useMarkAllNotificationsReadMutation() {
           old
             ? {
                 ...old,
-                items: old.items.map((item) => ({ ...item, readAt })),
-                unreadCount: 0,
+                items: old.items.map((item) =>
+                  changedIds.has(item.id) ? { ...item, readAt } : item,
+                ),
+                unreadCount: Math.max(
+                  0,
+                  old.unreadCount -
+                    old.items.filter((item) => changedIds.has(item.id)).length,
+                ),
               }
             : old,
       )
       queryClient.setQueryData<{ count: number }>(
         NOTIFICATION_QUERY_KEYS.unreadCount,
-        (old) => (old ? { count: 0 } : old),
+        (old) =>
+          old
+            ? { count: Math.max(0, old.count - changedIds.size) }
+            : old,
       )
 
       return { previousLists, previousUnreadCount }
