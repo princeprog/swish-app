@@ -5,6 +5,7 @@ import * as React from "react";
 
 import { ScorekeeperGameList } from "@/components/organizations/scorekeeper/scorekeeper-game-list";
 import { ScorekeeperShell } from "@/components/organizations/scorekeeper/scorekeeper-shell";
+import { PageEntrance } from "@/components/motion/page-motion";
 import {
   getScorekeeperErrorState,
   ScorekeeperFocusedState,
@@ -43,7 +44,8 @@ export function ScorekeeperWorkspaceScreen({
     const state = getScorekeeperErrorState(organizationsQuery.error);
 
     return (
-      <main className="min-h-screen bg-background p-6 text-foreground">
+      <PageEntrance asChild variant="subtle">
+        <main className="min-h-screen bg-background p-6 text-foreground">
         <div className="mx-auto max-w-3xl">
           <ScorekeeperFocusedState
             description={state.description}
@@ -52,13 +54,15 @@ export function ScorekeeperWorkspaceScreen({
             onRetry={() => organizationsQuery.refetch()}
           />
         </div>
-      </main>
+        </main>
+      </PageEntrance>
     );
   }
 
   if (!organization) {
     return (
-      <main className="min-h-screen bg-background p-6 text-foreground">
+      <PageEntrance asChild variant="subtle">
+        <main className="min-h-screen bg-background p-6 text-foreground">
         <div className="mx-auto max-w-3xl">
           <ScorekeeperFocusedState
             description="This workspace does not exist or you do not have access to it."
@@ -68,7 +72,8 @@ export function ScorekeeperWorkspaceScreen({
             actionLabel="Back to organizations"
           />
         </div>
-      </main>
+        </main>
+      </PageEntrance>
     );
   }
 

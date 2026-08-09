@@ -23,6 +23,7 @@ import {
   ScorekeeperFocusedState,
   ScorekeeperLoadingState,
 } from "@/components/organizations/scorekeeper/scorekeeper-states";
+import { PageEntrance } from "@/components/motion/page-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -967,7 +968,8 @@ export function ScorekeeperGameDetailScreen({
     const state = getScorekeeperErrorState(organizationsQuery.error);
 
     return (
-      <main className="min-h-screen bg-background p-6 text-foreground">
+      <PageEntrance asChild variant="subtle">
+        <main className="min-h-screen bg-background p-6 text-foreground">
         <div className="mx-auto max-w-3xl">
           <ScorekeeperFocusedState
             description={state.description}
@@ -976,13 +978,15 @@ export function ScorekeeperGameDetailScreen({
             onRetry={() => organizationsQuery.refetch()}
           />
         </div>
-      </main>
+        </main>
+      </PageEntrance>
     );
   }
 
   if (!organization) {
     return (
-      <main className="min-h-screen bg-background p-6 text-foreground">
+      <PageEntrance asChild variant="subtle">
+        <main className="min-h-screen bg-background p-6 text-foreground">
         <div className="mx-auto max-w-3xl">
           <ScorekeeperFocusedState
             description="This workspace does not exist or you do not have access to it."
@@ -992,7 +996,8 @@ export function ScorekeeperGameDetailScreen({
             actionLabel="Back to organizations"
           />
         </div>
-      </main>
+        </main>
+      </PageEntrance>
     );
   }
 
@@ -1004,7 +1009,8 @@ export function ScorekeeperGameDetailScreen({
     const state = getScorekeeperErrorState(scoring.query.error);
 
     return (
-      <main className="min-h-screen bg-background p-6 text-foreground">
+      <PageEntrance asChild variant="subtle">
+        <main className="min-h-screen bg-background p-6 text-foreground">
         <div className="mx-auto max-w-3xl">
           <ScorekeeperFocusedState
             description={state.description}
@@ -1014,7 +1020,8 @@ export function ScorekeeperGameDetailScreen({
             actionLabel="Back to assignments"
           />
         </div>
-      </main>
+        </main>
+      </PageEntrance>
     );
   }
 
@@ -1047,7 +1054,8 @@ export function ScorekeeperGameDetailScreen({
       !scoring.offlineLockActive && displayedState.control.status !== "claimed";
 
     return (
-      <main className="min-h-screen bg-background p-4 text-foreground md:p-8">
+      <PageEntrance asChild variant="subtle">
+        <main className="min-h-screen bg-background p-4 text-foreground md:p-8">
         <div className="mx-auto grid max-w-4xl gap-4">
           <Button
             className="w-fit"
@@ -1163,12 +1171,14 @@ export function ScorekeeperGameDetailScreen({
             </CardContent>
           </Card>
         </div>
-      </main>
+        </main>
+      </PageEntrance>
     );
   }
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <PageEntrance asChild variant="subtle">
+      <main className="min-h-screen bg-background text-foreground">
       <header className="flex h-16 items-center justify-between border-b bg-background px-4 md:h-20 md:px-8">
         <Button
           aria-label="Back to assignments"
@@ -1416,6 +1426,7 @@ export function ScorekeeperGameDetailScreen({
           Undo {displayedState.latestReversibleEvent?.summary ?? ""}
         </Button>
       </div>
-    </main>
+      </main>
+    </PageEntrance>
   );
 }

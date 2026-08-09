@@ -6,6 +6,7 @@ import { format } from "date-fns"
 import { CalendarDaysIcon, TrophyIcon, Users2Icon } from "lucide-react"
 
 import { AppSidebar } from "@/components/app-sidebar"
+import { PageEntrance, StaggerReveal } from "@/components/motion/page-motion"
 import { ManagerTeamOverview } from "@/components/organizations/team-manager/manager-team-overview"
 import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
 import { StandingsTable } from "@/components/organizations/standings/organization-standings-view"
@@ -106,8 +107,10 @@ function ManagerShell({
           pageTitle={pageTitle}
           primaryAction={null}
         />
-        <main className="flex flex-1 flex-col gap-5 bg-background px-4 py-4 lg:px-6 lg:py-5">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <PageEntrance asChild>
+          <main className="flex flex-1 flex-col gap-5 bg-background px-4 py-4 lg:px-6 lg:py-5">
+            <StaggerReveal className="contents">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="min-w-0">
               <h1
                 className={cn(
@@ -142,8 +145,10 @@ function ManagerShell({
               </Select>
             ) : null}
           </div>
-          {children}
-        </main>
+              {children}
+            </StaggerReveal>
+          </main>
+        </PageEntrance>
       </SidebarInset>
     </SidebarProvider>
   )
@@ -168,11 +173,13 @@ function ManagerLoadingState({ organization }: { organization: Organization }) {
           pageTitle="My team"
           primaryAction={null}
         />
-        <main className="space-y-4 bg-background px-4 py-4 lg:px-6 lg:py-5">
-          <Skeleton className="h-10 w-72" />
-          <Skeleton className="h-36 rounded-lg" />
-          <Skeleton className="h-72 rounded-lg" />
-        </main>
+        <PageEntrance asChild>
+          <main className="space-y-4 bg-background px-4 py-4 lg:px-6 lg:py-5">
+            <Skeleton className="h-10 w-72" />
+            <Skeleton className="h-36 rounded-lg" />
+            <Skeleton className="h-72 rounded-lg" />
+          </main>
+        </PageEntrance>
       </SidebarInset>
     </SidebarProvider>
   )

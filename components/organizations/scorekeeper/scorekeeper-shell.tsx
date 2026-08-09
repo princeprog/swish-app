@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { HeaderAccountMenu } from "@/components/auth/header-account-menu";
+import { PageEntrance } from "@/components/motion/page-motion";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -98,9 +99,11 @@ export function ScorekeeperShell({
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-        {children}
-      </div>
+      <PageEntrance asChild variant="subtle">
+        <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+          {children}
+        </div>
+      </PageEntrance>
     </main>
   );
 }

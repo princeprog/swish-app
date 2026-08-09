@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { AlertCircle, CalendarOff, Lock, SearchX } from "lucide-react";
 
+import { PageEntrance } from "@/components/motion/page-motion";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -74,7 +75,8 @@ export function ScorekeeperFocusedState({
 
 export function ScorekeeperLoadingState() {
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <PageEntrance asChild variant="subtle">
+      <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -93,7 +95,8 @@ export function ScorekeeperLoadingState() {
           ))}
         </div>
       </div>
-    </main>
+      </main>
+    </PageEntrance>
   );
 }
 

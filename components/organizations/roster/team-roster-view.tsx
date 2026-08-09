@@ -22,6 +22,7 @@ import {
 import { toast } from "sonner"
 
 import { AppSidebar } from "@/components/app-sidebar"
+import { PageEntrance, StaggerReveal } from "@/components/motion/page-motion"
 import { DataTablePagination } from "@/components/organizations/shared/data-table-pagination"
 import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -1110,8 +1111,10 @@ export function TeamRosterView({
           }}
         />
 
-        <main className="flex flex-1 flex-col gap-6 bg-background px-4 py-4 lg:px-6 lg:py-5">
-          <section className="space-y-4">
+        <PageEntrance asChild>
+          <main className="flex flex-1 flex-col gap-6 bg-background px-4 py-4 lg:px-6 lg:py-5">
+            <StaggerReveal className="contents">
+              <section className="space-y-4">
             <Button asChild variant="ghost" className="w-fit">
               <Link href={`/organizations/${organization.slug}/teams`}>
                 <ArrowLeft className="size-4" />
@@ -1277,9 +1280,11 @@ export function TeamRosterView({
               pagination={pagination}
               players={rosterPlayers}
             />
-            </section>
-          ) : null}
-        </main>
+              </section>
+            ) : null}
+            </StaggerReveal>
+          </main>
+        </PageEntrance>
       </SidebarInset>
 
       {createModalOpen && canEditPlayers ? (
