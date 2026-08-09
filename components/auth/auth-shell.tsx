@@ -4,7 +4,11 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Trophy } from "lucide-react";
 
-import { PageEntrance, StaggerReveal } from "@/components/motion/page-motion";
+import {
+  ComponentReveal,
+  PageEntrance,
+  RevealGroup,
+} from "@/components/motion/page-motion";
 
 type AuthShellProps = {
   children: ReactNode;
@@ -44,20 +48,24 @@ export function AuthShell({ children, description, title }: AuthShellProps) {
           <section className="flex min-h-screen bg-background">
             <div className="flex w-full flex-col px-6 py-6 sm:px-8 lg:px-10">
               <div className="flex flex-1 items-center justify-center py-10">
-                <StaggerReveal asChild>
+                <RevealGroup asChild>
                   <div className="w-full max-w-md space-y-8">
-                    <div className="space-y-3">
-                      <h1 className="text-4xl font-semibold tracking-tight text-foreground">
-                        {title}
-                      </h1>
-                      <p className="text-sm leading-6 text-muted-foreground">
-                        {description}
-                      </p>
-                    </div>
+                    <ComponentReveal asChild>
+                      <div className="space-y-3">
+                        <h1 className="text-4xl font-semibold tracking-tight text-foreground">
+                          {title}
+                        </h1>
+                        <p className="text-sm leading-6 text-muted-foreground">
+                          {description}
+                        </p>
+                      </div>
+                    </ComponentReveal>
 
-                    <div className="space-y-6">{children}</div>
+                    <ComponentReveal asChild>
+                      <div className="space-y-6">{children}</div>
+                    </ComponentReveal>
                   </div>
-                </StaggerReveal>
+                </RevealGroup>
               </div>
             </div>
           </section>

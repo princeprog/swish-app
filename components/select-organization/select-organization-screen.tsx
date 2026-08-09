@@ -39,7 +39,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PageEntrance, StaggerReveal } from "@/components/motion/page-motion";
+import {
+  ComponentReveal,
+  PageEntrance,
+  RevealGroup,
+} from "@/components/motion/page-motion";
 
 export function SelectOrganizationScreen() {
   const organizationsQuery = useOrganizationsQuery();
@@ -64,150 +68,164 @@ export function SelectOrganizationScreen() {
       <main className="min-h-screen bg-background text-foreground">
         <OrganizationsAppHeader />
 
-        <StaggerReveal asChild>
+        <RevealGroup asChild>
           <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
-            <OrganizationDirectoryOverview
-              activeCount={activeCount}
-              organizationCount={organizations.length}
-              scorekeeperCount={scorekeeperCount}
-            />
+            <ComponentReveal>
+              <OrganizationDirectoryOverview
+                activeCount={activeCount}
+                organizationCount={organizations.length}
+                scorekeeperCount={scorekeeperCount}
+              />
+            </ComponentReveal>
 
-            <section
-              className="flex flex-col gap-4"
-              aria-labelledby="your-orgs"
-            >
-              <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
-                <h2 id="your-orgs" className="text-xl font-semibold">
-                  Your organizations
-                </h2>
+            <ComponentReveal asChild>
+              <section
+                className="flex flex-col gap-4"
+                aria-labelledby="your-orgs"
+              >
+                <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+                  <h2 id="your-orgs" className="text-xl font-semibold">
+                    Your organizations
+                  </h2>
 
-                <div className="grid gap-3 sm:grid-cols-[minmax(14rem,1fr)_10rem_12rem]">
-                  <InputGroup>
-                    <InputGroupAddon>
-                      <SearchIcon />
-                    </InputGroupAddon>
-                    <InputGroupInput
-                      aria-label="Search organizations"
-                      placeholder="Search organizations..."
-                      value={query}
-                      onChange={(event) => setQuery(event.target.value)}
-                    />
-                  </InputGroup>
+                  <div className="grid gap-3 sm:grid-cols-[minmax(14rem,1fr)_10rem_12rem]">
+                    <InputGroup>
+                      <InputGroupAddon>
+                        <SearchIcon />
+                      </InputGroupAddon>
+                      <InputGroupInput
+                        aria-label="Search organizations"
+                        placeholder="Search organizations..."
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                      />
+                    </InputGroup>
 
-                  <Select
-                    value={role}
-                    onValueChange={(value) =>
-                      setRole(value as OrganizationRoleFilter)
-                    }
-                  >
-                    <SelectTrigger
-                      className="w-full"
-                      aria-label="Filter by role"
+                    <Select
+                      value={role}
+                      onValueChange={(value) =>
+                        setRole(value as OrganizationRoleFilter)
+                      }
                     >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectItem value="all">All roles</SelectItem>
-                        <SelectItem value="owner">Owner</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="team_manager">
-                          Team manager
-                        </SelectItem>
-                        <SelectItem value="scorekeeper">Scorekeeper</SelectItem>
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-
-                  <Select
-                    value={sort}
-                    onValueChange={(value) =>
-                      setSort(value as OrganizationSort)
-                    }
-                  >
-                    <SelectTrigger
-                      className="w-full"
-                      aria-label="Sort organizations"
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectItem value="recent">Recently updated</SelectItem>
-                        <SelectItem value="name">Organization name</SelectItem>
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {organizationsQuery.isLoading ? (
-                <OrganizationDirectoryLoading />
-              ) : organizationsQuery.isError ? (
-                <Empty className="border">
-                  <EmptyHeader>
-                    <EmptyMedia variant="icon">
-                      <Building2Icon />
-                    </EmptyMedia>
-                    <EmptyTitle>
-                      We couldn&apos;t load your organizations
-                    </EmptyTitle>
-                    <EmptyDescription>
-                      {getApiErrorMessage(organizationsQuery.error)}
-                    </EmptyDescription>
-                  </EmptyHeader>
-                  <EmptyContent>
-                    <Button onClick={() => organizationsQuery.refetch()}>
-                      Try again
-                    </Button>
-                  </EmptyContent>
-                </Empty>
-              ) : visibleOrganizations.length === 0 ? (
-                <Empty className="border">
-                  <EmptyHeader>
-                    <EmptyMedia variant="icon">
-                      <SearchIcon />
-                    </EmptyMedia>
-                    <EmptyTitle>
-                      {organizations.length === 0
-                        ? "No organizations yet"
-                        : "No organizations found"}
-                    </EmptyTitle>
-                    <EmptyDescription>
-                      {organizations.length === 0
-                        ? "Create your first organization to start managing a basketball league."
-                        : "Try another search term or role filter."}
-                    </EmptyDescription>
-                  </EmptyHeader>
-                  {organizations.length > 0 ? (
-                    <EmptyContent>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setQuery("");
-                          setRole("all");
-                        }}
+                      <SelectTrigger
+                        className="w-full"
+                        aria-label="Filter by role"
                       >
-                        Clear filters
-                      </Button>
-                    </EmptyContent>
-                  ) : null}
-                </Empty>
-              ) : (
-                <div className="grid gap-4 lg:grid-cols-2">
-                  {visibleOrganizations.map((organization) => (
-                    <OrganizationDirectoryCard
-                      key={organization.id}
-                      organization={organization}
-                    />
-                  ))}
-                </div>
-              )}
-            </section>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value="all">All roles</SelectItem>
+                          <SelectItem value="owner">Owner</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="team_manager">
+                            Team manager
+                          </SelectItem>
+                          <SelectItem value="scorekeeper">Scorekeeper</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
 
-            <OrganizationInvitationCard />
+                    <Select
+                      value={sort}
+                      onValueChange={(value) =>
+                        setSort(value as OrganizationSort)
+                      }
+                    >
+                      <SelectTrigger
+                        className="w-full"
+                        aria-label="Sort organizations"
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value="recent">Recently updated</SelectItem>
+                          <SelectItem value="name">Organization name</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {organizationsQuery.isLoading ? (
+                  <ComponentReveal>
+                    <OrganizationDirectoryLoading />
+                  </ComponentReveal>
+                ) : organizationsQuery.isError ? (
+                  <ComponentReveal>
+                    <Empty className="border">
+                      <EmptyHeader>
+                        <EmptyMedia variant="icon">
+                          <Building2Icon />
+                        </EmptyMedia>
+                        <EmptyTitle>
+                          We couldn&apos;t load your organizations
+                        </EmptyTitle>
+                        <EmptyDescription>
+                          {getApiErrorMessage(organizationsQuery.error)}
+                        </EmptyDescription>
+                      </EmptyHeader>
+                      <EmptyContent>
+                        <Button onClick={() => organizationsQuery.refetch()}>
+                          Try again
+                        </Button>
+                      </EmptyContent>
+                    </Empty>
+                  </ComponentReveal>
+                ) : visibleOrganizations.length === 0 ? (
+                  <ComponentReveal>
+                    <Empty className="border">
+                      <EmptyHeader>
+                        <EmptyMedia variant="icon">
+                          <SearchIcon />
+                        </EmptyMedia>
+                        <EmptyTitle>
+                          {organizations.length === 0
+                            ? "No organizations yet"
+                            : "No organizations found"}
+                        </EmptyTitle>
+                        <EmptyDescription>
+                          {organizations.length === 0
+                            ? "Create your first organization to start managing a basketball league."
+                            : "Try another search term or role filter."}
+                        </EmptyDescription>
+                      </EmptyHeader>
+                      {organizations.length > 0 ? (
+                        <EmptyContent>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setQuery("");
+                              setRole("all");
+                            }}
+                          >
+                            Clear filters
+                          </Button>
+                        </EmptyContent>
+                      ) : null}
+                    </Empty>
+                  </ComponentReveal>
+                ) : (
+                  <ComponentReveal asChild>
+                    <div className="grid gap-4 lg:grid-cols-2">
+                      {visibleOrganizations.map((organization) => (
+                        <OrganizationDirectoryCard
+                          key={organization.id}
+                          organization={organization}
+                        />
+                      ))}
+                    </div>
+                  </ComponentReveal>
+                )}
+              </section>
+            </ComponentReveal>
+
+            <ComponentReveal>
+              <OrganizationInvitationCard />
+            </ComponentReveal>
           </div>
-        </StaggerReveal>
+        </RevealGroup>
       </main>
     </PageEntrance>
   );

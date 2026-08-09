@@ -6,7 +6,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { CheckCircle2, Loader2, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 
-import { PageEntrance } from "@/components/motion/page-motion";
+import { ComponentReveal, PageEntrance } from "@/components/motion/page-motion";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -95,61 +95,63 @@ export function InvitationAcceptScreen() {
   return (
     <PageEntrance asChild>
       <main className="flex min-h-screen items-center justify-center bg-background p-6 text-foreground">
-        <Card className="w-full max-w-xl border-border/60 shadow-none">
-          <CardHeader>
-            <div className="mb-2 flex size-10 items-center justify-center rounded-md border bg-muted/40">
-              <ShieldAlert className="size-5 text-muted-foreground" />
-            </div>
-            <CardTitle>Accept organization invitation</CardTitle>
-            <CardDescription>
-              {preview.organization.name} invited {preview.email} as{" "}
-              {preview.role.replace("_", " ")}.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {preview.status !== "pending" ? (
-              <Alert variant="destructive">
-                <AlertTitle>This invitation is {preview.status}</AlertTitle>
-                <AlertDescription>
-                  Ask the organization owner to send a fresh invitation.
-                </AlertDescription>
-              </Alert>
-            ) : null}
-            {meQuery.isError && isUnauthorizedApiError(meQuery.error) ? (
-              <div className="flex flex-wrap gap-2">
-                <Button asChild>
-                  <Link href={loginHref}>Sign in to accept</Link>
-                </Button>
-                <Button asChild variant="outline">
-                  <Link href={signupHref}>Create account</Link>
-                </Button>
+        <ComponentReveal asChild>
+          <Card className="w-full max-w-xl border-border/60 shadow-none">
+            <CardHeader>
+              <div className="mb-2 flex size-10 items-center justify-center rounded-md border bg-muted/40">
+                <ShieldAlert className="size-5 text-muted-foreground" />
               </div>
-            ) : null}
-            {meQuery.data ? (
-              <Button
-                disabled={
-                  preview.status !== "pending" || acceptMutation.isPending
-                }
-                onClick={() => acceptMutation.mutate()}
-              >
-                {acceptMutation.isPending ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="size-4" />
-                )}
-                Accept invitation
-              </Button>
-            ) : null}
-            {acceptMutation.isError ? (
-              <Alert variant="destructive">
-                <AlertTitle>Unable to accept invitation</AlertTitle>
-                <AlertDescription>
-                  {getApiErrorMessage(acceptMutation.error)}
-                </AlertDescription>
-              </Alert>
-            ) : null}
-          </CardContent>
-        </Card>
+              <CardTitle>Accept organization invitation</CardTitle>
+              <CardDescription>
+                {preview.organization.name} invited {preview.email} as{" "}
+                {preview.role.replace("_", " ")}.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {preview.status !== "pending" ? (
+                <Alert variant="destructive">
+                  <AlertTitle>This invitation is {preview.status}</AlertTitle>
+                  <AlertDescription>
+                    Ask the organization owner to send a fresh invitation.
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+              {meQuery.isError && isUnauthorizedApiError(meQuery.error) ? (
+                <div className="flex flex-wrap gap-2">
+                  <Button asChild>
+                    <Link href={loginHref}>Sign in to accept</Link>
+                  </Button>
+                  <Button asChild variant="outline">
+                    <Link href={signupHref}>Create account</Link>
+                  </Button>
+                </div>
+              ) : null}
+              {meQuery.data ? (
+                <Button
+                  disabled={
+                    preview.status !== "pending" || acceptMutation.isPending
+                  }
+                  onClick={() => acceptMutation.mutate()}
+                >
+                  {acceptMutation.isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="size-4" />
+                  )}
+                  Accept invitation
+                </Button>
+              ) : null}
+              {acceptMutation.isError ? (
+                <Alert variant="destructive">
+                  <AlertTitle>Unable to accept invitation</AlertTitle>
+                  <AlertDescription>
+                    {getApiErrorMessage(acceptMutation.error)}
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+            </CardContent>
+          </Card>
+        </ComponentReveal>
       </main>
     </PageEntrance>
   );
@@ -167,15 +169,17 @@ function InvitationShell({
   return (
     <PageEntrance asChild>
       <main className="flex min-h-screen items-center justify-center bg-background p-6 text-foreground">
-        <Card className="w-full max-w-lg border-border/60 shadow-none">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              {loading ? <Loader2 className="size-4 animate-spin" /> : null}
-              {title}
-            </CardTitle>
-            <CardDescription>{description}</CardDescription>
-          </CardHeader>
-        </Card>
+        <ComponentReveal asChild>
+          <Card className="w-full max-w-lg border-border/60 shadow-none">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                {loading ? <Loader2 className="size-4 animate-spin" /> : null}
+                {title}
+              </CardTitle>
+              <CardDescription>{description}</CardDescription>
+            </CardHeader>
+          </Card>
+        </ComponentReveal>
       </main>
     </PageEntrance>
   );
