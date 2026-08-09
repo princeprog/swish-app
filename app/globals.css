@@ -162,6 +162,38 @@ body {
   }
 }
 
+@keyframes swish-component-exit {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate3d(0, -4px, 0);
+  }
+}
+
+@keyframes swish-presence-expand {
+  from {
+    grid-template-rows: 0fr;
+  }
+
+  to {
+    grid-template-rows: 1fr;
+  }
+}
+
+@keyframes swish-presence-collapse {
+  from {
+    grid-template-rows: 1fr;
+  }
+
+  to {
+    grid-template-rows: 0fr;
+  }
+}
+
 .page-entrance {
   animation: swish-page-entrance 140ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -337,13 +369,84 @@ body {
   animation-delay: 0ms;
 }
 
+.presence-reveal[data-motion-state="enter"] {
+  animation: swish-component-reveal 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 60ms;
+}
+
+.presence-reveal.presence-reveal-subtle[data-motion-state="enter"] {
+  animation-name: swish-component-reveal-subtle;
+  animation-duration: 180ms;
+  animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+  animation-delay: 40ms;
+}
+
+.presence-reveal[data-motion-state="exit"] {
+  animation: swish-component-exit 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  pointer-events: none;
+}
+
+.presence-reveal.presence-reveal-subtle[data-motion-state="exit"] {
+  animation-duration: 180ms;
+  animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.presence-reveal[data-motion-collapse="true"] {
+  display: grid;
+  min-height: 0;
+  overflow: hidden;
+  grid-template-rows: 1fr;
+}
+
+.presence-reveal[data-motion-collapse="true"] > * {
+  min-height: 0;
+}
+
+.presence-reveal[data-motion-collapse="true"][data-motion-state="enter"] {
+  animation-name: swish-component-reveal, swish-presence-expand;
+  animation-duration: 260ms, 260ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1), cubic-bezier(0.22, 1, 0.36, 1);
+  animation-delay: 60ms, 0ms;
+  animation-fill-mode: both, both;
+}
+
+.presence-reveal.presence-reveal-subtle[data-motion-collapse="true"][data-motion-state="enter"] {
+  animation-name: swish-component-reveal-subtle, swish-presence-expand;
+  animation-duration: 180ms, 180ms;
+  animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1), cubic-bezier(0.33, 1, 0.68, 1);
+  animation-delay: 40ms, 0ms;
+  animation-fill-mode: both, both;
+}
+
+.presence-reveal[data-motion-collapse="true"][data-motion-state="exit"] {
+  animation-name: swish-component-exit, swish-presence-collapse;
+  animation-duration: 260ms, 260ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1), cubic-bezier(0.22, 1, 0.36, 1);
+  animation-delay: 0ms, 0ms;
+  animation-fill-mode: both, both;
+}
+
+.presence-reveal.presence-reveal-subtle[data-motion-collapse="true"][data-motion-state="exit"] {
+  animation-duration: 180ms, 180ms;
+  animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1), cubic-bezier(0.33, 1, 0.68, 1);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .page-entrance,
   .component-reveal,
+  .presence-reveal,
   .reveal-group > [data-motion="component-reveal"] {
     animation: none;
     animation-delay: 0ms;
     opacity: 1;
     transform: none;
+  }
+
+  .presence-reveal[data-motion-collapse="true"] {
+    grid-template-rows: 1fr;
+  }
+
+  .presence-reveal[data-motion-collapse="true"][data-motion-state="exit"] {
+    grid-template-rows: 0fr;
   }
 }

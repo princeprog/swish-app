@@ -10,10 +10,19 @@ import {
   replaceSeasonSelection,
   type InvitationAssignmentMode,
 } from "@/lib/team-assignment-selection"
+import { PresenceReveal } from "@/components/motion/presence-reveal"
 import type { Team } from "@/services/team.service"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export type { InvitationAssignmentMode }
@@ -102,40 +111,52 @@ export function TeamAssignmentPicker({
         </Alert>
       ) : null}
 
-      {!isLoading && assignmentMode === "now" && teams.length ? (
-        <div className="flex max-h-64 flex-col gap-4 overflow-y-auto rounded-md border p-3">
-          {groups.map((group) => {
-            const seasonTeamIds = group.teams.map((team) => team.id)
-            const selectedTeamId =
-              group.teams.find((team) => selectedIds.includes(team.id))?.id ?? "none"
+      <PresenceReveal
+        animateOnMount={false}
+        collapse
+        className="flex max-h-64 flex-col gap-4 overflow-y-auto rounded-md border p-3"
+        present={!isLoading && assignmentMode === "now" && teams.length > 0}
+        variant="subtle"
+      >
+        {groups.map((group) => {
+          const seasonTeamIds = group.teams.map((team) => team.id)
+          const selectedTeamId =
+            group.teams.find((team) => selectedIds.includes(team.id))?.id ?? "none"
 
-            return (
-              <Field key={group.seasonId} data-invalid={Boolean(error)}>
-                <FieldLabel>{group.seasonLabel}</FieldLabel>
-                <RadioGroup
-                  aria-label={`${group.seasonLabel} team`}
-                  disabled={disabled}
-                  value={selectedTeamId}
-                  onValueChange={(teamId) =>
-                    onChange(replaceSeasonSelection(selectedIds, seasonTeamIds, teamId))
-                  }
+          return (
+            <Field key={group.seasonId} data-invalid={Boolean(error)}>
+              <FieldLabel htmlFor={`team-access-${group.seasonId}`}>
+                {group.seasonLabel}
+              </FieldLabel>
+              <Select
+                disabled={disabled}
+                value={selectedTeamId}
+                onValueChange={(teamId) =>
+                  onChange(replaceSeasonSelection(selectedIds, seasonTeamIds, teamId))
+                }
+              >
+                <SelectTrigger
+                  id={`team-access-${group.seasonId}`}
+                  aria-invalid={Boolean(error)}
+                  className="w-full"
                 >
-                  <label className="flex items-center gap-2 text-sm">
-                    <RadioGroupItem value="none" />
-                    <span>No team this season</span>
-                  </label>
-                  {group.teams.map((team) => (
-                    <label key={team.id} className="flex items-center gap-2 text-sm">
-                      <RadioGroupItem value={team.id} />
-                      <span>{team.name}</span>
-                    </label>
-                  ))}
-                </RadioGroup>
-              </Field>
-            )
-          })}
-        </div>
-      ) : null}
+                  <SelectValue placeholder="Select a team" />
+                </SelectTrigger>
+                <SelectContent position="popper" align="start">
+                  <SelectGroup>
+                    <SelectItem value="none">No team this season</SelectItem>
+                    {group.teams.map((team) => (
+                      <SelectItem key={team.id} value={team.id}>
+                        {team.name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </Field>
+          )
+        })}
+      </PresenceReveal>
 
       {error ? <FieldError>{error}</FieldError> : null}
     </fieldset>

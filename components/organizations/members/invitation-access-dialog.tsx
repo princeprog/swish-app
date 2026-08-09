@@ -19,6 +19,7 @@ import type {
 } from "@/services/access.service"
 import type { OrganizationRole } from "@/services/organization.service"
 import type { Team } from "@/services/team.service"
+import { PresenceReveal } from "@/components/motion/presence-reveal"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import {
@@ -98,8 +99,6 @@ export function InvitationAccessDialog({
 
     if (nextRole === "team_manager") {
       setAssignmentMode(teams.length ? "now" : "later")
-    } else {
-      setAssignmentMode("later")
     }
   }
 
@@ -188,7 +187,7 @@ export function InvitationAccessDialog({
                 <FieldDescription>The owner role cannot be assigned from an invitation.</FieldDescription>
               </Field>
 
-              {role === "team_manager" ? (
+              <PresenceReveal collapse present={role === "team_manager"} variant="subtle">
                 <TeamAssignmentPicker
                   assignmentMode={assignmentMode}
                   disabled={isPending}
@@ -203,7 +202,7 @@ export function InvitationAccessDialog({
                   selectedIds={selectedIds}
                   teams={teams}
                 />
-              ) : null}
+              </PresenceReveal>
 
               {teamError ? <FieldError>{getApiErrorMessage(teamError)}</FieldError> : null}
               {createInvitation.isError ? <FieldError>{getApiErrorMessage(createInvitation.error)}</FieldError> : null}
