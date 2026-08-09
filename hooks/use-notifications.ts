@@ -44,7 +44,60 @@ export function useSetNotificationReadMutation() {
   return useMutation({
     mutationFn: ({ notificationId, read }: { notificationId: string; read: boolean }) =>
       notificationService.setRead(notificationId, read),
-    onSuccess: async () => {
+    onMutate: async ({ notificationId, read }) => {
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: ["notifications", "list"] }),
+        queryClient.cancelQueries({ queryKey: NOTIFICATION_QUERY_KEYS.unreadCount }),
+      ])
+
+      const previousLists = queryClient.getQueriesData<NotificationListResponse>({
+        queryKey: ["notifications", "list"],
+      })
+      const previousUnreadCount = queryClient.getQueryData<{ count: number }>(
+        NOTIFICATION_QUERY_KEYS.unreadCount,
+      )
+      const cachedItem = previousLists
+        .flatMap(([, data]) => data?.items ?? [])
+        .find((item) => item.id === notificationId)
+      const shouldChangeCount = cachedItem
+        ? Boolean(cachedItem.readAt) !== read
+        : true
+      const unreadDelta = shouldChangeCount ? (read ? -1 : 1) : 0
+      const readAt = read ? new Date().toISOString() : null
+
+      queryClient.setQueriesData<NotificationListResponse>(
+        { queryKey: ["notifications", "list"] },
+        (old) => {
+          if (!old) return old
+          return {
+            ...old,
+            items: old.items.map((item) =>
+              item.id === notificationId ? { ...item, readAt } : item,
+            ),
+            unreadCount: Math.max(0, old.unreadCount + unreadDelta),
+          }
+        },
+      )
+      queryClient.setQueryData<{ count: number }>(
+        NOTIFICATION_QUERY_KEYS.unreadCount,
+        (old) =>
+          old
+            ? { count: Math.max(0, old.count + unreadDelta) }
+            : old,
+      )
+
+      return { previousLists, previousUnreadCount }
+    },
+    onError: (_error, _variables, context) => {
+      context?.previousLists.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data)
+      })
+      queryClient.setQueryData(
+        NOTIFICATION_QUERY_KEYS.unreadCount,
+        context?.previousUnreadCount,
+      )
+    },
+    onSettled: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["notifications", "list"] }),
         queryClient.invalidateQueries({ queryKey: NOTIFICATION_QUERY_KEYS.unreadCount }),
@@ -59,7 +112,48 @@ export function useMarkAllNotificationsReadMutation() {
   return useMutation({
     mutationFn: (organizationId?: string) =>
       notificationService.markAllRead(organizationId),
-    onSuccess: async () => {
+    onMutate: async () => {
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: ["notifications", "list"] }),
+        queryClient.cancelQueries({ queryKey: NOTIFICATION_QUERY_KEYS.unreadCount }),
+      ])
+
+      const previousLists = queryClient.getQueriesData<NotificationListResponse>({
+        queryKey: ["notifications", "list"],
+      })
+      const previousUnreadCount = queryClient.getQueryData<{ count: number }>(
+        NOTIFICATION_QUERY_KEYS.unreadCount,
+      )
+      const readAt = new Date().toISOString()
+
+      queryClient.setQueriesData<NotificationListResponse>(
+        { queryKey: ["notifications", "list"] },
+        (old) =>
+          old
+            ? {
+                ...old,
+                items: old.items.map((item) => ({ ...item, readAt })),
+                unreadCount: 0,
+              }
+            : old,
+      )
+      queryClient.setQueryData<{ count: number }>(
+        NOTIFICATION_QUERY_KEYS.unreadCount,
+        (old) => (old ? { count: 0 } : old),
+      )
+
+      return { previousLists, previousUnreadCount }
+    },
+    onError: (_error, _organizationId, context) => {
+      context?.previousLists.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data)
+      })
+      queryClient.setQueryData(
+        NOTIFICATION_QUERY_KEYS.unreadCount,
+        context?.previousUnreadCount,
+      )
+    },
+    onSettled: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["notifications", "list"] }),
         queryClient.invalidateQueries({ queryKey: NOTIFICATION_QUERY_KEYS.unreadCount }),
