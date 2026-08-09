@@ -33,6 +33,16 @@ export const API_ENDPOINTS = {
   invitations: {
     accept: "/invitations/accept",
     preview: "/invitations/preview",
+    byId: (invitationId: string) => `/invitations/${invitationId}`,
+    acceptById: (invitationId: string) =>
+      `/invitations/${invitationId}/accept`,
+  },
+  notifications: {
+    list: "/notifications",
+    unreadCount: "/notifications/unread-count",
+    read: (notificationId: string) => `/notifications/${notificationId}`,
+    readAll: "/notifications/read-all",
+    stream: "/notifications/stream",
   },
   organizationInvitations: {
     create: (organizationId: string) =>
