@@ -5,6 +5,7 @@ import { AuthSessionProvider } from "@/components/providers/auth-session-provide
 import { QueryProvider } from "@/components/providers/query-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
+import { NotificationRealtime } from "@/components/notifications/notification-realtime";
 
 const fontSans = Inter({subsets:['latin'],variable:'--font-sans'});
 
@@ -25,6 +26,7 @@ export default function RootLayout({
         <ThemeProvider>
           <QueryProvider>
             <AuthSessionProvider>
+              <NotificationRealtime />
               {children}
               <Toaster />
             </AuthSessionProvider>
