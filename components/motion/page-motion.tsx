@@ -4,10 +4,23 @@ import { Slot } from "radix-ui"
 import { cn } from "@/lib/utils"
 
 type PageMotionVariant = "standard" | "subtle"
+type ComponentRevealTrigger = "mount" | "active"
+type RevealGroupPace = "standard" | "compact"
 
 type PageEntranceProps = React.ComponentProps<"div"> & {
   asChild?: boolean
   variant?: PageMotionVariant
+}
+
+type ComponentRevealProps = React.ComponentProps<"div"> & {
+  asChild?: boolean
+  variant?: PageMotionVariant
+  trigger?: ComponentRevealTrigger
+}
+
+type RevealGroupProps = React.ComponentProps<"div"> & {
+  asChild?: boolean
+  pace?: RevealGroupPace
 }
 
 type StaggerRevealProps = React.ComponentProps<"div"> & {
@@ -45,9 +58,56 @@ export function StaggerReveal({
 
   return (
     <Comp
-      data-motion="stagger-reveal"
-      className={cn("stagger-reveal", className)}
+      data-motion="reveal-group"
+      data-motion-pace="standard"
+      className={cn("reveal-group", className)}
       {...props}
+    />
+  )
+}
+
+export function ComponentReveal({
+  asChild = false,
+  className,
+  trigger = "mount",
+  variant = "standard",
+  ...props
+}: ComponentRevealProps) {
+  const Comp = asChild ? Slot.Root : "div"
+
+  return (
+    <Comp
+      {...props}
+      data-motion="component-reveal"
+      data-motion-trigger={trigger}
+      data-motion-variant={variant}
+      className={cn(
+        "component-reveal",
+        variant === "subtle" && "component-reveal-subtle",
+        className,
+      )}
+    />
+  )
+}
+
+export function RevealGroup({
+  asChild = false,
+  className,
+  pace = "standard",
+  ...props
+}: RevealGroupProps) {
+  const Comp = asChild ? Slot.Root : "div"
+
+  return (
+    <Comp
+      {...props}
+      data-motion="reveal-group"
+      data-motion-pace={pace}
+      className={cn(
+        "reveal-group",
+        pace === "compact" && "reveal-group-compact",
+        className,
+      )}
     />
   )
 }
