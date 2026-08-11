@@ -319,6 +319,19 @@ export function ManagerComplianceContent({
       </Card>
     );
   if (!data) return null;
+  if (!data.settings || data.requirements.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>No competition requirements yet</CardTitle>
+          <CardDescription>
+            The league organizer has not published requirements for this
+            division. You can return here when the checklist is available.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
   const setResponse = (id: string, value: ResponseValue) =>
     setResponses((current) => ({ ...current, [id]: value }));
   async function save(requirement: TeamComplianceRequirement) {
