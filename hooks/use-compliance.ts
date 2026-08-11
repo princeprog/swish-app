@@ -1,0 +1,250 @@
+"use client"
+
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+
+import {
+  complianceService,
+  type ComplianceResponseType,
+  type CreateComplianceRequirementPayload,
+  type UpdateComplianceSettingsPayload,
+} from "@/services/compliance.service"
+
+export const COMPLIANCE_QUERY_KEYS = {
+  division: (organizationId: string, divisionId: string) =>
+    ["compliance", "division", organizationId, divisionId] as const,
+  overview: (organizationId: string, divisionId: string) =>
+    ["compliance", "overview", organizationId, divisionId] as const,
+  reviewQueue: (organizationId: string, divisionId: string) =>
+    ["compliance", "review-queue", organizationId, divisionId] as const,
+  team: (organizationId: string, teamId: string) =>
+    ["compliance", "team", organizationId, teamId] as const,
+}
+
+export function useDivisionComplianceQuery(
+  organizationId?: string,
+  divisionId?: string,
+) {
+  return useQuery({
+    enabled: Boolean(organizationId && divisionId),
+    queryFn: () => complianceService.getDivision(organizationId!, divisionId!),
+    queryKey: COMPLIANCE_QUERY_KEYS.division(
+      organizationId ?? "unknown",
+      divisionId ?? "unknown",
+    ),
+    retry: false,
+  })
+}
+
+export function useDivisionComplianceOverviewQuery(
+  organizationId?: string,
+  divisionId?: string,
+) {
+  return useQuery({
+    enabled: Boolean(organizationId && divisionId),
+    queryFn: () =>
+      complianceService.getOverview(organizationId!, divisionId!),
+    queryKey: COMPLIANCE_QUERY_KEYS.overview(
+      organizationId ?? "unknown",
+      divisionId ?? "unknown",
+    ),
+    retry: false,
+  })
+}
+
+export function useComplianceReviewQueueQuery(
+  organizationId?: string,
+  divisionId?: string,
+) {
+  return useQuery({
+    enabled: Boolean(organizationId && divisionId),
+    queryFn: () =>
+      complianceService.getReviewQueue(organizationId!, divisionId!, {
+        page: 1,
+        pageSize: 50,
+        status: "submitted",
+      }),
+    queryKey: COMPLIANCE_QUERY_KEYS.reviewQueue(
+      organizationId ?? "unknown",
+      divisionId ?? "unknown",
+    ),
+    retry: false,
+  })
+}
+
+export function useTeamComplianceQuery(
+  organizationId?: string,
+  teamId?: string,
+) {
+  return useQuery({
+    enabled: Boolean(organizationId && teamId),
+    queryFn: () => complianceService.getTeam(organizationId!, teamId!),
+    queryKey: COMPLIANCE_QUERY_KEYS.team(
+      organizationId ?? "unknown",
+      teamId ?? "unknown",
+    ),
+    retry: false,
+  })
+}
+
+function useComplianceInvalidation(organizationId: string) {
+  const queryClient = useQueryClient()
+  return async () => {
+    await queryClient.invalidateQueries({ queryKey: ["compliance"] })
+    await queryClient.invalidateQueries({
+      queryKey: ["team-manager-workspace", organizationId],
+    })
+  }
+}
+
+export function useUpdateComplianceSettingsMutation(
+  organizationId: string,
+  divisionId: string,
+) {
+  const invalidate = useComplianceInvalidation(organizationId)
+  return useMutation({
+    mutationFn: (payload: UpdateComplianceSettingsPayload) =>
+      complianceService.updateDivisionSettings(
+        organizationId,
+        divisionId,
+        payload,
+      ),
+    onSuccess: invalidate,
+  })
+}
+
+export function useCreateComplianceRequirementMutation(
+  organizationId: string,
+  divisionId: string,
+) {
+  const invalidate = useComplianceInvalidation(organizationId)
+  return useMutation({
+    mutationFn: (payload: CreateComplianceRequirementPayload) =>
+      complianceService.createRequirement(organizationId, divisionId, payload),
+    onSuccess: invalidate,
+  })
+}
+
+export function useUpdateComplianceRequirementMutation(
+  organizationId: string,
+  divisionId: string,
+  requirementId: string,
+) {
+  const invalidate = useComplianceInvalidation(organizationId)
+  return useMutation({
+    mutationFn: (payload: Partial<CreateComplianceRequirementPayload>) =>
+      complianceService.updateRequirement(
+        organizationId,
+        divisionId,
+        requirementId,
+        payload,
+      ),
+    onSuccess: invalidate,
+  })
+}
+
+export function useArchiveComplianceRequirementMutation(
+  organizationId: string,
+  divisionId: string,
+  requirementId: string,
+) {
+  const invalidate = useComplianceInvalidation(organizationId)
+  return useMutation({
+    mutationFn: () =>
+      complianceService.archiveRequirement(
+        organizationId,
+        divisionId,
+        requirementId,
+      ),
+    onSuccess: invalidate,
+  })
+}
+
+export function usePublishComplianceMutation(
+  organizationId: string,
+  divisionId: string,
+) {
+  const invalidate = useComplianceInvalidation(organizationId)
+  return useMutation({
+    mutationFn: () => complianceService.publish(organizationId, divisionId),
+    onSuccess: invalidate,
+  })
+}
+
+export function useSaveComplianceDraftMutation(
+  organizationId: string,
+  teamId: string,
+  requirementId: string,
+) {
+  const invalidate = useComplianceInvalidation(organizationId)
+  return useMutation({
+    mutationFn: (response: unknown) =>
+      complianceService.saveDraft(
+        organizationId,
+        teamId,
+        requirementId,
+        response,
+      ),
+    onSuccess: invalidate,
+  })
+}
+
+export function useSubmitComplianceMutation(
+  organizationId: string,
+  teamId: string,
+  requirementId: string,
+) {
+  const invalidate = useComplianceInvalidation(organizationId)
+  return useMutation({
+    mutationFn: () =>
+      complianceService.submit(organizationId, teamId, requirementId),
+    onSuccess: invalidate,
+  })
+}
+
+export function useComplianceReviewMutation(
+  organizationId: string,
+  teamId: string,
+  requirementId: string,
+) {
+  const invalidate = useComplianceInvalidation(organizationId)
+  return {
+    approve: useMutation({
+      mutationFn: () =>
+        complianceService.approve(organizationId, teamId, requirementId),
+      onSuccess: invalidate,
+    }),
+    requestChanges: useMutation({
+      mutationFn: (reason: string) =>
+        complianceService.requestChanges(
+          organizationId,
+          teamId,
+          requirementId,
+          reason,
+        ),
+      onSuccess: invalidate,
+    }),
+    waive: useMutation({
+      mutationFn: (payload: { expiresAt?: string; reason: string }) =>
+        complianceService.waive(
+          organizationId,
+          teamId,
+          requirementId,
+          payload.reason,
+          payload.expiresAt,
+        ),
+      onSuccess: invalidate,
+    }),
+    reopen: useMutation({
+      mutationFn: (reason: string) =>
+        complianceService.reopen(
+          organizationId,
+          teamId,
+          requirementId,
+          reason,
+        ),
+      onSuccess: invalidate,
+    }),
+  }
+}
+
+export type { ComplianceResponseType }

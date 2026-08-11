@@ -7,6 +7,7 @@ export type NotificationCategory =
   | "schedule"
   | "scoring"
   | "competition"
+  | "compliance"
 
 export type NotificationPriority =
   | "action_required"

@@ -1,21 +1,22 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import * as React from "react"
-import { format } from "date-fns"
-import { CalendarDaysIcon, TrophyIcon, Users2Icon } from "lucide-react"
+import Link from "next/link";
+import * as React from "react";
+import { format } from "date-fns";
+import { CalendarDaysIcon, TrophyIcon, Users2Icon } from "lucide-react";
 
-import { AppSidebar } from "@/components/app-sidebar"
+import { AppSidebar } from "@/components/app-sidebar";
 import {
   ComponentReveal,
   PageEntrance,
   RevealGroup,
-} from "@/components/motion/page-motion"
-import { ManagerTeamOverview } from "@/components/organizations/team-manager/manager-team-overview"
-import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
-import { StandingsTable } from "@/components/organizations/standings/organization-standings-view"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+} from "@/components/motion/page-motion";
+import { ManagerTeamOverview } from "@/components/organizations/team-manager/manager-team-overview";
+import { ManagerComplianceContent } from "@/components/organizations/compliance/manager-compliance-content";
+import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header";
+import { StandingsTable } from "@/components/organizations/standings/organization-standings-view";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Empty,
   EmptyContent,
@@ -23,57 +24,60 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@/components/ui/empty"
-import { Input } from "@/components/ui/input"
+} from "@/components/ui/empty";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { getApiErrorMessage } from "@/hooks/use-auth"
-import { usePlayersQuery } from "@/hooks/use-player"
-import { useSchedulesQuery } from "@/hooks/use-schedule"
-import { useStandingsQuery } from "@/hooks/use-standings"
-import {
-  useSelectedManagerAssignment,
-} from "@/hooks/use-team-manager-workspace"
-import { cn } from "@/lib/utils"
-import type { Organization } from "@/services/organization.service"
-import type { Schedule } from "@/services/schedule.service"
-import type { TeamManagerWorkspaceAssignment } from "@/services/team-manager-workspace.service"
+} from "@/components/ui/select";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getApiErrorMessage } from "@/hooks/use-auth";
+import { usePlayersQuery } from "@/hooks/use-player";
+import { useSchedulesQuery } from "@/hooks/use-schedule";
+import { useStandingsQuery } from "@/hooks/use-standings";
+import { useSelectedManagerAssignment } from "@/hooks/use-team-manager-workspace";
+import { cn } from "@/lib/utils";
+import type { Organization } from "@/services/organization.service";
+import type { Schedule } from "@/services/schedule.service";
+import type { TeamManagerWorkspaceAssignment } from "@/services/team-manager-workspace.service";
 
-type ManagerPage = "players" | "schedule" | "standings" | "team"
+type ManagerPage =
+  | "players"
+  | "requirements"
+  | "schedule"
+  | "standings"
+  | "team";
 
 type ManagerWorkspaceProps = {
-  organization: Organization
-  page: ManagerPage
-}
+  organization: Organization;
+  page: ManagerPage;
+};
 
 function rosterStatusLabel(status: string) {
-  if (status === "submitted") return "Submitted"
-  if (status === "returned") return "Returned"
-  if (status === "approved") return "Approved"
-  return "Draft"
+  if (status === "submitted") return "Submitted";
+  if (status === "returned") return "Returned";
+  if (status === "approved") return "Approved";
+  return "Draft";
 }
 
 function rosterStatusClassName(status: string) {
-  if (status === "approved") return "bg-emerald-600 text-white"
-  if (status === "submitted") return "bg-blue-600 text-white"
-  if (status === "returned") return "bg-amber-600 text-white"
-  return "bg-muted text-muted-foreground"
+  if (status === "approved") return "bg-emerald-600 text-white";
+  if (status === "submitted") return "bg-blue-600 text-white";
+  if (status === "returned") return "bg-amber-600 text-white";
+  return "bg-muted text-muted-foreground";
 }
 
 function isRosterEditable(status: string) {
-  return status === "draft" || status === "returned"
+  return status === "draft" || status === "returned";
 }
 
 function formatDateTime(value: string) {
-  return format(new Date(value), "MMM d, yyyy h:mm a")
+  return format(new Date(value), "MMM d, yyyy h:mm a");
 }
 
 function ManagerShell({
@@ -85,13 +89,13 @@ function ManagerShell({
   setSelectedSeasonId,
   workspaceAssignments,
 }: {
-  assignment?: TeamManagerWorkspaceAssignment
-  children: React.ReactNode
-  organization: Organization
-  pageTitle: string
-  selectedSeasonId: string | null
-  setSelectedSeasonId: (seasonId: string) => void
-  workspaceAssignments: TeamManagerWorkspaceAssignment[]
+  assignment?: TeamManagerWorkspaceAssignment;
+  children: React.ReactNode;
+  organization: Organization;
+  pageTitle: string;
+  selectedSeasonId: string | null;
+  setSelectedSeasonId: (seasonId: string) => void;
+  workspaceAssignments: TeamManagerWorkspaceAssignment[];
 }) {
   return (
     <SidebarProvider>
@@ -142,7 +146,10 @@ function ManagerShell({
                       </SelectTrigger>
                       <SelectContent>
                         {workspaceAssignments.map((item) => (
-                          <SelectItem key={item.assignmentId} value={item.season.id}>
+                          <SelectItem
+                            key={item.assignmentId}
+                            value={item.season.id}
+                          >
                             {item.season.name}
                           </SelectItem>
                         ))}
@@ -157,7 +164,7 @@ function ManagerShell({
         </PageEntrance>
       </SidebarInset>
     </SidebarProvider>
-  )
+  );
 }
 
 function ManagerLoadingState({ organization }: { organization: Organization }) {
@@ -192,10 +199,14 @@ function ManagerLoadingState({ organization }: { organization: Organization }) {
         </PageEntrance>
       </SidebarInset>
     </SidebarProvider>
-  )
+  );
 }
 
-function ManagerNoAssignmentState({ organization }: { organization: Organization }) {
+function ManagerNoAssignmentState({
+  organization,
+}: {
+  organization: Organization;
+}) {
   return (
     <ManagerShell
       organization={organization}
@@ -216,15 +227,15 @@ function ManagerNoAssignmentState({ organization }: { organization: Organization
         </EmptyHeader>
       </Empty>
     </ManagerShell>
-  )
+  );
 }
 
 function ManagerErrorState({
   description,
   organization,
 }: {
-  description: string
-  organization: Organization
+  description: string;
+  organization: Organization;
 }) {
   return (
     <ManagerShell
@@ -244,17 +255,17 @@ function ManagerErrorState({
         </EmptyHeader>
       </Empty>
     </ManagerShell>
-  )
+  );
 }
 
 function RosterStatusPanel({
   assignment,
   organization,
 }: {
-  assignment: TeamManagerWorkspaceAssignment
-  organization: Organization
+  assignment: TeamManagerWorkspaceAssignment;
+  organization: Organization;
 }) {
-  const editable = isRosterEditable(assignment.roster.status)
+  const editable = isRosterEditable(assignment.roster.status);
 
   return (
     <section className="rounded-lg border bg-card p-4">
@@ -286,50 +297,53 @@ function RosterStatusPanel({
         </Button>
       </div>
     </section>
-  )
+  );
 }
 
 function ManagerPlayersContent({
   assignment,
   organization,
 }: {
-  assignment: TeamManagerWorkspaceAssignment
-  organization: Organization
+  assignment: TeamManagerWorkspaceAssignment;
+  organization: Organization;
 }) {
-  const [search, setSearch] = React.useState("")
-  const [status, setStatus] = React.useState("all")
+  const [search, setSearch] = React.useState("");
+  const [status, setStatus] = React.useState("all");
   const playersQuery = usePlayersQuery(organization.id, {
     pageSize: 50,
     search: search || undefined,
     status: status === "all" ? undefined : (status as "active" | "inactive"),
     teamId: assignment.team.id,
-  })
-  const players = playersQuery.data?.data ?? []
+  });
+  const players = playersQuery.data?.data ?? [];
 
   return (
     <RevealGroup className="contents">
       <ComponentReveal>
-        <RosterStatusPanel assignment={assignment} organization={organization} />
+        <RosterStatusPanel
+          assignment={assignment}
+          organization={organization}
+        />
       </ComponentReveal>
       <ComponentReveal asChild>
         <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_12rem]">
-        <Input
-          aria-label="Search players"
-          className="h-9"
-          placeholder="Search players..."
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-        />
-        <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="h-9 w-full">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All status</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-          </SelectContent>
-        </Select>
+          <Input
+            aria-label="Search players"
+            className="h-9"
+            placeholder="Search players..."
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+          <Select value={status} onValueChange={setStatus}>
+            <SelectTrigger className="h-9 w-full">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All status</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </ComponentReveal>
       <section className="overflow-hidden rounded-lg border bg-card">
@@ -355,30 +369,30 @@ function ManagerPlayersContent({
         ) : players.length ? (
           <ComponentReveal asChild>
             <div className="divide-y">
-            {players.map((player) => (
-              <div
-                key={player.id}
-                className="grid gap-3 p-4 text-sm sm:grid-cols-[minmax(0,1fr)_8rem_10rem_7rem]"
-              >
-                <div>
-                  <p className="font-medium">{player.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    #{player.jersey_number || "-"}
-                  </p>
-                </div>
-                <span>{player.position || "Unspecified"}</span>
-                <span>{formatDateTime(player.updated_at)}</span>
-                <Badge
-                  className={
-                    player.status === "active"
-                      ? "bg-emerald-600 text-white"
-                      : "bg-zinc-600 text-white"
-                  }
+              {players.map((player) => (
+                <div
+                  key={player.id}
+                  className="grid gap-3 p-4 text-sm sm:grid-cols-[minmax(0,1fr)_8rem_10rem_7rem]"
                 >
-                  {player.status}
-                </Badge>
-              </div>
-            ))}
+                  <div>
+                    <p className="font-medium">{player.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      #{player.jersey_number || "-"}
+                    </p>
+                  </div>
+                  <span>{player.position || "Unspecified"}</span>
+                  <span>{formatDateTime(player.updated_at)}</span>
+                  <Badge
+                    className={
+                      player.status === "active"
+                        ? "bg-emerald-600 text-white"
+                        : "bg-zinc-600 text-white"
+                    }
+                  >
+                    {player.status}
+                  </Badge>
+                </div>
+              ))}
             </div>
           </ComponentReveal>
         ) : (
@@ -406,19 +420,19 @@ function ManagerPlayersContent({
         )}
       </section>
     </RevealGroup>
-  )
+  );
 }
 
 function gameIsResult(game: Schedule) {
-  return game.status === "final" || game.status === "cancelled"
+  return game.status === "final" || game.status === "cancelled";
 }
 
 function groupGamesByDate(games: Schedule[]) {
   return games.reduce<Record<string, Schedule[]>>((groups, game) => {
-    const key = format(new Date(game.starts_at), "yyyy-MM-dd")
-    groups[key] = [...(groups[key] ?? []), game]
-    return groups
-  }, {})
+    const key = format(new Date(game.starts_at), "yyyy-MM-dd");
+    groups[key] = [...(groups[key] ?? []), game];
+    return groups;
+  }, {});
 }
 
 function ManagerGameList({
@@ -426,12 +440,12 @@ function ManagerGameList({
   games,
   title,
 }: {
-  assignment: TeamManagerWorkspaceAssignment
-  games: Schedule[]
-  title: string
+  assignment: TeamManagerWorkspaceAssignment;
+  games: Schedule[];
+  title: string;
 }) {
-  const groupedGames = groupGamesByDate(games)
-  const dates = Object.keys(groupedGames).sort()
+  const groupedGames = groupGamesByDate(games);
+  const dates = Object.keys(groupedGames).sort();
 
   if (!games.length) {
     return (
@@ -446,7 +460,7 @@ function ManagerGameList({
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
-    )
+    );
   }
 
   return (
@@ -458,10 +472,12 @@ function ManagerGameList({
           </h2>
           <div className="overflow-hidden rounded-lg border bg-card">
             {groupedGames[date].map((game) => {
-              const isHome = game.home_team_id === assignment.team.id
-              const opponent = isHome ? game.away_team_name : game.home_team_name
-              const teamScore = isHome ? game.home_score : game.away_score
-              const opponentScore = isHome ? game.away_score : game.home_score
+              const isHome = game.home_team_id === assignment.team.id;
+              const opponent = isHome
+                ? game.away_team_name
+                : game.home_team_name;
+              const teamScore = isHome ? game.home_score : game.away_score;
+              const opponentScore = isHome ? game.away_score : game.home_score;
 
               return (
                 <div
@@ -504,36 +520,36 @@ function ManagerGameList({
                     {game.status}
                   </Badge>
                 </div>
-              )
+              );
             })}
           </div>
         </section>
       ))}
     </div>
-  )
+  );
 }
 
 function ManagerScheduleContent({
   assignment,
   organization,
 }: {
-  assignment: TeamManagerWorkspaceAssignment
-  organization: Organization
+  assignment: TeamManagerWorkspaceAssignment;
+  organization: Organization;
 }) {
   const schedulesQuery = useSchedulesQuery(organization.id, {
     leagueSeasonId: assignment.season.id,
     sortBy: "date",
-  })
-  const games = schedulesQuery.data ?? []
-  const upcomingGames = games.filter((game) => !gameIsResult(game))
-  const resultGames = games.filter(gameIsResult)
+  });
+  const games = schedulesQuery.data ?? [];
+  const upcomingGames = games.filter((game) => !gameIsResult(game));
+  const resultGames = games.filter(gameIsResult);
 
   if (schedulesQuery.isLoading) {
     return (
       <ComponentReveal>
         <Skeleton className="h-96 rounded-lg" />
       </ComponentReveal>
-    )
+    );
   }
 
   if (schedulesQuery.isError) {
@@ -548,7 +564,7 @@ function ManagerScheduleContent({
           </EmptyHeader>
         </Empty>
       </ComponentReveal>
-    )
+    );
   }
 
   return (
@@ -576,28 +592,28 @@ function ManagerScheduleContent({
         </TabsContent>
       </ComponentReveal>
     </Tabs>
-  )
+  );
 }
 
 function ManagerStandingsContent({
   assignment,
   organization,
 }: {
-  assignment: TeamManagerWorkspaceAssignment
-  organization: Organization
+  assignment: TeamManagerWorkspaceAssignment;
+  organization: Organization;
 }) {
   const standingsQuery = useStandingsQuery(organization.id, {
     divisionId: assignment.division.id,
     leagueSeasonId: assignment.season.id,
-  })
-  const rows = standingsQuery.data?.rows ?? []
+  });
+  const rows = standingsQuery.data?.rows ?? [];
 
   if (standingsQuery.isLoading) {
     return (
       <ComponentReveal>
         <Skeleton className="h-96 rounded-lg" />
       </ComponentReveal>
-    )
+    );
   }
 
   if (standingsQuery.isError) {
@@ -612,29 +628,25 @@ function ManagerStandingsContent({
           </EmptyHeader>
         </Empty>
       </ComponentReveal>
-    )
+    );
   }
 
   return (
     <ComponentReveal>
       <StandingsTable rows={rows} />
     </ComponentReveal>
-  )
+  );
 }
 
 export function TeamManagerWorkspace({
   organization,
   page,
 }: ManagerWorkspaceProps) {
-  const {
-    assignment,
-    selectedSeasonId,
-    setSelectedSeasonId,
-    workspaceQuery,
-  } = useSelectedManagerAssignment(organization.id)
+  const { assignment, selectedSeasonId, setSelectedSeasonId, workspaceQuery } =
+    useSelectedManagerAssignment(organization.id);
 
   if (workspaceQuery.isLoading) {
-    return <ManagerLoadingState organization={organization} />
+    return <ManagerLoadingState organization={organization} />;
   }
 
   if (workspaceQuery.isError) {
@@ -643,11 +655,11 @@ export function TeamManagerWorkspace({
         description={getApiErrorMessage(workspaceQuery.error)}
         organization={organization}
       />
-    )
+    );
   }
 
   if (!assignment || !workspaceQuery.data?.assignments.length) {
-    return <ManagerNoAssignmentState organization={organization} />
+    return <ManagerNoAssignmentState organization={organization} />;
   }
 
   const pageTitle =
@@ -657,7 +669,9 @@ export function TeamManagerWorkspace({
         ? "Schedule"
         : page === "standings"
           ? "Standings"
-          : "My team"
+          : page === "requirements"
+            ? "Requirements"
+            : "My team";
 
   return (
     <ManagerShell
@@ -669,13 +683,22 @@ export function TeamManagerWorkspace({
       workspaceAssignments={workspaceQuery.data.assignments}
     >
       {page === "team" ? (
-        <ManagerTeamOverview assignment={assignment} organization={organization} />
+        <ManagerTeamOverview
+          assignment={assignment}
+          organization={organization}
+        />
       ) : null}
       {page === "players" ? (
-        <ManagerPlayersContent assignment={assignment} organization={organization} />
+        <ManagerPlayersContent
+          assignment={assignment}
+          organization={organization}
+        />
       ) : null}
       {page === "schedule" ? (
-        <ManagerScheduleContent assignment={assignment} organization={organization} />
+        <ManagerScheduleContent
+          assignment={assignment}
+          organization={organization}
+        />
       ) : null}
       {page === "standings" ? (
         <ManagerStandingsContent
@@ -683,6 +706,12 @@ export function TeamManagerWorkspace({
           organization={organization}
         />
       ) : null}
+      {page === "requirements" ? (
+        <ManagerComplianceContent
+          assignment={assignment}
+          organization={organization}
+        />
+      ) : null}
     </ManagerShell>
-  )
+  );
 }
