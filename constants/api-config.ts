@@ -136,4 +136,96 @@ export const API_ENDPOINTS = {
     list: (organizationId: string) =>
       `/organizations/${organizationId}/standings`,
   },
+  compliance: {
+    divisionSettings: (organizationId: string, divisionId: string) =>
+      `/organizations/${organizationId}/divisions/${divisionId}/compliance/settings`,
+    updateDivisionSettings: (organizationId: string, divisionId: string) =>
+      `/organizations/${organizationId}/divisions/${divisionId}/compliance/settings`,
+    createRequirement: (organizationId: string, divisionId: string) =>
+      `/organizations/${organizationId}/divisions/${divisionId}/compliance/requirements`,
+    updateRequirement: (
+      organizationId: string,
+      divisionId: string,
+      requirementId: string,
+    ) =>
+      `/organizations/${organizationId}/divisions/${divisionId}/compliance/requirements/${requirementId}`,
+    archiveRequirement: (
+      organizationId: string,
+      divisionId: string,
+      requirementId: string,
+    ) =>
+      `/organizations/${organizationId}/divisions/${divisionId}/compliance/requirements/${requirementId}`,
+    publish: (organizationId: string, divisionId: string) =>
+      `/organizations/${organizationId}/divisions/${divisionId}/compliance/publish`,
+    overview: (organizationId: string, divisionId: string) =>
+      `/organizations/${organizationId}/divisions/${divisionId}/compliance/overview`,
+    reviewQueue: (organizationId: string, divisionId: string) =>
+      `/organizations/${organizationId}/divisions/${divisionId}/compliance/review-queue`,
+    team: (organizationId: string, teamId: string) =>
+      `/organizations/${organizationId}/teams/${teamId}/compliance`,
+    saveDraft: (
+      organizationId: string,
+      teamId: string,
+      requirementId: string,
+    ) =>
+      `/organizations/${organizationId}/teams/${teamId}/compliance/requirements/${requirementId}/draft`,
+    submit: (
+      organizationId: string,
+      teamId: string,
+      requirementId: string,
+    ) =>
+      `/organizations/${organizationId}/teams/${teamId}/compliance/requirements/${requirementId}/submit`,
+    approve: (
+      organizationId: string,
+      teamId: string,
+      requirementId: string,
+    ) =>
+      `/organizations/${organizationId}/teams/${teamId}/compliance/requirements/${requirementId}/approve`,
+    requestChanges: (
+      organizationId: string,
+      teamId: string,
+      requirementId: string,
+    ) =>
+      `/organizations/${organizationId}/teams/${teamId}/compliance/requirements/${requirementId}/request-changes`,
+    waive: (
+      organizationId: string,
+      teamId: string,
+      requirementId: string,
+    ) =>
+      `/organizations/${organizationId}/teams/${teamId}/compliance/requirements/${requirementId}/waive`,
+    reopen: (
+      organizationId: string,
+      teamId: string,
+      requirementId: string,
+    ) =>
+      `/organizations/${organizationId}/teams/${teamId}/compliance/requirements/${requirementId}/reopen`,
+    history: (
+      organizationId: string,
+      teamId: string,
+      requirementId: string,
+    ) =>
+      `/organizations/${organizationId}/teams/${teamId}/compliance/requirements/${requirementId}/history`,
+    prepareUpload: (
+      organizationId: string,
+      teamId: string,
+      requirementId: string,
+    ) =>
+      `/organizations/${organizationId}/teams/${teamId}/compliance/requirements/${requirementId}/uploads/prepare`,
+    completeUpload: (
+      organizationId: string,
+      teamId: string,
+      requirementId: string,
+      fileId: string,
+    ) =>
+      `/organizations/${organizationId}/teams/${teamId}/compliance/requirements/${requirementId}/uploads/${fileId}/complete`,
+    deleteUpload: (
+      organizationId: string,
+      teamId: string,
+      requirementId: string,
+      fileId: string,
+    ) =>
+      `/organizations/${organizationId}/teams/${teamId}/compliance/requirements/${requirementId}/uploads/${fileId}`,
+    downloadUrl: (organizationId: string, teamId: string, fileId: string) =>
+      `/organizations/${organizationId}/teams/${teamId}/compliance/files/${fileId}/download-url`,
+  },
 } as const
