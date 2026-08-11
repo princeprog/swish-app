@@ -54,7 +54,9 @@ export type DivisionComplianceResponse = {
 export type ComplianceFileReference = {
   id: string
   name?: string
+  original_filename?: string
   status?: string
+  verification_status?: string
 }
 
 export type TeamComplianceRequirement = ComplianceRequirement & {
@@ -62,6 +64,7 @@ export type TeamComplianceRequirement = ComplianceRequirement & {
   files?: ComplianceFileReference[]
   requirement_id: string
   review_note: string | null
+  response?: unknown
   submission_id: string | null
   waiver_expires_at: string | null
   workflow_status: ComplianceWorkflowStatus | null

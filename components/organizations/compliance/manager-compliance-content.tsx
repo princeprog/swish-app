@@ -59,6 +59,22 @@ function dateLabel(value: string | null) {
     : null;
 }
 
+function responseValue(value: unknown): ResponseValue | undefined {
+  if (typeof value === "string" || typeof value === "boolean") return value;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return;
+  const files = (value as { files?: unknown }).files;
+  if (!Array.isArray(files)) return;
+  const references = files.filter(
+    (file): file is ComplianceFileReference =>
+      Boolean(
+        file &&
+          typeof file === "object" &&
+          typeof (file as { id?: unknown }).id === "string",
+      ),
+  );
+  return { files: references };
+}
+
 function RequirementCard({
   onChange,
   onSave,
@@ -180,8 +196,14 @@ function RequirementCard({
                     className="flex items-center justify-between rounded-md border px-3 py-2 text-sm"
                     key={file.id}
                   >
-                    <span>{file.name ?? "Uploaded file"}</span>
-                    <ComplianceStatusBadge status={file.status ?? "verified"} />
+                    <span>
+                      {file.name ?? file.original_filename ?? "Uploaded file"}
+                    </span>
+                    <ComplianceStatusBadge
+                      status={
+                        file.status ?? file.verification_status ?? "verified"
+                      }
+                    />
                   </div>
                 ))}
               </div>
@@ -247,9 +269,36 @@ export function ManagerComplianceContent({
       complianceService.submit(organization.id, teamId, requirementId),
     onSuccess: () =>
       queryClient.invalidateQueries({
-        queryKey: COMPLIANCE_QUERY_KEYS.team(organization.id, teamId),
+      queryKey: COMPLIANCE_QUERY_KEYS.team(organization.id, teamId),
       }),
   });
+
+  const data = complianceQuery.data;
+  React.useEffect(() => {
+    if (!data) return;
+    setResponses((current) => {
+      const next = { ...current };
+      for (const requirement of data.requirements) {
+        if (
+          Object.prototype.hasOwnProperty.call(
+            next,
+            requirement.requirement_id,
+          )
+        ) {
+          continue;
+        }
+        const saved = responseValue(requirement.response);
+        if (saved !== undefined) {
+          next[requirement.requirement_id] = saved;
+          continue;
+        }
+        if (requirement.files?.length) {
+          next[requirement.requirement_id] = { files: requirement.files };
+        }
+      }
+      return next;
+    });
+  }, [data]);
 
   if (complianceQuery.isLoading)
     return (
@@ -269,7 +318,7 @@ export function ManagerComplianceContent({
         </CardHeader>
       </Card>
     );
-  const data = complianceQuery.data!;
+  if (!data) return null;
   const setResponse = (id: string, value: ResponseValue) =>
     setResponses((current) => ({ ...current, [id]: value }));
   async function save(requirement: TeamComplianceRequirement) {
