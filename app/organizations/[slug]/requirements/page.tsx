@@ -1,9 +1,10 @@
 import { TeamManagerRequirementsScreen } from "@/components/organizations/compliance/team-manager-requirements-screen";
 
-export default function RequirementsPage({
+export default async function RequirementsPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  return <TeamManagerRequirementsScreen slug={params.slug} />;
+  const routeParams = await params;
+  return <TeamManagerRequirementsScreen slug={routeParams.slug} />;
 }

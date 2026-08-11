@@ -4,6 +4,17 @@ import * as React from "react";
 import { Check, PencilLine, Plus, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,7 +24,29 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -111,87 +144,133 @@ function RequirementEditor({
   }
 
   return (
-    <form
-      className="space-y-4 rounded-lg border border-primary/30 bg-primary/5 p-4"
-      onSubmit={save}
-    >
-      <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_13rem]">
-        <div className="space-y-2">
-          <Label htmlFor={`requirement-title-${requirement?.id ?? "new"}`}>
-            Requirement title
-          </Label>
-          <Input
-            id={`requirement-title-${requirement?.id ?? "new"}`}
-            placeholder="Team registration certificate"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`requirement-type-${requirement?.id ?? "new"}`}>
-            Response type
-          </Label>
-          <select
-            className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-            id={`requirement-type-${requirement?.id ?? "new"}`}
-            value={responseType}
-            onChange={(event) =>
-              setResponseType(event.target.value as ComplianceResponseType)
-            }
-          >
-            {responseTypes.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor={`requirement-instructions-${requirement?.id ?? "new"}`}>
-          Instructions for team managers
-        </Label>
-        <Textarea
-          id={`requirement-instructions-${requirement?.id ?? "new"}`}
-          placeholder="Tell managers exactly what a complete response should include."
-          value={instructions}
-          onChange={(event) => setInstructions(event.target.value)}
-        />
-      </div>
-      <div className="flex flex-wrap items-center gap-5">
-        <label className="flex items-center gap-2 text-sm">
-          <Switch checked={isRequired} onCheckedChange={setIsRequired} />
-          Required before a team can compete
-        </label>
-        {responseType === "file" ? (
-          <label className="flex items-center gap-2 text-sm">
-            Max files
+    <DialogContent className="sm:max-w-2xl">
+      <DialogHeader>
+        <DialogTitle>
+          {requirement ? "Edit requirement" : "Add requirement"}
+        </DialogTitle>
+        <DialogDescription>
+          Define what team managers should submit and how the league will review
+          it.
+        </DialogDescription>
+      </DialogHeader>
+      <form className="grid gap-5" onSubmit={save}>
+        <FieldGroup>
+          <Field>
+            <FieldLabel
+              htmlFor={`requirement-title-${requirement?.id ?? "new"}`}
+            >
+              Requirement title
+            </FieldLabel>
             <Input
-              className="h-8 w-20"
-              max={5}
-              min={1}
-              type="number"
-              value={maxFileCount}
-              onChange={(event) => setMaxFileCount(Number(event.target.value))}
+              id={`requirement-title-${requirement?.id ?? "new"}`}
+              placeholder="Team registration certificate"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
             />
-          </label>
+            <FieldDescription>
+              Use a short title that is easy for team managers to scan.
+            </FieldDescription>
+          </Field>
+          <Field>
+            <FieldLabel
+              htmlFor={`requirement-type-${requirement?.id ?? "new"}`}
+            >
+              Response type
+            </FieldLabel>
+            <Select
+              value={responseType}
+              onValueChange={(value) =>
+                setResponseType(value as ComplianceResponseType)
+              }
+            >
+              <SelectTrigger
+                className="w-full"
+                id={`requirement-type-${requirement?.id ?? "new"}`}
+              >
+                <SelectValue placeholder="Choose a response type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {responseTypes.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field>
+            <FieldLabel
+              htmlFor={`requirement-instructions-${requirement?.id ?? "new"}`}
+            >
+              Instructions for team managers
+            </FieldLabel>
+            <Textarea
+              id={`requirement-instructions-${requirement?.id ?? "new"}`}
+              placeholder="Tell managers exactly what a complete response should include."
+              value={instructions}
+              onChange={(event) => setInstructions(event.target.value)}
+            />
+            <FieldDescription>
+              Explain acceptable evidence, naming conventions, or review tips.
+            </FieldDescription>
+          </Field>
+          <Field className="rounded-lg border p-3" orientation="horizontal">
+            <FieldContent>
+              <FieldLabel
+                htmlFor={`requirement-required-${requirement?.id ?? "new"}`}
+              >
+                Required before a team can compete
+              </FieldLabel>
+              <FieldDescription>
+                Required items contribute to the division clearance decision.
+              </FieldDescription>
+            </FieldContent>
+            <Switch
+              checked={isRequired}
+              id={`requirement-required-${requirement?.id ?? "new"}`}
+              onCheckedChange={setIsRequired}
+            />
+          </Field>
+          {responseType === "file" ? (
+            <Field>
+              <FieldLabel
+                htmlFor={`requirement-max-files-${requirement?.id ?? "new"}`}
+              >
+                Maximum files
+              </FieldLabel>
+              <Input
+                className="max-w-28"
+                id={`requirement-max-files-${requirement?.id ?? "new"}`}
+                max={5}
+                min={1}
+                type="number"
+                value={maxFileCount}
+                onChange={(event) =>
+                  setMaxFileCount(Math.max(1, Number(event.target.value)))
+                }
+              />
+            </Field>
+          ) : null}
+        </FieldGroup>
+        {mutation.isError ? (
+          <p className="text-sm text-destructive">
+            {getApiErrorMessage(mutation.error)}
+          </p>
         ) : null}
-      </div>
-      {mutation.isError ? (
-        <p className="text-sm text-destructive">
-          {getApiErrorMessage(mutation.error)}
-        </p>
-      ) : null}
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="ghost" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button disabled={mutation.isPending || !title.trim()} type="submit">
-          <Save className="size-4" />
-          {mutation.isPending ? "Saving" : "Save requirement"}
-        </Button>
-      </div>
-    </form>
+        <DialogFooter>
+          <Button type="button" variant="ghost" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button disabled={mutation.isPending || !title.trim()} type="submit">
+            <Save data-icon="inline-start" />
+            {mutation.isPending ? "Saving" : "Save requirement"}
+          </Button>
+        </DialogFooter>
+      </form>
+    </DialogContent>
   );
 }
 
@@ -212,12 +291,6 @@ function RequirementRow({
     requirement.id,
   );
   async function archive() {
-    if (
-      !window.confirm(
-        `Archive “${requirement.title}”? Teams will no longer see it.`,
-      )
-    )
-      return;
     try {
       await archiveMutation.mutateAsync();
       toast.success("Requirement archived");
@@ -227,7 +300,7 @@ function RequirementRow({
   }
   return (
     <div className="flex flex-col gap-3 border-b p-4 last:border-b-0 sm:flex-row sm:items-start sm:justify-between">
-      <div className="min-w-0 space-y-1">
+      <div className="grid min-w-0 gap-1">
         <div className="flex flex-wrap items-center gap-2">
           <p className="font-medium">{requirement.title}</p>
           <ComplianceStatusBadge
@@ -254,18 +327,39 @@ function RequirementRow({
           variant="outline"
           onClick={onEdit}
         >
-          <PencilLine className="size-4" />
+          <PencilLine data-icon="inline-start" />
           Edit
         </Button>
-        <Button
-          aria-label={`Archive ${requirement.title}`}
-          disabled={archiveMutation.isPending}
-          size="sm"
-          variant="ghost"
-          onClick={archive}
-        >
-          <Trash2 className="size-4" />
-        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              aria-label={`Archive ${requirement.title}`}
+              disabled={archiveMutation.isPending}
+              size="sm"
+              variant="ghost"
+            >
+              <Trash2 data-icon="inline-start" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Archive this requirement?</AlertDialogTitle>
+              <AlertDialogDescription>
+                “{requirement.title}” will no longer appear for team managers.
+                Existing submissions remain available in the review history.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Keep requirement</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={archiveMutation.isPending}
+                onClick={archive}
+              >
+                Archive requirement
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
@@ -314,12 +408,6 @@ export function DivisionComplianceBuilder({
   }
 
   async function publish() {
-    if (
-      !window.confirm(
-        "Publish these requirements? Team managers will see them and required items will count toward game clearance.",
-      )
-    )
-      return;
     try {
       await publishMutation.mutateAsync();
       toast.success("Requirements published");
@@ -329,99 +417,102 @@ export function DivisionComplianceBuilder({
   }
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
-      <div className="space-y-5">
-        <Card>
-          <CardHeader>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <CardTitle>Division guidance</CardTitle>
-                <CardDescription>
-                  Explain the submission process and set one deadline for the
-                  division.
-                </CardDescription>
-              </div>
-              <ComplianceStatusBadge status={settings?.status ?? "draft"} />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <form className="space-y-4" onSubmit={saveSettings}>
-              <div className="space-y-2">
-                <Label htmlFor="compliance-instructions">Instructions</Label>
-                <Textarea
-                  id="compliance-instructions"
-                  placeholder="Add clear guidance for team managers."
-                  value={instructions}
-                  onChange={(event) => setInstructions(event.target.value)}
-                />
-              </div>
-              <div className="space-y-2 sm:max-w-xs">
-                <Label htmlFor="compliance-deadline">Submission deadline</Label>
-                <Input
-                  id="compliance-deadline"
-                  type="datetime-local"
-                  value={deadline}
-                  onChange={(event) => setDeadline(event.target.value)}
-                />
-              </div>
-              <div className="flex justify-end">
-                <Button disabled={settingsMutation.isPending} type="submit">
-                  <Save className="size-4" />
-                  {settingsMutation.isPending ? "Saving" : "Save guidance"}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+    <div className="grid gap-6">
+      <div className="flex flex-col gap-4 border-b pb-5 sm:flex-row sm:items-start sm:justify-between">
+        <div className="grid min-w-0 gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-lg font-semibold tracking-tight">
+              Division checklist
+            </h2>
+            <ComplianceStatusBadge status={settings?.status ?? "draft"} />
+          </div>
+          <p className="max-w-2xl text-sm text-muted-foreground">
+            Decide what teams must submit before they can compete in this
+            division, then publish the checklist when it is ready.
+          </p>
+        </div>
+        <Button
+          className="w-full sm:w-auto"
+          onClick={() => setEditingId("new")}
+        >
+          <Plus data-icon="inline-start" />
+          Add requirement
+        </Button>
+      </div>
 
-        <Card>
-          <CardHeader>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <CardTitle>Required submissions</CardTitle>
-                <CardDescription>
-                  Order the items team managers must complete before competing.
-                </CardDescription>
-              </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setEditingId("new")}
-              >
-                <Plus className="size-4" />
-                Add requirement
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            {editingId === "new" ? (
-              <div className="p-4">
-                <RequirementEditor
-                  divisionId={divisionId}
-                  onCancel={() => setEditingId(null)}
-                  onSaved={() => setEditingId(null)}
-                  organizationId={organizationId}
-                />
-              </div>
-            ) : null}
-            {!data.requirements.length && editingId !== "new" ? (
-              <div className="p-6 text-sm text-muted-foreground">
-                No requirements yet. Add the first item to start this
-                division&apos;s checklist.
-              </div>
-            ) : null}
-            {data.requirements.map((requirement) =>
-              editingId === requirement.id ? (
-                <div className="border-b p-4" key={requirement.id}>
-                  <RequirementEditor
-                    divisionId={divisionId}
-                    onCancel={() => setEditingId(null)}
-                    onSaved={() => setEditingId(null)}
-                    organizationId={organizationId}
-                    requirement={requirement}
-                  />
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="grid gap-5">
+          <Card>
+            <CardHeader>
+              <CardTitle>Checklist guidance</CardTitle>
+              <CardDescription>
+                Give team managers clear instructions and set the division
+                submission deadline.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form className="grid gap-5" onSubmit={saveSettings}>
+                <FieldGroup>
+                  <Field>
+                    <FieldLabel htmlFor="compliance-instructions">
+                      Instructions for team managers
+                    </FieldLabel>
+                    <Textarea
+                      id="compliance-instructions"
+                      placeholder="Add clear guidance for team managers."
+                      value={instructions}
+                      onChange={(event) => setInstructions(event.target.value)}
+                    />
+                    <FieldDescription>
+                      Explain what a complete submission should include and
+                      where managers can get help.
+                    </FieldDescription>
+                  </Field>
+                  <Field className="max-w-sm">
+                    <FieldLabel htmlFor="compliance-deadline">
+                      Submission deadline
+                    </FieldLabel>
+                    <Input
+                      id="compliance-deadline"
+                      type="datetime-local"
+                      value={deadline}
+                      onChange={(event) => setDeadline(event.target.value)}
+                    />
+                    <FieldDescription>
+                      Managers can still save drafts after this date, but new
+                      submissions may need organizer review.
+                    </FieldDescription>
+                  </Field>
+                </FieldGroup>
+                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                  <Button disabled={settingsMutation.isPending} type="submit">
+                    <Save data-icon="inline-start" />
+                    {settingsMutation.isPending ? "Saving" : "Save guidance"}
+                  </Button>
                 </div>
-              ) : (
+              </form>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Checklist requirements</CardTitle>
+              <CardDescription>
+                Add each item teams must complete before competing. Required
+                items contribute to clearance.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              {!data.requirements.length && editingId !== "new" ? (
+                <div className="grid place-items-center gap-2 px-6 py-12 text-center">
+                  <p className="font-medium">No requirements configured</p>
+                  <p className="max-w-sm text-sm text-muted-foreground">
+                    Add the first checklist item to start collecting submissions
+                    from team managers.
+                  </p>
+                </div>
+              ) : null}
+              {data.requirements.map((requirement) => (
                 <RequirementRow
                   divisionId={divisionId}
                   key={requirement.id}
@@ -429,48 +520,119 @@ export function DivisionComplianceBuilder({
                   organizationId={organizationId}
                   requirement={requirement}
                 />
-              ),
-            )}
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="h-fit border-primary/20 bg-primary/5 xl:sticky xl:top-6">
+          <CardHeader>
+            <CardTitle className="text-base">Publishing summary</CardTitle>
+            <CardDescription>
+              Review the checklist before making it visible to team managers.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <div className="rounded-lg border bg-background/70 p-4">
+              <p className="text-2xl font-semibold tracking-tight">
+                {data.requirements.length}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {data.requirements.length === 1
+                  ? "checklist item configured"
+                  : "checklist items configured"}
+              </p>
+            </div>
+            <div className="grid gap-3 text-sm">
+              <div className="flex items-start gap-2">
+                <Check className="mt-0.5 size-4 shrink-0 text-primary" />
+                <span>
+                  Required items will be included in clearance checks.
+                </span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Check className="mt-0.5 size-4 shrink-0 text-primary" />
+                <span>Team managers will see published instructions.</span>
+              </div>
+            </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  className="w-full"
+                  disabled={
+                    publishMutation.isPending ||
+                    !data.requirements.length ||
+                    settings?.status === "published"
+                  }
+                >
+                  {publishMutation.isPending
+                    ? "Publishing"
+                    : settings?.status === "published"
+                      ? "Published"
+                      : "Publish requirements"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Publish this checklist?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Published requirements apply to new submissions and may
+                    change what team managers see. Required items will count
+                    toward game clearance.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Keep as draft</AlertDialogCancel>
+                  <AlertDialogAction
+                    disabled={publishMutation.isPending}
+                    onClick={publish}
+                  >
+                    Publish checklist
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            {settings?.status === "draft" ? (
+              <p className="text-xs text-muted-foreground">
+                Draft changes stay private until you publish them.
+              </p>
+            ) : null}
+            {settings?.status === "published" ? (
+              <p className="text-xs text-muted-foreground">
+                Published changes apply to new submissions and may change what
+                managers see.
+              </p>
+            ) : null}
           </CardContent>
         </Card>
       </div>
 
-      <Card className="h-fit border-primary/20 bg-primary/5">
-        <CardHeader>
-          <CardTitle className="text-base">Ready to publish?</CardTitle>
-          <CardDescription>
-            Publishing makes required items visible to team managers and enables
-            clearance checks when a game starts.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center gap-2 text-sm">
-            <Check className="size-4 text-emerald-600" />
-            {data.requirements.length} requirement
-            {data.requirements.length === 1 ? "" : "s"} configured
-          </div>
-          <Button
-            className="w-full"
-            disabled={
-              publishMutation.isPending ||
-              !data.requirements.length ||
-              settings?.status === "published"
-            }
-            onClick={publish}
-          >
-            {publishMutation.isPending
-              ? "Publishing"
-              : settings?.status === "published"
-                ? "Published"
-                : "Publish requirements"}
-          </Button>
-          {settings?.status === "draft" ? (
-            <p className="text-xs text-muted-foreground">
-              Draft changes stay private until you publish them.
-            </p>
-          ) : null}
-        </CardContent>
-      </Card>
+      <Dialog
+        open={editingId !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditingId(null);
+        }}
+      >
+        {editingId === "new" ? (
+          <RequirementEditor
+            divisionId={divisionId}
+            onCancel={() => setEditingId(null)}
+            onSaved={() => setEditingId(null)}
+            organizationId={organizationId}
+          />
+        ) : null}
+        {editingId && editingId !== "new" ? (
+          <RequirementEditor
+            divisionId={divisionId}
+            onCancel={() => setEditingId(null)}
+            onSaved={() => setEditingId(null)}
+            organizationId={organizationId}
+            requirement={data.requirements.find(
+              (requirement) => requirement.id === editingId,
+            )}
+          />
+        ) : null}
+      </Dialog>
     </div>
   );
 }

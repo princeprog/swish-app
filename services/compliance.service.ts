@@ -19,6 +19,11 @@ export type ComplianceWorkflowStatus =
   | "waived"
   | "reopened"
 
+export type ComplianceReviewQueueScope =
+  | "needs_review"
+  | "all"
+  | "completed"
+
 export type ComplianceRequirement = {
   archived_at: string | null
   created_at: string
@@ -105,6 +110,31 @@ export type ComplianceReviewRow = {
   team_id: string
   team_name: string
   workflow_status: ComplianceWorkflowStatus
+}
+
+export type ComplianceHistoryAttempt = {
+  attempt_number: number
+  id: string
+  response_type: ComplianceResponseType
+  response_value: unknown
+  submission_id: string
+  submitted_at: string
+  submitted_by_member_id: string
+}
+
+export type ComplianceHistoryEvent = {
+  actor_member_id: string | null
+  created_at: string
+  event_type: string
+  id: string
+  metadata: Record<string, unknown>
+  submission_attempt_id: string | null
+  submission_id: string
+}
+
+export type ComplianceHistoryResponse = {
+  attempts: ComplianceHistoryAttempt[]
+  events: ComplianceHistoryEvent[]
 }
 
 export type UpdateComplianceSettingsPayload = {
@@ -205,7 +235,11 @@ export const complianceService = {
   getReviewQueue: (
     organizationId: string,
     divisionId: string,
-    params: PaginationParams & { status?: ComplianceWorkflowStatus },
+    params: PaginationParams & {
+      scope?: ComplianceReviewQueueScope
+      search?: string
+      status?: ComplianceWorkflowStatus
+    },
   ) =>
     apiService.get<PaginatedResponse<ComplianceReviewRow>>(
       API_ENDPOINTS.compliance.reviewQueue(organizationId, divisionId),
@@ -282,7 +316,7 @@ export const complianceService = {
       { credentials: "include" },
     ),
   history: (organizationId: string, teamId: string, requirementId: string) =>
-    apiService.get(
+    apiService.get<ComplianceHistoryResponse>(
       API_ENDPOINTS.compliance.history(organizationId, teamId, requirementId),
       { credentials: "include" },
     ),
@@ -343,19 +377,38 @@ export const complianceService = {
 export async function uploadComplianceFile(
   prepared: PreparedComplianceUpload,
   file: File,
+  onProgress?: (percent: number) => void,
 ) {
-  const form = new FormData()
-  for (const [key, value] of Object.entries(prepared.fields)) {
-    form.append(key, value)
-  }
-  form.append("file", file)
-  const response = await fetch(prepared.uploadUrl, {
-    body: form,
-    method: "POST",
+  await new Promise<void>((resolve, reject) => {
+    const form = new FormData()
+    for (const [key, value] of Object.entries(prepared.fields)) {
+      form.append(key, value)
+    }
+    form.append("file", file)
+
+    const request = new XMLHttpRequest()
+    request.open("POST", prepared.uploadUrl)
+    request.upload.addEventListener("progress", (event) => {
+      if (event.lengthComputable) {
+        onProgress?.(Math.round((event.loaded / event.total) * 100))
+      }
+    })
+    request.addEventListener("load", () => {
+      if (request.status >= 200 && request.status < 300) {
+        onProgress?.(100)
+        resolve()
+      } else {
+        reject(new Error("The file could not be uploaded. Try again."))
+      }
+    })
+    request.addEventListener("error", () =>
+      reject(new Error("The file could not be uploaded. Try again.")),
+    )
+    request.addEventListener("abort", () =>
+      reject(new Error("The file could not be uploaded. Try again.")),
+    )
+    request.send(form)
   })
-  if (!response.ok) {
-    throw new Error("The file could not be uploaded. Try again.")
-  }
 }
 
 export async function sha256File(file: File) {

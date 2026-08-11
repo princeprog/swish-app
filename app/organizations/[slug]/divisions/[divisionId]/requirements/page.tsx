@@ -1,14 +1,15 @@
 import { DivisionComplianceScreen } from "@/components/organizations/compliance/division-compliance-screen";
 
-export default function DivisionRequirementsPage({
+export default async function DivisionRequirementsPage({
   params,
 }: {
-  params: { divisionId: string; slug: string };
+  params: Promise<{ divisionId: string; slug: string }>;
 }) {
+  const routeParams = await params;
   return (
     <DivisionComplianceScreen
-      divisionId={params.divisionId}
-      slug={params.slug}
+      divisionId={routeParams.divisionId}
+      slug={routeParams.slug}
     />
   );
 }
