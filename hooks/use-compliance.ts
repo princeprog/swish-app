@@ -121,9 +121,10 @@ export function useComplianceHistoryQuery(
 export function useTeamComplianceQuery(
   organizationId?: string,
   teamId?: string,
+  enabled = true,
 ) {
   return useQuery({
-    enabled: Boolean(organizationId && teamId),
+    enabled: Boolean(enabled && organizationId && teamId),
     queryFn: () => complianceService.getTeam(organizationId!, teamId!),
     queryKey: COMPLIANCE_QUERY_KEYS.team(
       organizationId ?? "unknown",
