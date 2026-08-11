@@ -1,7 +1,8 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { createPortal } from "react-dom"
+import * as React from "react";
+import { createPortal } from "react-dom";
+import Link from "next/link";
 import {
   Layers3,
   Loader2,
@@ -10,47 +11,48 @@ import {
   Plus,
   Trash2,
   X,
-} from "lucide-react"
-import { toast } from "sonner"
+  ShieldCheck,
+} from "lucide-react";
+import { toast } from "sonner";
 
-import { AppSidebar } from "@/components/app-sidebar"
+import { AppSidebar } from "@/components/app-sidebar";
 import {
   ComponentReveal,
   PageEntrance,
   RevealGroup,
-} from "@/components/motion/page-motion"
-import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
-import { DataTablePagination } from "@/components/organizations/shared/data-table-pagination"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+} from "@/components/motion/page-motion";
+import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header";
+import { DataTablePagination } from "@/components/organizations/shared/data-table-pagination";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Empty,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@/components/ui/empty"
+} from "@/components/ui/empty";
 import {
   Field,
   FieldContent,
   FieldDescription,
   FieldError,
   FieldLabel,
-} from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import {
   NativeSelect,
   NativeSelectOption,
-} from "@/components/ui/native-select"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+} from "@/components/ui/native-select";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import {
   Table,
   TableBody,
@@ -58,17 +60,17 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { getApiErrorMessage } from "@/hooks/use-auth"
+} from "@/components/ui/table";
+import { getApiErrorMessage } from "@/hooks/use-auth";
 import {
   useCreateDivisionMutation,
   useDeleteDivisionMutation,
   useUpdateDivisionMutation,
-} from "@/hooks/use-division"
-import type { Division } from "@/services/division.service"
-import type { LeagueSeason } from "@/services/league-season.service"
-import type { Organization } from "@/services/organization.service"
-import type { PageSizeOption, PaginationMeta } from "@/services/pagination"
+} from "@/hooks/use-division";
+import type { Division } from "@/services/division.service";
+import type { LeagueSeason } from "@/services/league-season.service";
+import type { Organization } from "@/services/organization.service";
+import type { PageSizeOption, PaginationMeta } from "@/services/pagination";
 
 function slugifyName(name: string): string {
   return name
@@ -76,83 +78,88 @@ function slugifyName(name: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
-    .replace(/-{2,}/g, "-")
+    .replace(/-{2,}/g, "-");
 }
 
 function statusTone(status: string) {
   if (status === "active") {
-    return "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+    return "border-emerald-500/20 bg-emerald-500/10 text-emerald-300";
   }
 
-  return "border-zinc-500/20 bg-zinc-500/10 text-zinc-300"
+  return "border-zinc-500/20 bg-zinc-500/10 text-zinc-300";
 }
 
 function DivisionActionsPopover({
   division,
+  organizationSlug,
   onDelete,
   onEdit,
 }: {
-  division: Division
-  onDelete: () => void
-  onEdit: () => void
+  division: Division;
+  organizationSlug: string;
+  onDelete: () => void;
+  onEdit: () => void;
 }) {
-  const [open, setOpen] = React.useState(false)
-  const buttonRef = React.useRef<HTMLButtonElement | null>(null)
+  const [open, setOpen] = React.useState(false);
+  const buttonRef = React.useRef<HTMLButtonElement | null>(null);
   const [menuPosition, setMenuPosition] = React.useState<{
-    top: number
-    left: number
-  } | null>(null)
+    top: number;
+    left: number;
+  } | null>(null);
 
   React.useEffect(() => {
     if (!open) {
-      setMenuPosition(null)
-      return
+      setMenuPosition(null);
+      return;
     }
 
     function updatePosition() {
-      const rect = buttonRef.current?.getBoundingClientRect()
+      const rect = buttonRef.current?.getBoundingClientRect();
 
       if (!rect) {
-        return
+        return;
       }
 
       setMenuPosition({
         top: rect.bottom + 8,
         left: rect.right - 176,
-      })
+      });
     }
 
-    updatePosition()
+    updatePosition();
 
     function handlePointerDown(event: MouseEvent) {
-      const target = event.target as HTMLElement | null
+      const target = event.target as HTMLElement | null;
 
       if (!target?.closest(`[data-division-actions="${division.id}"]`)) {
-        setOpen(false)
+        setOpen(false);
       }
     }
 
     function handleEscape(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        setOpen(false)
+        setOpen(false);
       }
     }
 
-    document.addEventListener("mousedown", handlePointerDown)
-    document.addEventListener("keydown", handleEscape)
-    window.addEventListener("resize", updatePosition)
-    window.addEventListener("scroll", updatePosition, true)
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleEscape);
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
 
     return () => {
-      document.removeEventListener("mousedown", handlePointerDown)
-      document.removeEventListener("keydown", handleEscape)
-      window.removeEventListener("resize", updatePosition)
-      window.removeEventListener("scroll", updatePosition, true)
-    }
-  }, [division.id, open])
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleEscape);
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [division.id, open]);
 
   return (
-    <div className="relative inline-flex justify-end" data-division-actions={division.id}>
+    <div
+      className="relative inline-flex justify-end"
+      data-division-actions={division.id}
+    >
       <Button
         aria-expanded={open}
         aria-haspopup="menu"
@@ -177,12 +184,25 @@ function DivisionActionsPopover({
             >
               <div data-division-actions={division.id}>
                 <Button
+                  asChild
+                  className="w-full justify-start"
+                  size="sm"
+                  variant="ghost"
+                >
+                  <Link
+                    href={`/organizations/${organizationSlug}/divisions/${division.id}/requirements`}
+                  >
+                    <ShieldCheck className="size-4" />
+                    Manage requirements
+                  </Link>
+                </Button>
+                <Button
                   className="w-full justify-start"
                   size="sm"
                   variant="ghost"
                   onClick={() => {
-                    setOpen(false)
-                    onEdit()
+                    setOpen(false);
+                    onEdit();
                   }}
                 >
                   <PencilLine className="size-4" />
@@ -193,8 +213,8 @@ function DivisionActionsPopover({
                   size="sm"
                   variant="ghost"
                   onClick={() => {
-                    setOpen(false)
-                    onDelete()
+                    setOpen(false);
+                    onDelete();
                   }}
                 >
                   <Trash2 className="size-4" />
@@ -206,7 +226,7 @@ function DivisionActionsPopover({
           )
         : null}
     </div>
-  )
+  );
 }
 
 function EditDivisionModal({
@@ -215,39 +235,43 @@ function EditDivisionModal({
   organization,
   seasons,
 }: {
-  division: Division
-  onClose: () => void
-  organization: Organization
-  seasons: LeagueSeason[]
+  division: Division;
+  onClose: () => void;
+  organization: Organization;
+  seasons: LeagueSeason[];
 }) {
-  const updateDivisionMutation = useUpdateDivisionMutation(organization.id)
-  const [name, setName] = React.useState(division.name)
-  const [slug, setSlug] = React.useState(division.slug)
-  const [leagueSeasonId, setLeagueSeasonId] = React.useState(division.league_season_id)
+  const updateDivisionMutation = useUpdateDivisionMutation(organization.id);
+  const [name, setName] = React.useState(division.name);
+  const [slug, setSlug] = React.useState(division.slug);
+  const [leagueSeasonId, setLeagueSeasonId] = React.useState(
+    division.league_season_id,
+  );
   const [status, setStatus] = React.useState<"active" | "inactive">(
     division.status as "active" | "inactive",
-  )
-  const [validationError, setValidationError] = React.useState<string | null>(null)
+  );
+  const [validationError, setValidationError] = React.useState<string | null>(
+    null,
+  );
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+    event.preventDefault();
 
     if (!leagueSeasonId) {
-      setValidationError("League season is required.")
-      return
+      setValidationError("League season is required.");
+      return;
     }
 
     if (!name.trim()) {
-      setValidationError("Division name is required.")
-      return
+      setValidationError("Division name is required.");
+      return;
     }
 
     if (!slug.trim()) {
-      setValidationError("Division slug is required.")
-      return
+      setValidationError("Division slug is required.");
+      return;
     }
 
-    setValidationError(null)
+    setValidationError(null);
 
     try {
       const updatedDivision = await updateDivisionMutation.mutateAsync({
@@ -258,12 +282,12 @@ function EditDivisionModal({
           slug: slug.trim(),
           status,
         },
-      })
+      });
 
-      toast.success(`Updated ${updatedDivision.name}`)
-      onClose()
+      toast.success(`Updated ${updatedDivision.name}`);
+      onClose();
     } catch (error) {
-      toast.error(getApiErrorMessage(error))
+      toast.error(getApiErrorMessage(error));
     }
   }
 
@@ -292,14 +316,18 @@ function EditDivisionModal({
         <CardContent className="space-y-6">
           <form className="space-y-5" onSubmit={handleSubmit}>
             <Field>
-              <FieldLabel htmlFor="edit-division-season">League season</FieldLabel>
+              <FieldLabel htmlFor="edit-division-season">
+                League season
+              </FieldLabel>
               <FieldContent>
                 <NativeSelect
                   id="edit-division-season"
                   value={leagueSeasonId}
                   onChange={(event) => setLeagueSeasonId(event.target.value)}
                 >
-                  <NativeSelectOption value="">Select a season</NativeSelectOption>
+                  <NativeSelectOption value="">
+                    Select a season
+                  </NativeSelectOption>
                   {seasons.map((season) => (
                     <NativeSelectOption key={season.id} value={season.id}>
                       {season.name}
@@ -310,17 +338,19 @@ function EditDivisionModal({
             </Field>
 
             <Field>
-              <FieldLabel htmlFor="edit-division-name">Division name</FieldLabel>
+              <FieldLabel htmlFor="edit-division-name">
+                Division name
+              </FieldLabel>
               <FieldContent>
                 <Input
                   id="edit-division-name"
                   value={name}
                   onChange={(event) => {
-                    const nextName = event.target.value
-                    setName(nextName)
+                    const nextName = event.target.value;
+                    setName(nextName);
 
                     if (!slug.trim() || slug === slugifyName(name)) {
-                      setSlug(slugifyName(nextName))
+                      setSlug(slugifyName(nextName));
                     }
                   }}
                 />
@@ -328,7 +358,9 @@ function EditDivisionModal({
             </Field>
 
             <Field>
-              <FieldLabel htmlFor="edit-division-slug">Division slug</FieldLabel>
+              <FieldLabel htmlFor="edit-division-slug">
+                Division slug
+              </FieldLabel>
               <FieldContent>
                 <Input
                   id="edit-division-slug"
@@ -352,14 +384,17 @@ function EditDivisionModal({
                   }
                 >
                   <NativeSelectOption value="active">Active</NativeSelectOption>
-                  <NativeSelectOption value="inactive">Inactive</NativeSelectOption>
+                  <NativeSelectOption value="inactive">
+                    Inactive
+                  </NativeSelectOption>
                 </NativeSelect>
               </FieldContent>
             </Field>
 
             {validationError || updateDivisionMutation.isError ? (
               <FieldError>
-                {validationError ?? getApiErrorMessage(updateDivisionMutation.error)}
+                {validationError ??
+                  getApiErrorMessage(updateDivisionMutation.error)}
               </FieldError>
             ) : null}
 
@@ -385,7 +420,7 @@ function EditDivisionModal({
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
 
 function DeleteDivisionModal({
@@ -393,19 +428,19 @@ function DeleteDivisionModal({
   onClose,
   organizationId,
 }: {
-  division: Division
-  onClose: () => void
-  organizationId: string
+  division: Division;
+  onClose: () => void;
+  organizationId: string;
 }) {
-  const deleteDivisionMutation = useDeleteDivisionMutation(organizationId)
+  const deleteDivisionMutation = useDeleteDivisionMutation(organizationId);
 
   async function handleDelete() {
     try {
-      await deleteDivisionMutation.mutateAsync(division.id)
-      toast.success(`Deleted ${division.name}`)
-      onClose()
+      await deleteDivisionMutation.mutateAsync(division.id);
+      toast.success(`Deleted ${division.name}`);
+      onClose();
     } catch (error) {
-      toast.error(getApiErrorMessage(error))
+      toast.error(getApiErrorMessage(error));
     }
   }
 
@@ -415,13 +450,16 @@ function DeleteDivisionModal({
         <CardHeader>
           <CardTitle>Delete division</CardTitle>
           <CardDescription>
-            You are about to delete <span className="font-medium">{division.name}</span>.
-            This action cannot be undone.
+            You are about to delete{" "}
+            <span className="font-medium">{division.name}</span>. This action
+            cannot be undone.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
           {deleteDivisionMutation.isError ? (
-            <FieldError>{getApiErrorMessage(deleteDivisionMutation.error)}</FieldError>
+            <FieldError>
+              {getApiErrorMessage(deleteDivisionMutation.error)}
+            </FieldError>
           ) : null}
 
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
@@ -450,7 +488,7 @@ function DeleteDivisionModal({
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
 
 function CreateDivisionModal({
@@ -458,36 +496,40 @@ function CreateDivisionModal({
   organization,
   seasons,
 }: {
-  onClose: () => void
-  organization: Organization
-  seasons: LeagueSeason[]
+  onClose: () => void;
+  organization: Organization;
+  seasons: LeagueSeason[];
 }) {
-  const createDivisionMutation = useCreateDivisionMutation(organization.id)
-  const [name, setName] = React.useState("")
-  const [slug, setSlug] = React.useState("")
-  const [leagueSeasonId, setLeagueSeasonId] = React.useState(seasons[0]?.id ?? "")
-  const [status, setStatus] = React.useState<"active" | "inactive">("active")
-  const [validationError, setValidationError] = React.useState<string | null>(null)
+  const createDivisionMutation = useCreateDivisionMutation(organization.id);
+  const [name, setName] = React.useState("");
+  const [slug, setSlug] = React.useState("");
+  const [leagueSeasonId, setLeagueSeasonId] = React.useState(
+    seasons[0]?.id ?? "",
+  );
+  const [status, setStatus] = React.useState<"active" | "inactive">("active");
+  const [validationError, setValidationError] = React.useState<string | null>(
+    null,
+  );
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+    event.preventDefault();
 
     if (!leagueSeasonId) {
-      setValidationError("League season is required.")
-      return
+      setValidationError("League season is required.");
+      return;
     }
 
     if (!name.trim()) {
-      setValidationError("Division name is required.")
-      return
+      setValidationError("Division name is required.");
+      return;
     }
 
     if (!slug.trim()) {
-      setValidationError("Division slug is required.")
-      return
+      setValidationError("Division slug is required.");
+      return;
     }
 
-    setValidationError(null)
+    setValidationError(null);
 
     try {
       const division = await createDivisionMutation.mutateAsync({
@@ -495,12 +537,12 @@ function CreateDivisionModal({
         name: name.trim(),
         slug: slug.trim(),
         status,
-      })
+      });
 
-      toast.success(`Created ${division.name}`)
-      onClose()
+      toast.success(`Created ${division.name}`);
+      onClose();
     } catch (error) {
-      toast.error(getApiErrorMessage(error))
+      toast.error(getApiErrorMessage(error));
     }
   }
 
@@ -513,7 +555,8 @@ function CreateDivisionModal({
               <CardTitle className="text-xl">Create division</CardTitle>
               <CardDescription>
                 Add a new competition division under {organization.name}. This
-                can represent categories like Senior Open, Under 18, or Women&apos;s.
+                can represent categories like Senior Open, Under 18, or
+                Women&apos;s.
               </CardDescription>
             </div>
             <Button
@@ -537,7 +580,9 @@ function CreateDivisionModal({
                   value={leagueSeasonId}
                   onChange={(event) => setLeagueSeasonId(event.target.value)}
                 >
-                  <NativeSelectOption value="">Select a season</NativeSelectOption>
+                  <NativeSelectOption value="">
+                    Select a season
+                  </NativeSelectOption>
                   {seasons.map((season) => (
                     <NativeSelectOption key={season.id} value={season.id}>
                       {season.name}
@@ -558,11 +603,11 @@ function CreateDivisionModal({
                   placeholder="Senior Open"
                   value={name}
                   onChange={(event) => {
-                    const nextName = event.target.value
-                    setName(nextName)
+                    const nextName = event.target.value;
+                    setName(nextName);
 
                     if (!slug.trim() || slug === slugifyName(name)) {
-                      setSlug(slugifyName(nextName))
+                      setSlug(slugifyName(nextName));
                     }
                   }}
                 />
@@ -595,14 +640,17 @@ function CreateDivisionModal({
                   }
                 >
                   <NativeSelectOption value="active">Active</NativeSelectOption>
-                  <NativeSelectOption value="inactive">Inactive</NativeSelectOption>
+                  <NativeSelectOption value="inactive">
+                    Inactive
+                  </NativeSelectOption>
                 </NativeSelect>
               </FieldContent>
             </Field>
 
             {validationError || createDivisionMutation.isError ? (
               <FieldError>
-                {validationError ?? getApiErrorMessage(createDivisionMutation.error)}
+                {validationError ??
+                  getApiErrorMessage(createDivisionMutation.error)}
               </FieldError>
             ) : null}
 
@@ -628,7 +676,7 @@ function CreateDivisionModal({
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
 
 function DivisionsTable({
@@ -641,14 +689,14 @@ function DivisionsTable({
   pagination,
   seasonsById,
 }: {
-  divisions: Division[]
-  onPageChange: (page: number) => void
-  onPageSizeChange: (pageSize: PageSizeOption) => void
-  onDeleteDivision: (division: Division) => void
-  onEditDivision: (division: Division) => void
-  organizationSlug: string
-  pagination: PaginationMeta
-  seasonsById: Map<string, LeagueSeason>
+  divisions: Division[];
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: PageSizeOption) => void;
+  onDeleteDivision: (division: Division) => void;
+  onEditDivision: (division: Division) => void;
+  organizationSlug: string;
+  pagination: PaginationMeta;
+  seasonsById: Map<string, LeagueSeason>;
 }) {
   if (divisions.length === 0) {
     return (
@@ -664,7 +712,7 @@ function DivisionsTable({
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
-    )
+    );
   }
 
   return (
@@ -676,7 +724,9 @@ function DivisionsTable({
               <TableHead className="w-12 px-4">
                 <Checkbox aria-label="Select all divisions" />
               </TableHead>
-              <TableHead className="h-12 text-muted-foreground">Division</TableHead>
+              <TableHead className="h-12 text-muted-foreground">
+                Division
+              </TableHead>
               <TableHead className="text-muted-foreground">Season</TableHead>
               <TableHead className="text-muted-foreground">Slug</TableHead>
               <TableHead className="text-muted-foreground">Status</TableHead>
@@ -686,7 +736,7 @@ function DivisionsTable({
           </TableHeader>
           <TableBody>
             {divisions.map((division) => {
-              const season = seasonsById.get(division.league_season_id)
+              const season = seasonsById.get(division.league_season_id);
 
               return (
                 <TableRow
@@ -705,18 +755,26 @@ function DivisionsTable({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="font-mono font-normal text-muted-foreground">
+                    <Badge
+                      variant="outline"
+                      className="font-mono font-normal text-muted-foreground"
+                    >
                       {division.slug}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge className={statusTone(division.status)} variant="outline">
+                    <Badge
+                      className={statusTone(division.status)}
+                      variant="outline"
+                    >
                       {division.status}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1">
-                      <div>{new Date(division.updated_at).toLocaleDateString()}</div>
+                      <div>
+                        {new Date(division.updated_at).toLocaleDateString()}
+                      </div>
                       <div className="text-xs text-muted-foreground">
                         {new Date(division.updated_at).toLocaleTimeString([], {
                           hour: "numeric",
@@ -728,12 +786,13 @@ function DivisionsTable({
                   <TableCell className="text-right">
                     <DivisionActionsPopover
                       division={division}
+                      organizationSlug={organizationSlug}
                       onDelete={() => onDeleteDivision(division)}
                       onEdit={() => onEditDivision(division)}
                     />
                   </TableCell>
                 </TableRow>
-              )
+              );
             })}
           </TableBody>
         </Table>
@@ -744,7 +803,7 @@ function DivisionsTable({
         />
       </CardContent>
     </Card>
-  )
+  );
 }
 
 export function OrganizationDivisionsView({
@@ -755,20 +814,23 @@ export function OrganizationDivisionsView({
   pagination,
   seasons,
 }: {
-  divisions: Division[]
-  onPageChange: (page: number) => void
-  onPageSizeChange: (pageSize: PageSizeOption) => void
-  organization: Organization
-  pagination: PaginationMeta
-  seasons: LeagueSeason[]
+  divisions: Division[];
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: PageSizeOption) => void;
+  organization: Organization;
+  pagination: PaginationMeta;
+  seasons: LeagueSeason[];
 }) {
-  const [createModalOpen, setCreateModalOpen] = React.useState(false)
-  const [divisionToDelete, setDivisionToDelete] = React.useState<Division | null>(null)
-  const [divisionToEdit, setDivisionToEdit] = React.useState<Division | null>(null)
+  const [createModalOpen, setCreateModalOpen] = React.useState(false);
+  const [divisionToDelete, setDivisionToDelete] =
+    React.useState<Division | null>(null);
+  const [divisionToEdit, setDivisionToEdit] = React.useState<Division | null>(
+    null,
+  );
   const seasonsById = React.useMemo(
     () => new Map(seasons.map((season) => [season.id, season])),
     [seasons],
-  )
+  );
 
   return (
     <SidebarProvider>
@@ -782,7 +844,6 @@ export function OrganizationDivisionsView({
       />
       <SidebarInset>
         <WorkspaceHeader
-          
           organizationAccess={organization.access}
           organizationName={organization.name}
           organizationSlug={organization.slug}
@@ -813,8 +874,8 @@ export function OrganizationDivisionsView({
                     <CardHeader>
                       <CardTitle>Create a season first</CardTitle>
                       <CardDescription>
-                        Divisions belong to a league season. Add a season before creating
-                        competition categories for this organization.
+                        Divisions belong to a league season. Add a season before
+                        creating competition categories for this organization.
                       </CardDescription>
                     </CardHeader>
                   </Card>
@@ -865,5 +926,5 @@ export function OrganizationDivisionsView({
         />
       ) : null}
     </SidebarProvider>
-  )
+  );
 }

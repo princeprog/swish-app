@@ -1,22 +1,22 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import Link from "next/link"
-import { useSearchParams } from "next/navigation"
+import * as React from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
-import { NavMain } from "@/components/nav-main"
-import { NavUser } from "@/components/nav-user"
-import { NotificationBell } from "@/components/notifications/notification-bell"
-import { TeamSwitcher } from "@/components/team-switcher"
+import { NavMain } from "@/components/nav-main";
+import { NavUser } from "@/components/nav-user";
+import { NotificationBell } from "@/components/notifications/notification-bell";
+import { TeamSwitcher } from "@/components/team-switcher";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
-} from "@/components/ui/sidebar"
-import { useOrganizationsQuery } from "@/hooks/use-organization"
-import type { OrganizationAccess } from "@/services/organization.service"
+} from "@/components/ui/sidebar";
+import { useOrganizationsQuery } from "@/hooks/use-organization";
+import type { OrganizationAccess } from "@/services/organization.service";
 import {
   Building2Icon,
   CalendarDaysIcon,
@@ -24,29 +24,26 @@ import {
   TrophyIcon,
   UserRoundIcon,
   Users2Icon,
-} from "lucide-react"
+} from "lucide-react";
 
 type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
   organization?: {
-    access?: OrganizationAccess
-    name: string
-    slug: string
-    status: string
-  }
-}
+    access?: OrganizationAccess;
+    name: string;
+    slug: string;
+    status: string;
+  };
+};
 
-export function AppSidebar({
-  organization,
-  ...props
-}: AppSidebarProps) {
-  const organizationsQuery = useOrganizationsQuery()
-  const searchParams = useSearchParams()
+export function AppSidebar({ organization, ...props }: AppSidebarProps) {
+  const organizationsQuery = useOrganizationsQuery();
+  const searchParams = useSearchParams();
   const workspaceBasePath = organization
     ? `/organizations/${organization.slug}`
-    : "/organizations"
+    : "/organizations";
   const managerSeasonQuery = searchParams.get("seasonId")
     ? `?seasonId=${searchParams.get("seasonId")}`
-    : ""
+    : "";
 
   const fallbackWorkspaceItems = organization
     ? [
@@ -64,7 +61,7 @@ export function AppSidebar({
           plan: "Workspace list",
           href: "/organizations",
         },
-      ]
+      ];
 
   const workspaceItems = organizationsQuery.data?.length
     ? organizationsQuery.data.map((item) => ({
@@ -73,19 +70,25 @@ export function AppSidebar({
         plan: item.status,
         href: `/organizations/${item.slug}`,
       }))
-    : fallbackWorkspaceItems
+    : fallbackWorkspaceItems;
 
-  const permissions = organization?.access?.permissions ?? []
-  const isTeamManager = organization?.access?.role === "team_manager"
-  const canManageCompetition = permissions.includes("schedule.manage")
+  const permissions = organization?.access?.permissions ?? [];
+  const isTeamManager = organization?.access?.role === "team_manager";
+  const canManageCompetition = permissions.includes("schedule.manage");
   const canManagePeople =
     permissions.includes("teams.read") ||
-    permissions.includes("teams.read.assigned")
-  const canViewSchedules = permissions.includes("games.read.assigned")
+    permissions.includes("teams.read.assigned");
+  const canViewSchedules = permissions.includes("games.read.assigned");
   const canViewStandings =
     permissions.includes("standings.read") ||
-    permissions.includes("standings.read.assigned_division")
-  const canManageAccess = permissions.includes("members.manage")
+    permissions.includes("standings.read.assigned_division");
+  const canManageAccess = permissions.includes("members.manage");
+  const canManageCompliance = permissions.includes(
+    "compliance_requirements_manage",
+  );
+  const canSubmitCompliance = permissions.includes(
+    "compliance_submissions_submit_assigned",
+  );
 
   const managerNavMain = [
     {
@@ -108,7 +111,16 @@ export function AppSidebar({
       url: `${workspaceBasePath}/standings${managerSeasonQuery}`,
       icon: <TrophyIcon />,
     },
-  ]
+    ...(canSubmitCompliance
+      ? [
+          {
+            title: "Requirements",
+            url: `${workspaceBasePath}/requirements${managerSeasonQuery}`,
+            icon: <ShieldCheckIcon />,
+          },
+        ]
+      : []),
+  ];
 
   const adminNavMain = [
     {
@@ -137,6 +149,14 @@ export function AppSidebar({
                   },
                   {
                     title: "Divisions",
+                    url: `${workspaceBasePath}/divisions`,
+                  },
+                ]
+              : []),
+            ...(canManageCompliance
+              ? [
+                  {
+                    title: "Requirements",
                     url: `${workspaceBasePath}/divisions`,
                   },
                 ]
@@ -202,9 +222,9 @@ export function AppSidebar({
           ],
         }
       : null,
-  ].filter((item) => item !== null)
+  ].filter((item) => item !== null);
 
-  const navMain = isTeamManager ? managerNavMain : adminNavMain
+  const navMain = isTeamManager ? managerNavMain : adminNavMain;
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -229,5 +249,5 @@ export function AppSidebar({
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
-  )
+  );
 }
