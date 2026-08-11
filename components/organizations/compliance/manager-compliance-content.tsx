@@ -1,24 +1,24 @@
 "use client";
 
 import * as React from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { FileUp, Loader2, Save, Send } from "lucide-react";
+import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
+import { FileCheck2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { ComplianceStatusBadge } from "@/components/organizations/compliance/compliance-status-badge";
+import { ManagerComplianceHistory, ManagerComplianceHistoryEmpty } from "@/components/organizations/compliance/manager-compliance-history";
+import { ManagerComplianceRequirement, type ManagerResponseValue } from "@/components/organizations/compliance/manager-compliance-requirement";
+import { ManagerComplianceSummary } from "@/components/organizations/compliance/manager-compliance-summary";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getApiErrorMessage } from "@/hooks/use-auth";
 import {
   COMPLIANCE_QUERY_KEYS,
@@ -34,32 +34,9 @@ import {
 import type { Organization } from "@/services/organization.service";
 import type { TeamManagerWorkspaceAssignment } from "@/services/team-manager-workspace.service";
 
-type ResponseValue =
-  | string
-  | boolean
-  | { files: ComplianceFileReference[] }
-  | null
-  | undefined;
+type ManagerChecklistTab = "to_complete" | "submitted" | "history";
 
-function editable(status: string | null) {
-  return (
-    !status ||
-    status === "draft" ||
-    status === "rejected" ||
-    status === "reopened"
-  );
-}
-
-function dateLabel(value: string | null) {
-  return value
-    ? new Date(value).toLocaleString("en-PH", {
-        dateStyle: "medium",
-        timeStyle: "short",
-      })
-    : null;
-}
-
-function responseValue(value: unknown): ResponseValue | undefined {
+function responseValue(value: unknown): ManagerResponseValue | undefined {
   if (typeof value === "string" || typeof value === "boolean") return value;
   if (!value || typeof value !== "object" || Array.isArray(value)) return;
   const files = (value as { files?: unknown }).files;
@@ -75,159 +52,26 @@ function responseValue(value: unknown): ResponseValue | undefined {
   return { files: references };
 }
 
-function RequirementCard({
-  onChange,
-  onSave,
-  onSubmit,
-  onUpload,
-  response,
-  requirement,
-  uploading,
-}: {
-  onChange: (value: ResponseValue) => void;
-  onSave: () => void;
-  onSubmit: () => void;
-  onUpload: (files: FileList | null) => void;
-  response: ResponseValue;
-  requirement: TeamComplianceRequirement;
-  uploading: boolean;
-}) {
-  const canEdit = editable(requirement.workflow_status);
-  const fileResponse =
-    typeof response === "object" && response !== null && "files" in response
-      ? response.files
-      : [];
-  return (
-    <Card className="overflow-hidden">
-      <CardHeader className="gap-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <CardTitle className="text-base">{requirement.title}</CardTitle>
-            <CardDescription>
-              {requirement.is_required ? "Required" : "Optional"} ·{" "}
-              {requirement.response_type.replace("_", " ")}
-            </CardDescription>
-          </div>
-          <ComplianceStatusBadge
-            status={requirement.workflow_status ?? "draft"}
-          />
-        </div>
-        {requirement.instructions ? (
-          <p className="text-sm text-muted-foreground">
-            {requirement.instructions}
-          </p>
-        ) : null}
-        {requirement.review_note ? (
-          <p className="rounded-md bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-200">
-            Review note: {requirement.review_note}
-          </p>
-        ) : null}
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {requirement.response_type === "short_text" ? (
-          <Input
-            aria-label={`${requirement.title} response`}
-            disabled={!canEdit}
-            placeholder="Type your response"
-            value={typeof response === "string" ? response : ""}
-            onChange={(event) => onChange(event.target.value)}
-          />
-        ) : null}
-        {requirement.response_type === "long_text" ? (
-          <Textarea
-            aria-label={`${requirement.title} response`}
-            disabled={!canEdit}
-            placeholder="Type your response"
-            value={typeof response === "string" ? response : ""}
-            onChange={(event) => onChange(event.target.value)}
-          />
-        ) : null}
-        {requirement.response_type === "url" ? (
-          <Input
-            aria-label={`${requirement.title} link`}
-            disabled={!canEdit}
-            placeholder="https://"
-            type="url"
-            value={typeof response === "string" ? response : ""}
-            onChange={(event) => onChange(event.target.value)}
-          />
-        ) : null}
-        {requirement.response_type === "acknowledgement" ? (
-          <label className="flex items-center gap-3 text-sm">
-            <Checkbox
-              checked={response === true}
-              disabled={!canEdit}
-              onCheckedChange={(checked) => onChange(checked === true)}
-            />
-            I confirm the information above is complete and accurate.
-          </label>
-        ) : null}
-        {requirement.response_type === "file" ? (
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-3">
-              <Input
-                accept="application/pdf,image/jpeg,image/png"
-                className="sr-only"
-                disabled={!canEdit || uploading}
-                id={`file-upload-${requirement.id}`}
-                multiple
-                type="file"
-                onChange={(event) => onUpload(event.target.files)}
-              />
-              <Button
-                asChild
-                disabled={!canEdit || uploading}
-                variant="outline"
-              >
-                <label htmlFor={`file-upload-${requirement.id}`}>
-                  <FileUp className="size-4" />
-                  {uploading ? "Uploading" : "Choose files"}
-                </label>
-              </Button>
-              <span className="text-xs text-muted-foreground">
-                PDF, JPG, or PNG · up to 10 MB each ·{" "}
-                {requirement.max_file_count} maximum
-              </span>
-            </div>
-            {fileResponse.length ? (
-              <div className="space-y-2">
-                {fileResponse.map((file) => (
-                  <div
-                    className="flex items-center justify-between rounded-md border px-3 py-2 text-sm"
-                    key={file.id}
-                  >
-                    <span>
-                      {file.name ?? file.original_filename ?? "Uploaded file"}
-                    </span>
-                    <ComplianceStatusBadge
-                      status={
-                        file.status ?? file.verification_status ?? "verified"
-                      }
-                    />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                No files uploaded yet.
-              </p>
-            )}
-          </div>
-        ) : null}
-        {canEdit ? (
-          <div className="flex flex-wrap justify-end gap-2">
-            <Button size="sm" variant="ghost" onClick={onSave}>
-              <Save className="size-4" />
-              Save draft
-            </Button>
-            <Button size="sm" onClick={onSubmit}>
-              <Send className="size-4" />
-              Submit for review
-            </Button>
-          </div>
-        ) : null}
-      </CardContent>
-    </Card>
+function requirementsForTab(
+  requirements: TeamComplianceRequirement[],
+  tab: ManagerChecklistTab,
+) {
+  if (tab === "to_complete") {
+    return requirements.filter((requirement) =>
+      ["draft", "rejected", "reopened"].includes(
+        requirement.workflow_status ?? "draft",
+      ),
+    );
+  }
+  if (tab === "submitted") {
+    return requirements.filter((requirement) =>
+      ["submitted", "under_review"].includes(
+        requirement.workflow_status ?? "draft",
+      ),
+    );
+  }
+  return requirements.filter((requirement) =>
+    ["approved", "waived"].includes(requirement.workflow_status ?? "draft"),
   );
 }
 
@@ -241,17 +85,22 @@ export function ManagerComplianceContent({
   const teamId = assignment.team.id;
   const queryClient = useQueryClient();
   const complianceQuery = useTeamComplianceQuery(organization.id, teamId);
+  const [tab, setTab] = React.useState<ManagerChecklistTab>("to_complete");
   const [responses, setResponses] = React.useState<
-    Record<string, ResponseValue>
+    Record<string, ManagerResponseValue>
   >({});
   const [uploadingId, setUploadingId] = React.useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = React.useState<Record<string, number>>({});
+  const [uploadErrors, setUploadErrors] = React.useState<Record<string, string | null>>({});
+  const [failedFiles, setFailedFiles] = React.useState<Record<string, File | null>>({});
+
   const saveMutation = useMutation({
     mutationFn: ({
       requirementId,
       response,
     }: {
       requirementId: string;
-      response: ResponseValue;
+      response: ManagerResponseValue;
     }) =>
       complianceService.saveDraft(
         organization.id,
@@ -269,11 +118,30 @@ export function ManagerComplianceContent({
       complianceService.submit(organization.id, teamId, requirementId),
     onSuccess: () =>
       queryClient.invalidateQueries({
-      queryKey: COMPLIANCE_QUERY_KEYS.team(organization.id, teamId),
+        queryKey: COMPLIANCE_QUERY_KEYS.team(organization.id, teamId),
       }),
   });
 
   const data = complianceQuery.data;
+  const historyQueries = useQueries({
+    queries:
+      data?.requirements.map((requirement) => ({
+        enabled: tab === "history",
+        queryFn: () =>
+          complianceService.history(
+            organization.id,
+            teamId,
+            requirement.requirement_id,
+          ),
+        queryKey: COMPLIANCE_QUERY_KEYS.history(
+          organization.id,
+          teamId,
+          requirement.requirement_id,
+        ),
+        retry: false,
+      })) ?? [],
+  });
+
   React.useEffect(() => {
     if (!data) return;
     setResponses((current) => {
@@ -300,40 +168,65 @@ export function ManagerComplianceContent({
     });
   }, [data]);
 
-  if (complianceQuery.isLoading)
+  if (complianceQuery.isLoading) {
     return (
       <Skeleton
         aria-label="Loading requirements"
         className="h-[32rem] rounded-lg"
       />
     );
-  if (complianceQuery.isError)
+  }
+  if (complianceQuery.isError) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>We couldn&apos;t load requirements</CardTitle>
-          <CardDescription>
-            {getApiErrorMessage(complianceQuery.error)}
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      <Alert variant="destructive">
+        <FileCheck2 />
+        <AlertTitle>We couldn&apos;t load requirements</AlertTitle>
+        <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+          <span>{getApiErrorMessage(complianceQuery.error)}</span>
+          <Button size="sm" variant="outline" onClick={() => void complianceQuery.refetch()}>
+            Try again
+          </Button>
+        </AlertDescription>
+      </Alert>
     );
+  }
   if (!data) return null;
   if (!data.settings || data.requirements.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>No competition requirements yet</CardTitle>
-          <CardDescription>
+      <Empty className="border bg-card py-16">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <FileCheck2 />
+          </EmptyMedia>
+          <EmptyTitle>No competition requirements yet</EmptyTitle>
+          <EmptyDescription>
             The league organizer has not published requirements for this
             division. You can return here when the checklist is available.
-          </CardDescription>
-        </CardHeader>
-      </Card>
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     );
   }
-  const setResponse = (id: string, value: ResponseValue) =>
+
+  const requiredRequirements = data.requirements.filter(
+    (requirement) => requirement.is_required,
+  );
+  const satisfiedRequiredCount = requiredRequirements.filter((requirement) =>
+    ["approved", "waived"].includes(requirement.workflow_status ?? ""),
+  ).length;
+  const visibleRequirements = requirementsForTab(data.requirements, tab);
+  const historyLoading = historyQueries.some((query) => query.isLoading);
+  const historyByRequirementId = new Map(
+    data.requirements.map((requirement, index) => [
+      requirement.requirement_id,
+      historyQueries[index]?.data,
+    ]),
+  );
+
+  function setResponse(id: string, value: ManagerResponseValue) {
     setResponses((current) => ({ ...current, [id]: value }));
+  }
+
   async function save(requirement: TeamComplianceRequirement) {
     try {
       await saveMutation.mutateAsync({
@@ -345,6 +238,7 @@ export function ManagerComplianceContent({
       toast.error(getApiErrorMessage(error));
     }
   }
+
   async function submit(requirement: TeamComplianceRequirement) {
     try {
       await saveMutation.mutateAsync({
@@ -357,41 +251,56 @@ export function ManagerComplianceContent({
       toast.error(getApiErrorMessage(error));
     }
   }
-  async function upload(
+
+  async function uploadFiles(
     requirement: TeamComplianceRequirement,
-    files: FileList | null,
+    files: File[],
   ) {
-    if (!files?.length) return;
+    if (!files.length) return;
     const existing = responses[requirement.requirement_id];
     const refs =
       typeof existing === "object" && existing !== null && "files" in existing
         ? [...existing.files]
         : [];
+    let activeFile: File | null = null;
     setUploadingId(requirement.requirement_id);
+    setUploadErrors((current) => ({ ...current, [requirement.requirement_id]: null }));
     try {
-      for (const [index, file] of Array.from(files).entries()) {
+      for (const file of files) {
+        activeFile = file;
         if (
           !["application/pdf", "image/jpeg", "image/png"].includes(file.type) ||
           file.size > 10 * 1024 * 1024
-        )
+        ) {
           throw new Error("Upload a PDF, JPG, or PNG file up to 10 MB.");
-        if (refs.length >= requirement.max_file_count)
+        }
+        if (refs.length >= requirement.max_file_count) {
           throw new Error(
             `Upload no more than ${requirement.max_file_count} files for this requirement.`,
           );
+        }
         const prepared = await complianceService.prepareUpload(
           organization.id,
           teamId,
           requirement.requirement_id,
           {
             byteSize: file.size,
-            fileOrder: refs.length + index + 1,
+            fileOrder: refs.length + 1,
             mimeType: file.type,
             originalFilename: file.name,
             sha256: await sha256File(file),
           },
         );
-        await uploadComplianceFile(prepared, file);
+        setUploadProgress((current) => ({
+          ...current,
+          [requirement.requirement_id]: 0,
+        }));
+        await uploadComplianceFile(prepared, file, (percent) =>
+          setUploadProgress((current) => ({
+            ...current,
+            [requirement.requirement_id]: percent,
+          })),
+        );
         await complianceService.completeUpload(
           organization.id,
           teamId,
@@ -401,56 +310,139 @@ export function ManagerComplianceContent({
         refs.push({ id: prepared.fileId, name: file.name, status: "verified" });
       }
       setResponse(requirement.requirement_id, { files: refs });
+      setFailedFiles((current) => ({ ...current, [requirement.requirement_id]: null }));
+      setUploadErrors((current) => ({ ...current, [requirement.requirement_id]: null }));
       toast.success("File upload verified");
     } catch (error) {
-      toast.error(getApiErrorMessage(error));
+      const message = getApiErrorMessage(error);
+      setFailedFiles((current) => ({
+        ...current,
+        [requirement.requirement_id]: activeFile,
+      }));
+      setUploadErrors((current) => ({
+        ...current,
+        [requirement.requirement_id]: message,
+      }));
+      toast.error(message);
     } finally {
       setUploadingId(null);
     }
   }
+
   return (
-    <div className="space-y-5">
-      <Card className="border-primary/20 bg-primary/5">
-        <CardHeader>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <CardTitle>Competition clearance</CardTitle>
-              <CardDescription>
-                {data.settings?.instructions ??
-                  "Complete each required item and submit it for organizer review."}
-              </CardDescription>
+    <div className="grid gap-5">
+      <ManagerComplianceSummary
+        data={data}
+        requiredCount={requiredRequirements.length}
+        satisfiedRequiredCount={satisfiedRequiredCount}
+      />
+
+      <Tabs value={tab} onValueChange={(value) => setTab(value as ManagerChecklistTab)}>
+        <TabsList aria-label="Requirements checklist sections">
+          <TabsTrigger value="to_complete">To complete</TabsTrigger>
+          <TabsTrigger value="submitted">Submitted</TabsTrigger>
+          <TabsTrigger value="history">History</TabsTrigger>
+        </TabsList>
+        <TabsContent className="mt-4" value="to_complete">
+          {visibleRequirements.length ? (
+            <div className="grid gap-3">
+              {visibleRequirements.map((requirement) => (
+                <ManagerComplianceRequirement
+                  failedFile={failedFiles[requirement.requirement_id]}
+                  key={requirement.requirement_id}
+                  onChange={(value) => setResponse(requirement.requirement_id, value)}
+                  onRetry={() => {
+                    const failedFile = failedFiles[requirement.requirement_id];
+                    if (failedFile) void uploadFiles(requirement, [failedFile]);
+                  }}
+                  onSave={() => void save(requirement)}
+                  onSubmit={() => void submit(requirement)}
+                  onUpload={(files) => {
+                    void uploadFiles(requirement, files ? Array.from(files) : []);
+                  }}
+                  response={responses[requirement.requirement_id]}
+                  requirement={requirement}
+                  saving={saveMutation.isPending}
+                  submitting={submitMutation.isPending}
+                  uploadError={uploadErrors[requirement.requirement_id]}
+                  uploadProgress={uploadProgress[requirement.requirement_id]}
+                  uploading={uploadingId === requirement.requirement_id}
+                />
+              ))}
             </div>
-            <ComplianceStatusBadge
-              status={data.clearance?.status ?? "not_required"}
-            />
-          </div>
-          {data.settings?.submission_deadline_at ? (
-            <p className="text-sm font-medium">
-              Deadline: {dateLabel(data.settings.submission_deadline_at)}
-            </p>
-          ) : null}
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            A team is cleared when every required item is approved or covered by
-            an active waiver. Optional items do not block game starts.
-          </p>
-        </CardContent>
-      </Card>
-      <div className="space-y-4">
-        {data.requirements.map((requirement) => (
-          <RequirementCard
-            key={requirement.requirement_id}
-            onChange={(value) => setResponse(requirement.requirement_id, value)}
-            onSave={() => save(requirement)}
-            onSubmit={() => submit(requirement)}
-            onUpload={(files) => upload(requirement, files)}
-            response={responses[requirement.requirement_id]}
-            requirement={requirement}
-            uploading={uploadingId === requirement.requirement_id}
-          />
-        ))}
-      </div>
+          ) : (
+            <Empty className="border bg-card py-12">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <FileCheck2 />
+                </EmptyMedia>
+                <EmptyTitle>Nothing to complete</EmptyTitle>
+                <EmptyDescription>
+                  Draft, returned, and reopened requirements will appear here.
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          )}
+        </TabsContent>
+        <TabsContent className="mt-4" value="submitted">
+          {visibleRequirements.length ? (
+            <div className="grid gap-3">
+              {visibleRequirements.map((requirement) => (
+                <ManagerComplianceRequirement
+                  failedFile={failedFiles[requirement.requirement_id]}
+                  key={requirement.requirement_id}
+                  onChange={(value) => setResponse(requirement.requirement_id, value)}
+                  onRetry={() => {
+                    const failedFile = failedFiles[requirement.requirement_id];
+                    if (failedFile) void uploadFiles(requirement, [failedFile]);
+                  }}
+                  onSave={() => void save(requirement)}
+                  onSubmit={() => void submit(requirement)}
+                  onUpload={(files) => {
+                    void uploadFiles(requirement, files ? Array.from(files) : []);
+                  }}
+                  response={responses[requirement.requirement_id]}
+                  requirement={requirement}
+                  saving={saveMutation.isPending}
+                  submitting={submitMutation.isPending}
+                  uploadError={uploadErrors[requirement.requirement_id]}
+                  uploadProgress={uploadProgress[requirement.requirement_id]}
+                  uploading={uploadingId === requirement.requirement_id}
+                />
+              ))}
+            </div>
+          ) : (
+            <Empty className="border bg-card py-12">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <FileCheck2 />
+                </EmptyMedia>
+                <EmptyTitle>No submissions in review</EmptyTitle>
+                <EmptyDescription>
+                  Submitted and under-review requirements will appear here.
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          )}
+        </TabsContent>
+        <TabsContent className="mt-4" value="history">
+          {historyLoading ? (
+            <Skeleton aria-label="Loading requirement history" className="h-64 rounded-lg" />
+          ) : visibleRequirements.length ? (
+            <div className="grid gap-3">
+              {visibleRequirements.map((requirement) => (
+                <ManagerComplianceHistory
+                  history={historyByRequirementId.get(requirement.requirement_id)}
+                  key={requirement.requirement_id}
+                  requirement={requirement}
+                />
+              ))}
+            </div>
+          ) : (
+            <ManagerComplianceHistoryEmpty />
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

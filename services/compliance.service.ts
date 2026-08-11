@@ -377,19 +377,38 @@ export const complianceService = {
 export async function uploadComplianceFile(
   prepared: PreparedComplianceUpload,
   file: File,
+  onProgress?: (percent: number) => void,
 ) {
-  const form = new FormData()
-  for (const [key, value] of Object.entries(prepared.fields)) {
-    form.append(key, value)
-  }
-  form.append("file", file)
-  const response = await fetch(prepared.uploadUrl, {
-    body: form,
-    method: "POST",
+  await new Promise<void>((resolve, reject) => {
+    const form = new FormData()
+    for (const [key, value] of Object.entries(prepared.fields)) {
+      form.append(key, value)
+    }
+    form.append("file", file)
+
+    const request = new XMLHttpRequest()
+    request.open("POST", prepared.uploadUrl)
+    request.upload.addEventListener("progress", (event) => {
+      if (event.lengthComputable) {
+        onProgress?.(Math.round((event.loaded / event.total) * 100))
+      }
+    })
+    request.addEventListener("load", () => {
+      if (request.status >= 200 && request.status < 300) {
+        onProgress?.(100)
+        resolve()
+      } else {
+        reject(new Error("The file could not be uploaded. Try again."))
+      }
+    })
+    request.addEventListener("error", () =>
+      reject(new Error("The file could not be uploaded. Try again.")),
+    )
+    request.addEventListener("abort", () =>
+      reject(new Error("The file could not be uploaded. Try again.")),
+    )
+    request.send(form)
   })
-  if (!response.ok) {
-    throw new Error("The file could not be uploaded. Try again.")
-  }
 }
 
 export async function sha256File(file: File) {
