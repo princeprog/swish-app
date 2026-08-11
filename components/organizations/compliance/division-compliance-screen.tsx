@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { FileCheck2 } from "lucide-react";
 
 import { AppSidebar } from "@/components/app-sidebar";
@@ -23,6 +24,12 @@ import {
 } from "@/components/ui/empty";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { getApiErrorMessage } from "@/hooks/use-auth";
 import { useDivisionComplianceQuery } from "@/hooks/use-compliance";
 import { useDivisionsQuery } from "@/hooks/use-division";
@@ -36,6 +43,9 @@ export function DivisionComplianceScreen({
   divisionId: string;
   slug: string;
 }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const organizationsQuery = useOrganizationsQuery();
   const organization = organizationsQuery.data?.find(
     (item) => item.slug === slug,
@@ -92,6 +102,18 @@ export function DivisionComplianceScreen({
   }
 
   const data = complianceQuery.data!;
+  const view = searchParams.get("view") === "settings" ? "settings" : "review";
+  function changeView(nextView: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (nextView === "settings") {
+      params.set("view", "settings");
+    } else {
+      params.delete("view");
+    }
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }
+
   return (
     <ScreenShell
       organization={organization}
@@ -104,20 +126,26 @@ export function DivisionComplianceScreen({
               Set the checklist team managers must complete before their games
               can start.
             </p>
-            <DivisionComplianceBuilder
-              data={data}
-              divisionId={divisionId}
-              organizationId={organization.id}
-            />
+            <Tabs value={view} onValueChange={changeView}>
+              <TabsList aria-label="Requirements workspace sections">
+                <TabsTrigger value="review">Review submissions</TabsTrigger>
+                <TabsTrigger value="settings">Checklist settings</TabsTrigger>
+              </TabsList>
+              <TabsContent className="mt-5" value="review">
+                <DivisionComplianceReviewQueue
+                  divisionId={divisionId}
+                  organizationId={organization.id}
+                />
+              </TabsContent>
+              <TabsContent className="mt-5" value="settings">
+                <DivisionComplianceBuilder
+                  data={data}
+                  divisionId={divisionId}
+                  organizationId={organization.id}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
-        </ComponentReveal>
-        <ComponentReveal asChild>
-          <section className="mt-8">
-            <DivisionComplianceReviewQueue
-              divisionId={divisionId}
-              organizationId={organization.id}
-            />
-          </section>
         </ComponentReveal>
       </RevealGroup>
     </ScreenShell>

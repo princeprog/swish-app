@@ -10,20 +10,29 @@ const labels: Record<string, string> = {
   rejected: "Changes requested",
   reopened: "Reopened",
   submitted: "Submitted",
+  under_review: "Under review",
   waived: "Waived",
+  required: "Required",
+  optional: "Optional",
 };
 
-const tones: Record<string, string> = {
-  approved: "bg-emerald-600 text-white",
-  blocked: "bg-rose-600 text-white",
-  cleared: "bg-emerald-600 text-white",
-  draft: "bg-muted text-muted-foreground",
-  not_required: "bg-muted text-muted-foreground",
-  pending: "bg-amber-500 text-white",
-  rejected: "bg-amber-500 text-white",
-  reopened: "bg-amber-500 text-white",
-  submitted: "bg-blue-600 text-white",
-  waived: "bg-violet-600 text-white",
+const tones: Record<
+  string,
+  "default" | "secondary" | "destructive" | "outline" | "ghost"
+> = {
+  approved: "default",
+  blocked: "destructive",
+  cleared: "default",
+  draft: "secondary",
+  not_required: "secondary",
+  optional: "secondary",
+  pending: "secondary",
+  rejected: "destructive",
+  reopened: "secondary",
+  required: "outline",
+  submitted: "default",
+  under_review: "secondary",
+  waived: "outline",
 };
 
 export function ComplianceStatusBadge({
@@ -32,9 +41,5 @@ export function ComplianceStatusBadge({
   status: string | null | undefined;
 }) {
   const value = status ?? "draft";
-  return (
-    <Badge className={tones[value] ?? "bg-muted text-muted-foreground"}>
-      {labels[value] ?? value.replaceAll("_", " ")}
-    </Badge>
-  );
+  return <Badge variant={tones[value] ?? "secondary"}>{labels[value] ?? value.replaceAll("_", " ")}</Badge>;
 }
