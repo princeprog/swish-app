@@ -19,6 +19,11 @@ export type ComplianceWorkflowStatus =
   | "waived"
   | "reopened"
 
+export type ComplianceReviewQueueScope =
+  | "needs_review"
+  | "all"
+  | "completed"
+
 export type ComplianceRequirement = {
   archived_at: string | null
   created_at: string
@@ -105,6 +110,31 @@ export type ComplianceReviewRow = {
   team_id: string
   team_name: string
   workflow_status: ComplianceWorkflowStatus
+}
+
+export type ComplianceHistoryAttempt = {
+  attempt_number: number
+  id: string
+  response_type: ComplianceResponseType
+  response_value: unknown
+  submission_id: string
+  submitted_at: string
+  submitted_by_member_id: string
+}
+
+export type ComplianceHistoryEvent = {
+  actor_member_id: string | null
+  created_at: string
+  event_type: string
+  id: string
+  metadata: Record<string, unknown>
+  submission_attempt_id: string | null
+  submission_id: string
+}
+
+export type ComplianceHistoryResponse = {
+  attempts: ComplianceHistoryAttempt[]
+  events: ComplianceHistoryEvent[]
 }
 
 export type UpdateComplianceSettingsPayload = {
@@ -205,7 +235,11 @@ export const complianceService = {
   getReviewQueue: (
     organizationId: string,
     divisionId: string,
-    params: PaginationParams & { status?: ComplianceWorkflowStatus },
+    params: PaginationParams & {
+      scope?: ComplianceReviewQueueScope
+      search?: string
+      status?: ComplianceWorkflowStatus
+    },
   ) =>
     apiService.get<PaginatedResponse<ComplianceReviewRow>>(
       API_ENDPOINTS.compliance.reviewQueue(organizationId, divisionId),
@@ -282,7 +316,7 @@ export const complianceService = {
       { credentials: "include" },
     ),
   history: (organizationId: string, teamId: string, requirementId: string) =>
-    apiService.get(
+    apiService.get<ComplianceHistoryResponse>(
       API_ENDPOINTS.compliance.history(organizationId, teamId, requirementId),
       { credentials: "include" },
     ),
