@@ -46,7 +46,7 @@ export function ManagerComplianceHistory({
         <ComplianceStatusBadge status={requirement.workflow_status ?? "draft"} />
       </div>
       {requirement.review_note ? (
-        <p className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-sm">
+        <p className="rounded-md border border-border bg-muted/50 p-3 text-sm">
           Review note: {requirement.review_note}
         </p>
       ) : null}

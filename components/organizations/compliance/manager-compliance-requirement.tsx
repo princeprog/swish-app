@@ -112,7 +112,7 @@ export function ManagerComplianceRequirement({
               </p>
             ) : null}
             {requirement.review_note ? (
-              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm">
+              <div className="rounded-lg border border-border bg-muted/50 p-3 text-sm">
                 <p className="font-medium">Changes requested</p>
                 <p className="mt-1 text-muted-foreground">{requirement.review_note}</p>
               </div>
