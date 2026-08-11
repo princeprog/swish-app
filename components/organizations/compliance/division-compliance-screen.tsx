@@ -25,12 +25,7 @@ import {
 } from "@/components/ui/empty";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getApiErrorMessage } from "@/hooks/use-auth";
 import { useDivisionComplianceQuery } from "@/hooks/use-compliance";
 import { useDivisionsQuery } from "@/hooks/use-division";
@@ -65,9 +60,7 @@ export function DivisionComplianceScreen({
   const searchParams = useSearchParams();
   const view: RequirementsView =
     searchParams.get("view") === "settings" ? "settings" : "review";
-  const visitedViews = React.useRef(
-    new Set<RequirementsView>([view]),
-  );
+  const visitedViews = React.useRef(new Set<RequirementsView>([view]));
   const previousView = React.useRef(view);
   const [revealingView, setRevealingView] =
     React.useState<RequirementsView | null>(null);
@@ -150,7 +143,9 @@ export function DivisionComplianceScreen({
       params.delete("view");
     }
     const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    router.replace(query ? `${pathname}?${query}` : pathname, {
+      scroll: false,
+    });
   }
 
   return (
