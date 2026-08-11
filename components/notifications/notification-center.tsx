@@ -40,6 +40,7 @@ const categories: Array<{ label: string; value: NotificationCategory | "all" }> 
   { label: "Schedule", value: "schedule" },
   { label: "Scoring", value: "scoring" },
   { label: "Competition", value: "competition" },
+  { label: "Requirements", value: "compliance" },
 ]
 
 export function NotificationCenter() {
