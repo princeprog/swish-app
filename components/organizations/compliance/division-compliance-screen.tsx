@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { FileCheck2 } from "lucide-react";
@@ -36,6 +37,22 @@ import { useDivisionsQuery } from "@/hooks/use-division";
 import { useOrganizationsQuery } from "@/hooks/use-organization";
 import type { Organization } from "@/services/organization.service";
 
+type RequirementsView = "review" | "settings";
+
+function TabPanelReveal({
+  animate,
+  children,
+}: {
+  animate: boolean;
+  children: React.ReactNode;
+}) {
+  return animate ? (
+    <ComponentReveal variant="subtle">{children}</ComponentReveal>
+  ) : (
+    children
+  );
+}
+
 export function DivisionComplianceScreen({
   divisionId,
   slug,
@@ -46,6 +63,29 @@ export function DivisionComplianceScreen({
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const view: RequirementsView =
+    searchParams.get("view") === "settings" ? "settings" : "review";
+  const visitedViews = React.useRef(
+    new Set<RequirementsView>([view]),
+  );
+  const previousView = React.useRef(view);
+  const [revealingView, setRevealingView] =
+    React.useState<RequirementsView | null>(null);
+
+  React.useEffect(() => {
+    if (previousView.current === view) return;
+
+    previousView.current = view;
+
+    if (visitedViews.current.has(view)) {
+      setRevealingView(null);
+      return;
+    }
+
+    visitedViews.current.add(view);
+    setRevealingView(view);
+  }, [view]);
+
   const organizationsQuery = useOrganizationsQuery();
   const organization = organizationsQuery.data?.find(
     (item) => item.slug === slug,
@@ -102,7 +142,6 @@ export function DivisionComplianceScreen({
   }
 
   const data = complianceQuery.data!;
-  const view = searchParams.get("view") === "settings" ? "settings" : "review";
   function changeView(nextView: string) {
     const params = new URLSearchParams(searchParams.toString());
     if (nextView === "settings") {
@@ -132,17 +171,21 @@ export function DivisionComplianceScreen({
                 <TabsTrigger value="settings">Checklist settings</TabsTrigger>
               </TabsList>
               <TabsContent className="mt-5" value="review">
-                <DivisionComplianceReviewQueue
-                  divisionId={divisionId}
-                  organizationId={organization.id}
-                />
+                <TabPanelReveal animate={revealingView === "review"}>
+                  <DivisionComplianceReviewQueue
+                    divisionId={divisionId}
+                    organizationId={organization.id}
+                  />
+                </TabPanelReveal>
               </TabsContent>
               <TabsContent className="mt-5" value="settings">
-                <DivisionComplianceBuilder
-                  data={data}
-                  divisionId={divisionId}
-                  organizationId={organization.id}
-                />
+                <TabPanelReveal animate={revealingView === "settings"}>
+                  <DivisionComplianceBuilder
+                    data={data}
+                    divisionId={divisionId}
+                    organizationId={organization.id}
+                  />
+                </TabPanelReveal>
               </TabsContent>
             </Tabs>
           </div>
