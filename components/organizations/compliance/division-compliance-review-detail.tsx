@@ -3,9 +3,10 @@
 import * as React from "react";
 import {
   Check,
-  ExternalLink,
+  Eye,
   FileCheck2,
   History,
+  Loader2,
   RotateCcw,
   Send,
   ShieldAlert,
@@ -90,6 +91,13 @@ type DivisionComplianceReviewDetailProps = {
 
 type ReasonAction = "request_changes" | "waive" | "reopen";
 
+type PreviewKind = "pdf" | "image" | "unsupported";
+
+type PreviewFile = {
+  file: ComplianceFileReference;
+  url: string;
+};
+
 function formatDate(value: string | null | undefined) {
   if (!value) return "Not recorded";
   return new Intl.DateTimeFormat(undefined, {
@@ -134,6 +142,13 @@ function fileStatusDescription(file: ComplianceFileReference) {
   }
 }
 
+function previewKind(file: ComplianceFileReference): PreviewKind {
+  const fileName = (file.original_filename ?? file.name ?? "").toLowerCase();
+  if (fileName.endsWith(".pdf")) return "pdf";
+  if (/\.(jpe?g|png)$/.test(fileName)) return "image";
+  return "unsupported";
+}
+
 function ComplianceEvidenceAttachment({
   downloadingFileId,
   file,
@@ -160,7 +175,9 @@ function ComplianceEvidenceAttachment({
       <AttachmentActions>
         <AttachmentAction
           aria-label={
-            isVerified ? `Open ${fileName}` : `${fileName} is not ready to view`
+            isVerified
+              ? `Preview ${fileName}`
+              : `${fileName} is not ready to view`
           }
           disabled={
             file.verification_status !== "verified" ||
@@ -168,7 +185,11 @@ function ComplianceEvidenceAttachment({
           }
           onClick={() => onOpen(file)}
         >
-          <ExternalLink />
+          {downloadingFileId === file.id ? (
+            <Loader2 className="animate-spin" />
+          ) : (
+            <Eye />
+          )}
         </AttachmentAction>
       </AttachmentActions>
     </Attachment>
@@ -199,6 +220,13 @@ export function DivisionComplianceReviewDetail({
   const [downloadingFileId, setDownloadingFileId] = React.useState<string | null>(
     null,
   );
+  const [previewFile, setPreviewFile] = React.useState<PreviewFile | null>(
+    null,
+  );
+
+  React.useEffect(() => {
+    if (!open) setPreviewFile(null);
+  }, [open]);
 
   const submission = detailQuery.data?.submission;
   const status = submission?.workflow_status ?? row.workflow_status;
@@ -256,7 +284,7 @@ export function DivisionComplianceReviewDetail({
         row.team_id,
         file.id,
       );
-      window.open(download.url, "_blank", "noopener,noreferrer");
+      setPreviewFile({ file, url: download.url });
     } catch (error) {
       toast.error(getApiErrorMessage(error));
     } finally {
@@ -269,6 +297,9 @@ export function DivisionComplianceReviewDetail({
   const files = detailQuery.data?.files ?? [];
   const attempts = detailQuery.data?.attempts ?? [];
   const events = detailQuery.data?.events ?? [];
+  const previewFileName =
+    previewFile?.file.original_filename ?? previewFile?.file.name ?? "Evidence file";
+  const previewFileKind = previewFile ? previewKind(previewFile.file) : null;
 
   return (
     <>
@@ -338,7 +369,7 @@ export function DivisionComplianceReviewDetail({
                     <div>
                       <h3 className="font-medium">Private evidence</h3>
                       <p className="text-sm text-muted-foreground">
-                        Files open through a short-lived private download link.
+                        Verified files can be previewed here in a secure, short-lived viewer.
                       </p>
                     </div>
                     {files.length ? (
@@ -568,6 +599,52 @@ export function DivisionComplianceReviewDetail({
                 : reasonAction === "waive"
                   ? "Save waiver"
                   : "Reopen requirement"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={previewFile !== null}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setPreviewFile(null);
+        }}
+      >
+        <DialogContent className="flex h-[min(90vh,52rem)] w-[min(96vw,64rem)] max-w-none flex-col gap-4 p-4 sm:p-6">
+          <DialogHeader className="pr-8">
+            <DialogTitle>{previewFileName}</DialogTitle>
+            <DialogDescription>
+              This private preview is available for a short time.
+            </DialogDescription>
+          </DialogHeader>
+          {previewFile ? (
+            <div className="min-h-0 flex-1 overflow-hidden rounded-lg border bg-muted/20">
+              {previewFileKind === "pdf" ? (
+                <iframe
+                  className="h-full w-full"
+                  src={previewFile.url}
+                  title={`Preview of ${previewFileName}`}
+                />
+              ) : previewFileKind === "image" ? (
+                <div className="flex h-full items-center justify-center overflow-auto p-4">
+                  <img
+                    alt={`Preview of ${previewFileName}`}
+                    className="max-h-full max-w-full object-contain"
+                    src={previewFile.url}
+                  />
+                </div>
+              ) : (
+                <div className="flex h-full items-center justify-center p-6 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    This file type cannot be previewed here.
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPreviewFile(null)}>
+              Close preview
             </Button>
           </DialogFooter>
         </DialogContent>
