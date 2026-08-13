@@ -76,6 +76,7 @@ import {
 } from "@/hooks/use-compliance";
 import { complianceService } from "@/services/compliance.service";
 import type {
+  ComplianceFileReference,
   ComplianceHistoryEvent,
   ComplianceHistoryAttempt,
   ComplianceReviewRow,
@@ -114,6 +115,65 @@ function eventDescription(event: ComplianceHistoryEvent) {
 
 function attemptLabel(attempt: ComplianceHistoryAttempt) {
   return `Attempt ${attempt.attempt_number} · ${formatDate(attempt.submitted_at)}`;
+}
+
+function fileStatusDescription(file: ComplianceFileReference) {
+  switch (file.verification_status) {
+    case "verified":
+      return "Verified private evidence";
+    case "pending_upload":
+      return "Upload did not finish. Ask the team manager to upload it again.";
+    case "uploaded":
+    case "scanning":
+      return "File is still being checked. Try again shortly.";
+    case "rejected":
+      return "File could not be verified. Ask the team manager to upload it again.";
+    case "deleted":
+      return "File is no longer available";
+    default:
+      return "File is not ready to view";
+  }
+}
+
+function ComplianceEvidenceAttachment({
+  downloadingFileId,
+  file,
+  onOpen,
+}: {
+  downloadingFileId: string | null;
+  file: ComplianceFileReference;
+  onOpen: (file: ComplianceFileReference) => void;
+}) {
+  const fileName = file.original_filename ?? file.name ?? "Evidence file";
+  const isVerified = file.verification_status === "verified";
+
+  return (
+    <Attachment className="w-full">
+      <AttachmentMedia>
+        <FileCheck2 />
+      </AttachmentMedia>
+      <AttachmentContent>
+        <AttachmentTitle>{fileName}</AttachmentTitle>
+        <AttachmentDescription>
+          {fileStatusDescription(file)}
+        </AttachmentDescription>
+      </AttachmentContent>
+      <AttachmentActions>
+        <AttachmentAction
+          aria-label={
+            isVerified ? `Open ${fileName}` : `${fileName} is not ready to view`
+          }
+          disabled={
+            file.verification_status !== "verified" ||
+            downloadingFileId === file.id
+          }
+          onClick={() => onOpen(file)}
+        >
+          <ExternalLink />
+        </AttachmentAction>
+      </AttachmentActions>
+    </Attachment>
+  );
 }
 
 export function DivisionComplianceReviewDetail({
@@ -193,13 +253,17 @@ export function DivisionComplianceReviewDetail({
     }
   }
 
-  async function openPrivateFile(fileId: string) {
-    setDownloadingFileId(fileId);
+  async function openPrivateFile(file: ComplianceFileReference) {
+    if (file.verification_status !== "verified") {
+      toast.info(fileStatusDescription(file));
+      return;
+    }
+    setDownloadingFileId(file.id);
     try {
       const download = await complianceService.downloadUrl(
         organizationId,
         row.team_id,
-        fileId,
+        file.id,
       );
       window.open(download.url, "_blank", "noopener,noreferrer");
     } catch (error) {
@@ -285,28 +349,14 @@ export function DivisionComplianceReviewDetail({
                     {files.length ? (
                       <AttachmentGroup className="w-full flex-col">
                         {files.map((file) => (
-                          <Attachment className="w-full" key={file.id}>
-                            <AttachmentMedia>
-                              <FileCheck2 />
-                            </AttachmentMedia>
-                            <AttachmentContent>
-                              <AttachmentTitle>
-                                {file.original_filename ?? file.name ?? "Evidence file"}
-                              </AttachmentTitle>
-                              <AttachmentDescription>
-                                Verified private evidence
-                              </AttachmentDescription>
-                            </AttachmentContent>
-                            <AttachmentActions>
-                              <AttachmentAction
-                                aria-label={`Open ${file.original_filename ?? file.name ?? "evidence file"}`}
-                                disabled={downloadingFileId === file.id}
-                                onClick={() => openPrivateFile(file.id)}
-                              >
-                                <ExternalLink />
-                              </AttachmentAction>
-                            </AttachmentActions>
-                          </Attachment>
+                          <ComplianceEvidenceAttachment
+                            downloadingFileId={downloadingFileId}
+                            file={file}
+                            key={file.id}
+                            onOpen={(selectedFile) =>
+                              void openPrivateFile(selectedFile)
+                            }
+                          />
                         ))}
                       </AttachmentGroup>
                     ) : (
