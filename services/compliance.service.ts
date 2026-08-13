@@ -115,6 +115,7 @@ export type ComplianceReviewRow = {
 
 export type ComplianceReviewSubmission = {
   current_attempt_id: string | null
+  division_id: string
   id: string
   is_required: boolean
   requirement_id: string

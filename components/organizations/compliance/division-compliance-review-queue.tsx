@@ -1,9 +1,10 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { FileCheck2, Search } from "lucide-react";
 
-import { DivisionComplianceReviewDetail } from "@/components/organizations/compliance/division-compliance-review-detail";
 import { ComplianceStatusBadge } from "@/components/organizations/compliance/compliance-status-badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -65,6 +66,8 @@ import {
 } from "@/hooks/use-compliance";
 import { useTablePaginationState } from "@/hooks/use-table-pagination-state";
 import {
+  buildComplianceReviewHref,
+  buildComplianceReviewReturnTo,
   reviewInboxFiltersWithScope,
   reviewInboxTabFromParam,
   type ComplianceReviewQueueScope,
@@ -115,10 +118,13 @@ const scopeTabs: Array<{
 export function DivisionComplianceReviewQueue({
   divisionId,
   organizationId,
+  slug,
 }: {
   divisionId: string;
   organizationId: string;
+  slug: string;
 }) {
+  const pathname = usePathname();
   const tablePagination = useTablePaginationState();
   const scope = reviewInboxTabFromParam(tablePagination.searchParams.get("scope"));
   const urlSearch = tablePagination.searchParams.get("search") ?? "";
@@ -157,8 +163,9 @@ export function DivisionComplianceReviewQueue({
     divisionId,
     filters,
   );
-  const [selectedRow, setSelectedRow] = React.useState<ComplianceReviewRow | null>(
-    null,
+  const returnTo = React.useMemo(
+    () => buildComplianceReviewReturnTo(pathname, tablePagination.searchParams),
+    [pathname, tablePagination.searchParams],
   );
 
   function changeScope(nextScope: ComplianceReviewQueueScope) {
@@ -169,8 +176,13 @@ export function DivisionComplianceReviewQueue({
     });
   }
 
-  function openRow(row: ComplianceReviewRow) {
-    setSelectedRow(row);
+  function reviewHref(row: ComplianceReviewRow) {
+    return buildComplianceReviewHref(
+      slug,
+      divisionId,
+      row.submission_id,
+      returnTo,
+    );
   }
 
   if (overviewQuery.isLoading || queueQuery.isLoading) {
@@ -310,14 +322,22 @@ export function DivisionComplianceReviewQueue({
                   </TableHeader>
                   <TableBody>
                     {rows.map((row) => (
-                      <QueueTableRow key={row.submission_id} row={row} onOpen={openRow} />
+                      <QueueTableRow
+                        href={reviewHref(row)}
+                        key={row.submission_id}
+                        row={row}
+                      />
                     ))}
                   </TableBody>
                 </Table>
               </div>
               <ItemGroup className="gap-2 p-3 md:hidden">
                 {rows.map((row) => (
-                  <QueueItem key={row.submission_id} row={row} onOpen={openRow} />
+                  <QueueItem
+                    href={reviewHref(row)}
+                    key={row.submission_id}
+                    row={row}
+                  />
                 ))}
               </ItemGroup>
             </>
@@ -396,16 +416,6 @@ export function DivisionComplianceReviewQueue({
         ) : null}
       </Card>
 
-      {selectedRow ? (
-        <DivisionComplianceReviewDetail
-          open
-          onOpenChange={(open) => {
-            if (!open) setSelectedRow(null);
-          }}
-          organizationId={organizationId}
-          row={selectedRow}
-        />
-      ) : null}
     </div>
   );
 }
@@ -435,25 +445,14 @@ function SummaryItem({
 }
 
 function QueueTableRow({
+  href,
   row,
-  onOpen,
 }: {
+  href: string;
   row: ComplianceReviewRow;
-  onOpen: (row: ComplianceReviewRow) => void;
 }) {
   return (
-    <TableRow
-      className="cursor-pointer"
-      role="button"
-      tabIndex={0}
-      onClick={() => onOpen(row)}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onOpen(row);
-        }
-      }}
-    >
+    <TableRow>
       <TableCell>
         <div className="flex items-center gap-3">
           <Avatar size="sm">
@@ -470,8 +469,8 @@ function QueueTableRow({
         <ComplianceStatusBadge status={row.workflow_status} />
       </TableCell>
       <TableCell className="text-right">
-        <Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); onOpen(row); }}>
-          Open review
+        <Button asChild size="sm" variant="outline">
+          <Link href={href}>Open review</Link>
         </Button>
       </TableCell>
     </TableRow>
@@ -479,20 +478,18 @@ function QueueTableRow({
 }
 
 function QueueItem({
+  href,
   row,
-  onOpen,
 }: {
+  href: string;
   row: ComplianceReviewRow;
-  onOpen: (row: ComplianceReviewRow) => void;
 }) {
   return (
     <Item
       asChild
-      className="cursor-pointer"
       variant="outline"
-      onClick={() => onOpen(row)}
     >
-      <button type="button">
+      <Link className="cursor-pointer" href={href}>
         <ItemMedia>
           <Avatar size="sm">
             <AvatarFallback>{initials(row.team_name)}</AvatarFallback>
@@ -505,9 +502,10 @@ function QueueItem({
           </ItemDescription>
         </ItemContent>
         <ItemActions>
+          <span className="text-xs font-medium text-primary">Open review</span>
           <ComplianceStatusBadge status={row.workflow_status} />
         </ItemActions>
-      </button>
+      </Link>
     </Item>
   );
 }
