@@ -218,9 +218,9 @@ export function DivisionComplianceReviewQueue({
     <div className="grid gap-5">
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryItem
-          description="Submitted or waiting for a decision"
+          description="Submitted or under review"
           label="Needs review"
-          value={counts?.pending ?? 0}
+          value={counts?.needs_review ?? 0}
           onClick={() => changeScope("needs_review")}
         />
         <SummaryItem

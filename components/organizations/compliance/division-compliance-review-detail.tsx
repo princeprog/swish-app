@@ -70,9 +70,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { getApiErrorMessage } from "@/hooks/use-auth";
 import {
-  useComplianceHistoryQuery,
+  useComplianceReviewDetailQuery,
   useComplianceReviewMutation,
-  useTeamComplianceQuery,
 } from "@/hooks/use-compliance";
 import { complianceService } from "@/services/compliance.service";
 import type {
@@ -182,15 +181,9 @@ export function DivisionComplianceReviewDetail({
   open,
   onOpenChange,
 }: DivisionComplianceReviewDetailProps) {
-  const teamQuery = useTeamComplianceQuery(
+  const detailQuery = useComplianceReviewDetailQuery(
     organizationId,
-    row.team_id,
-    open,
-  );
-  const historyQuery = useComplianceHistoryQuery(
-    organizationId,
-    row.team_id,
-    row.requirement_id,
+    row.submission_id,
     open,
   );
   const review = useComplianceReviewMutation(
@@ -207,10 +200,8 @@ export function DivisionComplianceReviewDetail({
     null,
   );
 
-  const requirement = teamQuery.data?.requirements.find(
-    (item) => item.requirement_id === row.requirement_id,
-  );
-  const status = requirement?.workflow_status ?? row.workflow_status;
+  const submission = detailQuery.data?.submission;
+  const status = submission?.workflow_status ?? row.workflow_status;
   const canReview = status === "submitted" || status === "under_review";
   const canReopen = ["approved", "rejected", "waived"].includes(status);
   const canWaive = status !== "approved";
@@ -273,11 +264,11 @@ export function DivisionComplianceReviewDetail({
     }
   }
 
-  const loading = teamQuery.isLoading || historyQuery.isLoading;
-  const error = teamQuery.error ?? historyQuery.error;
-  const files = requirement?.files ?? [];
-  const attempts = historyQuery.data?.attempts ?? [];
-  const events = historyQuery.data?.events ?? [];
+  const loading = detailQuery.isLoading;
+  const error = detailQuery.error;
+  const files = detailQuery.data?.files ?? [];
+  const attempts = detailQuery.data?.attempts ?? [];
+  const events = detailQuery.data?.events ?? [];
 
   return (
     <>
@@ -320,7 +311,9 @@ export function DivisionComplianceReviewDetail({
                       </div>
                       <div>
                         <p className="text-muted-foreground">Submitted</p>
-                        <p>{formatDate(row.submitted_at)}</p>
+                        <p>
+                          {formatDate(submission?.submitted_at ?? row.submitted_at)}
+                        </p>
                       </div>
                     </div>
                   </section>
@@ -329,13 +322,15 @@ export function DivisionComplianceReviewDetail({
                     <div>
                       <h3 className="font-medium">Response</h3>
                       <p className="text-sm text-muted-foreground">
-                        {requirement?.response_type ?? "Response"}
+                        {submission?.response_type ?? "Response"}
                       </p>
                     </div>
                     <div className="rounded-lg border bg-muted/20 p-4 text-sm whitespace-pre-wrap">
-                      {requirement?.response_type === "file"
+                      {submission?.response_type === "file"
                         ? "Private evidence files are attached below."
-                        : formatResponse(requirement?.response)}
+                        : formatResponse(
+                            detailQuery.data?.current_attempt?.response_value,
+                          )}
                     </div>
                   </section>
 
@@ -366,11 +361,11 @@ export function DivisionComplianceReviewDetail({
                     )}
                   </section>
 
-                  {requirement?.review_note ? (
+                  {submission?.review_note ? (
                     <Alert>
                       <Send />
                       <AlertTitle>Reviewer note</AlertTitle>
-                      <AlertDescription>{requirement.review_note}</AlertDescription>
+                      <AlertDescription>{submission.review_note}</AlertDescription>
                     </Alert>
                   ) : null}
 

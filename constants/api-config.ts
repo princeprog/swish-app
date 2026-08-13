@@ -161,6 +161,8 @@ export const API_ENDPOINTS = {
       `/organizations/${organizationId}/divisions/${divisionId}/compliance/overview`,
     reviewQueue: (organizationId: string, divisionId: string) =>
       `/organizations/${organizationId}/divisions/${divisionId}/compliance/review-queue`,
+    reviewDetail: (organizationId: string, submissionId: string) =>
+      `/organizations/${organizationId}/compliance/submissions/${submissionId}/review-detail`,
     team: (organizationId: string, teamId: string) =>
       `/organizations/${organizationId}/teams/${teamId}/compliance`,
     saveDraft: (
