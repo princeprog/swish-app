@@ -265,10 +265,15 @@ export const complianceService = {
       { response },
       { credentials: "include" },
     ),
-  submit: (organizationId: string, teamId: string, requirementId: string) =>
+  submit: (
+    organizationId: string,
+    teamId: string,
+    requirementId: string,
+    response?: unknown,
+  ) =>
     apiService.post(
       API_ENDPOINTS.compliance.submit(organizationId, teamId, requirementId),
-      undefined,
+      response === undefined ? undefined : { response },
       { credentials: "include" },
     ),
   approve: (organizationId: string, teamId: string, requirementId: string) =>

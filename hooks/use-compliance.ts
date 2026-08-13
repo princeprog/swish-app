@@ -243,8 +243,13 @@ export function useSubmitComplianceMutation(
 ) {
   const invalidate = useComplianceInvalidation(organizationId)
   return useMutation({
-    mutationFn: () =>
-      complianceService.submit(organizationId, teamId, requirementId),
+    mutationFn: (response?: unknown) =>
+      complianceService.submit(
+        organizationId,
+        teamId,
+        requirementId,
+        response,
+      ),
     onSuccess: invalidate,
   })
 }
