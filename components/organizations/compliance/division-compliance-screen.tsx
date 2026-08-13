@@ -5,15 +5,13 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { FileCheck2 } from "lucide-react";
 
-import { AppSidebar } from "@/components/app-sidebar";
 import {
   ComponentReveal,
-  PageEntrance,
   RevealGroup,
 } from "@/components/motion/page-motion";
 import { DivisionComplianceBuilder } from "@/components/organizations/compliance/division-compliance-builder";
 import { DivisionComplianceReviewQueue } from "@/components/organizations/compliance/division-compliance-review-queue";
-import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header";
+import { DivisionComplianceWorkspaceShell } from "@/components/organizations/compliance/division-compliance-workspace-shell";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -23,14 +21,12 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getApiErrorMessage } from "@/hooks/use-auth";
 import { useDivisionComplianceQuery } from "@/hooks/use-compliance";
 import { useDivisionsQuery } from "@/hooks/use-division";
 import { useOrganizationsQuery } from "@/hooks/use-organization";
-import type { Organization } from "@/services/organization.service";
 
 type RequirementsView = "review" | "settings";
 
@@ -97,13 +93,13 @@ export function DivisionComplianceScreen({
     (organization && complianceQuery.isLoading)
   )
     return (
-      <ScreenShell organization={organization} title="Requirements">
+      <DivisionComplianceWorkspaceShell organization={organization} title="Requirements">
         <Skeleton className="h-64 rounded-lg" />
-      </ScreenShell>
+      </DivisionComplianceWorkspaceShell>
     );
   if (organizationsQuery.isError || complianceQuery.isError || !organization) {
     return (
-      <ScreenShell organization={organization} title="Requirements">
+      <DivisionComplianceWorkspaceShell organization={organization} title="Requirements">
         <Empty className="border bg-card">
           <EmptyHeader>
             <EmptyMedia variant="icon">
@@ -130,7 +126,7 @@ export function DivisionComplianceScreen({
             </Button>
           </EmptyContent>
         </Empty>
-      </ScreenShell>
+      </DivisionComplianceWorkspaceShell>
     );
   }
 
@@ -149,7 +145,7 @@ export function DivisionComplianceScreen({
   }
 
   return (
-    <ScreenShell
+    <DivisionComplianceWorkspaceShell
       organization={organization}
       title={`${division?.name ?? "Division"} requirements`}
     >
@@ -170,6 +166,7 @@ export function DivisionComplianceScreen({
                   <DivisionComplianceReviewQueue
                     divisionId={divisionId}
                     organizationId={organization.id}
+                    slug={slug}
                   />
                 </TabPanelReveal>
               </TabsContent>
@@ -186,47 +183,6 @@ export function DivisionComplianceScreen({
           </div>
         </ComponentReveal>
       </RevealGroup>
-    </ScreenShell>
-  );
-}
-
-function ScreenShell({
-  children,
-  organization,
-  title,
-}: {
-  children: React.ReactNode;
-  organization?: Organization;
-  title: string;
-}) {
-  return (
-    <SidebarProvider>
-      <AppSidebar
-        organization={
-          organization
-            ? {
-                access: organization.access,
-                name: organization.name,
-                slug: organization.slug,
-                status: organization.status,
-              }
-            : undefined
-        }
-      />
-      <SidebarInset>
-        <WorkspaceHeader
-          organizationAccess={organization?.access}
-          organizationName={organization?.name ?? "Swish"}
-          organizationSlug={organization?.slug ?? ""}
-          pageTitle={title}
-          primaryAction={null}
-        />
-        <PageEntrance asChild>
-          <main className="flex flex-1 flex-col gap-5 bg-background px-4 py-4 lg:px-6 lg:py-5">
-            <div className="mx-auto w-full max-w-7xl">{children}</div>
-          </main>
-        </PageEntrance>
-      </SidebarInset>
-    </SidebarProvider>
+    </DivisionComplianceWorkspaceShell>
   );
 }

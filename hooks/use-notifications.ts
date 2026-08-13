@@ -15,6 +15,24 @@ export const NOTIFICATION_QUERY_KEYS = {
   unreadCount: ["notifications", "unread-count"] as const,
 } as const
 
+type NotificationStreamChange = {
+  organizationId?: string
+  resourceType?: string
+}
+
+function notificationStreamChange(event?: Event): NotificationStreamChange {
+  if (!event || !("data" in event) || typeof event.data !== "string") {
+    return {}
+  }
+
+  try {
+    const payload = JSON.parse(event.data) as NotificationStreamChange
+    return payload && typeof payload === "object" ? payload : {}
+  } catch {
+    return {}
+  }
+}
+
 export function useNotificationsQuery(
   query: NotificationListQuery = {},
   enabled = true,
@@ -194,11 +212,29 @@ export function useNotificationRealtime(enabled: boolean) {
     let retryTimer: ReturnType<typeof setTimeout> | undefined
     let source: EventSource | undefined
 
-    const invalidate = () => {
-      void Promise.all([
+    const invalidate = (event?: Event) => {
+      const change = notificationStreamChange(event)
+      const invalidations = [
         queryClient.invalidateQueries({ queryKey: ["notifications", "list"] }),
         queryClient.invalidateQueries({ queryKey: NOTIFICATION_QUERY_KEYS.unreadCount }),
-      ])
+      ]
+
+      if (
+        change.resourceType === "compliance_submission" &&
+        change.organizationId
+      ) {
+        for (const query of queryClient
+          .getQueryCache()
+          .findAll({ queryKey: ["compliance"] })) {
+          if (query.queryKey.includes(change.organizationId)) {
+            invalidations.push(
+              queryClient.invalidateQueries({ queryKey: query.queryKey }),
+            )
+          }
+        }
+      }
+
+      void Promise.all(invalidations)
     }
 
     const connect = () => {

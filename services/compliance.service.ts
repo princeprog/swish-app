@@ -94,6 +94,7 @@ export type ComplianceOverviewResponse = {
   counts: {
     blocked: number
     cleared: number
+    needs_review: number
     not_required: number
     pending: number
   }
@@ -109,6 +110,24 @@ export type ComplianceReviewRow = {
   submitted_at: string | null
   team_id: string
   team_name: string
+  workflow_status: ComplianceWorkflowStatus
+}
+
+export type ComplianceReviewSubmission = {
+  current_attempt_id: string | null
+  division_id: string
+  id: string
+  is_required: boolean
+  requirement_id: string
+  requirement_title: string
+  response_type: ComplianceResponseType
+  review_note: string | null
+  reviewed_at: string | null
+  submitted_at: string | null
+  team_id: string
+  team_name: string
+  waiver_expires_at: string | null
+  waiver_reason: string | null
   workflow_status: ComplianceWorkflowStatus
 }
 
@@ -135,6 +154,14 @@ export type ComplianceHistoryEvent = {
 export type ComplianceHistoryResponse = {
   attempts: ComplianceHistoryAttempt[]
   events: ComplianceHistoryEvent[]
+}
+
+export type ComplianceReviewDetailResponse = {
+  attempts: ComplianceHistoryAttempt[]
+  current_attempt: ComplianceHistoryAttempt | null
+  events: ComplianceHistoryEvent[]
+  files: ComplianceFileReference[]
+  submission: ComplianceReviewSubmission
 }
 
 export type UpdateComplianceSettingsPayload = {
@@ -245,6 +272,11 @@ export const complianceService = {
       API_ENDPOINTS.compliance.reviewQueue(organizationId, divisionId),
       { credentials: "include", query: params },
     ),
+  getReviewDetail: (organizationId: string, submissionId: string) =>
+    apiService.get<ComplianceReviewDetailResponse>(
+      API_ENDPOINTS.compliance.reviewDetail(organizationId, submissionId),
+      { credentials: "include" },
+    ),
   getTeam: (organizationId: string, teamId: string) =>
     apiService.get<TeamComplianceResponse>(
       API_ENDPOINTS.compliance.team(organizationId, teamId),
@@ -265,10 +297,15 @@ export const complianceService = {
       { response },
       { credentials: "include" },
     ),
-  submit: (organizationId: string, teamId: string, requirementId: string) =>
+  submit: (
+    organizationId: string,
+    teamId: string,
+    requirementId: string,
+    response?: unknown,
+  ) =>
     apiService.post(
       API_ENDPOINTS.compliance.submit(organizationId, teamId, requirementId),
-      undefined,
+      response === undefined ? undefined : { response },
       { credentials: "include" },
     ),
   approve: (organizationId: string, teamId: string, requirementId: string) =>

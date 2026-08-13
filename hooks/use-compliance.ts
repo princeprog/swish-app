@@ -40,6 +40,8 @@ export const COMPLIANCE_QUERY_KEYS = {
       filters.page,
       filters.pageSize,
     ] as const,
+  reviewDetail: (organizationId: string, submissionId: string) =>
+    ["compliance", "review-detail", organizationId, submissionId] as const,
   history: (organizationId: string, teamId: string, requirementId: string) =>
     ["compliance", "history", organizationId, teamId, requirementId] as const,
   team: (organizationId: string, teamId: string) =>
@@ -92,6 +94,23 @@ export function useComplianceReviewQueueQuery(
       organizationId ?? "unknown",
       divisionId ?? "unknown",
       filters,
+    ),
+    retry: false,
+  })
+}
+
+export function useComplianceReviewDetailQuery(
+  organizationId?: string,
+  submissionId?: string,
+  enabled = true,
+) {
+  return useQuery({
+    enabled: Boolean(enabled && organizationId && submissionId),
+    queryFn: () =>
+      complianceService.getReviewDetail(organizationId!, submissionId!),
+    queryKey: COMPLIANCE_QUERY_KEYS.reviewDetail(
+      organizationId ?? "unknown",
+      submissionId ?? "unknown",
     ),
     retry: false,
   })
@@ -243,8 +262,13 @@ export function useSubmitComplianceMutation(
 ) {
   const invalidate = useComplianceInvalidation(organizationId)
   return useMutation({
-    mutationFn: () =>
-      complianceService.submit(organizationId, teamId, requirementId),
+    mutationFn: (response?: unknown) =>
+      complianceService.submit(
+        organizationId,
+        teamId,
+        requirementId,
+        response,
+      ),
     onSuccess: invalidate,
   })
 }

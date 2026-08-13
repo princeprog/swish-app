@@ -90,6 +90,8 @@ export function ManagerComplianceContent({
     Record<string, ManagerResponseValue>
   >({});
   const [uploadingId, setUploadingId] = React.useState<string | null>(null);
+  const [savingId, setSavingId] = React.useState<string | null>(null);
+  const [submittingId, setSubmittingId] = React.useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = React.useState<Record<string, number>>({});
   const [uploadErrors, setUploadErrors] = React.useState<Record<string, string | null>>({});
   const [failedFiles, setFailedFiles] = React.useState<Record<string, File | null>>({});
@@ -114,8 +116,19 @@ export function ManagerComplianceContent({
       }),
   });
   const submitMutation = useMutation({
-    mutationFn: (requirementId: string) =>
-      complianceService.submit(organization.id, teamId, requirementId),
+    mutationFn: ({
+      requirementId,
+      response,
+    }: {
+      requirementId: string;
+      response: ManagerResponseValue;
+    }) =>
+      complianceService.submit(
+        organization.id,
+        teamId,
+        requirementId,
+        response,
+      ),
     onSuccess: () =>
       queryClient.invalidateQueries({
         queryKey: COMPLIANCE_QUERY_KEYS.team(organization.id, teamId),
@@ -228,6 +241,7 @@ export function ManagerComplianceContent({
   }
 
   async function save(requirement: TeamComplianceRequirement) {
+    setSavingId(requirement.requirement_id);
     try {
       await saveMutation.mutateAsync({
         requirementId: requirement.requirement_id,
@@ -236,19 +250,23 @@ export function ManagerComplianceContent({
       toast.success("Draft saved");
     } catch (error) {
       toast.error(getApiErrorMessage(error));
+    } finally {
+      setSavingId(null);
     }
   }
 
   async function submit(requirement: TeamComplianceRequirement) {
+    setSubmittingId(requirement.requirement_id);
     try {
-      await saveMutation.mutateAsync({
+      await submitMutation.mutateAsync({
         requirementId: requirement.requirement_id,
         response: responses[requirement.requirement_id] ?? null,
       });
-      await submitMutation.mutateAsync(requirement.requirement_id);
       toast.success("Submitted for review");
     } catch (error) {
       toast.error(getApiErrorMessage(error));
+    } finally {
+      setSubmittingId(null);
     }
   }
 
@@ -310,9 +328,30 @@ export function ManagerComplianceContent({
         refs.push({ id: prepared.fileId, name: file.name, status: "verified" });
       }
       setResponse(requirement.requirement_id, { files: refs });
+      setSavingId(requirement.requirement_id);
+      try {
+        await saveMutation.mutateAsync({
+          requirementId: requirement.requirement_id,
+          response: { files: refs },
+        });
+      } catch (error) {
+        const message = getApiErrorMessage(error);
+        setFailedFiles((current) => ({
+          ...current,
+          [requirement.requirement_id]: null,
+        }));
+        setUploadErrors((current) => ({
+          ...current,
+          [requirement.requirement_id]: `Files uploaded, but the draft could not be saved. ${message}`,
+        }));
+        toast.error("Files uploaded, but the draft could not be saved");
+        return;
+      } finally {
+        setSavingId(null);
+      }
       setFailedFiles((current) => ({ ...current, [requirement.requirement_id]: null }));
       setUploadErrors((current) => ({ ...current, [requirement.requirement_id]: null }));
-      toast.success("File upload verified");
+      toast.success("File uploaded and saved");
     } catch (error) {
       const message = getApiErrorMessage(error);
       setFailedFiles((current) => ({
@@ -362,8 +401,8 @@ export function ManagerComplianceContent({
                   }}
                   response={responses[requirement.requirement_id]}
                   requirement={requirement}
-                  saving={saveMutation.isPending}
-                  submitting={submitMutation.isPending}
+                  saving={savingId === requirement.requirement_id}
+                  submitting={submittingId === requirement.requirement_id}
                   uploadError={uploadErrors[requirement.requirement_id]}
                   uploadProgress={uploadProgress[requirement.requirement_id]}
                   uploading={uploadingId === requirement.requirement_id}
@@ -403,8 +442,8 @@ export function ManagerComplianceContent({
                   }}
                   response={responses[requirement.requirement_id]}
                   requirement={requirement}
-                  saving={saveMutation.isPending}
-                  submitting={submitMutation.isPending}
+                  saving={savingId === requirement.requirement_id}
+                  submitting={submittingId === requirement.requirement_id}
                   uploadError={uploadErrors[requirement.requirement_id]}
                   uploadProgress={uploadProgress[requirement.requirement_id]}
                   uploading={uploadingId === requirement.requirement_id}
