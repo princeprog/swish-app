@@ -189,5 +189,3 @@ Confirm the diff contains no `window.open`, `_blank`, or unrelated backend chang
 
     git add -- components/organizations/compliance/division-compliance-review-detail.tsx lib/compliance-review-inbox.test.mjs
     git commit -m "feat(compliance): preview evidence files in app"
-
-
