@@ -65,6 +65,7 @@ export type ScorekeeperOption = {
   id: string;
   name: string;
 };
+export type StatisticianOption = ScorekeeperOption;
 
 export type UpdateScorekeeperAssignmentPayload = {
   scorekeeperMemberId: string | null;
@@ -106,6 +107,11 @@ export const scheduleService = {
       {
         credentials: "include",
       },
+    ),
+  listStatisticians: (organizationId: string) =>
+    apiService.get<StatisticianOption[]>(
+      `${API_ENDPOINTS.schedules.list(organizationId)}/statisticians`,
+      { credentials: "include" },
     ),
   get: (organizationId: string, scheduleId: string) =>
     apiService.get<Schedule>(

@@ -136,6 +136,10 @@ export const API_ENDPOINTS = {
     list: (organizationId: string) =>
       `/organizations/${organizationId}/standings`,
   },
+  competition: {
+    workspace: (organizationId: string, divisionId: string) =>
+      `/organizations/${organizationId}/divisions/${divisionId}/competition`,
+  },
   compliance: {
     divisionSettings: (organizationId: string, divisionId: string) =>
       `/organizations/${organizationId}/divisions/${divisionId}/compliance/settings`,

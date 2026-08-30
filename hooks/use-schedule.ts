@@ -9,6 +9,7 @@ import {
   type Schedule,
   type ScheduleListQuery,
   type ScorekeeperOption,
+  type StatisticianOption,
   type UpdateScorekeeperAssignmentPayload,
   type UpdateSchedulePayload,
 } from "@/services/schedule.service";
@@ -23,6 +24,8 @@ export const SCHEDULE_QUERY_KEYS = {
     [...SCHEDULE_QUERY_KEYS.all(organizationId), query ?? {}] as const,
   scorekeepers: (organizationId: string) =>
     ["schedules", "scorekeepers", organizationId] as const,
+  statisticians: (organizationId: string) =>
+    ["schedules", "statisticians", organizationId] as const,
 };
 
 export function useSchedulesQuery(
@@ -58,6 +61,18 @@ export function useScorekeepersQuery(
     enabled: Boolean(organizationId && enabled),
     queryFn: () => scheduleService.listScorekeepers(organizationId!),
     queryKey: SCHEDULE_QUERY_KEYS.scorekeepers(organizationId ?? "unknown"),
+    retry: false,
+  });
+}
+
+export function useStatisticiansQuery(
+  organizationId?: string,
+  enabled = true,
+) {
+  return useQuery({
+    enabled: Boolean(organizationId && enabled),
+    queryFn: () => scheduleService.listStatisticians(organizationId!),
+    queryKey: SCHEDULE_QUERY_KEYS.statisticians(organizationId ?? "unknown"),
     retry: false,
   });
 }
@@ -148,4 +163,4 @@ export function useUpdateScorekeeperAssignmentMutation(organizationId: string) {
   });
 }
 
-export type { ScorekeeperOption };
+export type { ScorekeeperOption, StatisticianOption };
