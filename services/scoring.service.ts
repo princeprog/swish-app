@@ -20,6 +20,7 @@ export type ScoringCommandType =
   | "shot_clock.adjust"
   | "score.record"
   | "team_foul.record"
+  | "personal_foul.record"
   | "timeout.record"
   | "event.reverse"
   | "period.end"
@@ -80,8 +81,34 @@ export type ScoringState = {
     id: string;
     payload: Record<string, unknown>;
     summary: string;
-    type: "score.record" | "team_foul.record" | "timeout.record";
+    type:
+      | "score.record"
+      | "personal_foul.record"
+      | "team_foul.record"
+      | "timeout.record";
   } | null;
+  periodScores: Array<{
+    away_score: number;
+    home_score: number;
+    overtime_number: number;
+    period_number: number;
+  }>;
+  playerFouls: Array<{
+    fouled_out: boolean;
+    game_roster_player_id: string;
+    jersey_number: string;
+    name: string;
+    personal_fouls: number;
+    team_id: string;
+  }>;
+  roster: Array<{
+    id: string;
+    jersey_number: string;
+    name: string;
+    position: string | null;
+    sort_order: number;
+    team_id: string;
+  }>;
   period: {
     label: string;
     number: number;

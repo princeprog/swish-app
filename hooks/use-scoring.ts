@@ -100,8 +100,7 @@ function applyOptimisticCommand(
 
     if (teamId === next.game.homeTeam.id) {
       next.fouls.home += 1;
-      next.fouls.homeInPenalty =
-        next.fouls.home >= next.fouls.penaltyAt;
+      next.fouls.homeInPenalty = next.fouls.home >= next.fouls.penaltyAt;
       next.latestReversibleEvent = {
         id: "optimistic",
         payload: command.payload ?? {},
@@ -112,8 +111,7 @@ function applyOptimisticCommand(
 
     if (teamId === next.game.awayTeam.id) {
       next.fouls.away += 1;
-      next.fouls.awayInPenalty =
-        next.fouls.away >= next.fouls.penaltyAt;
+      next.fouls.awayInPenalty = next.fouls.away >= next.fouls.penaltyAt;
       next.latestReversibleEvent = {
         id: "optimistic",
         payload: command.payload ?? {},
@@ -121,6 +119,39 @@ function applyOptimisticCommand(
         type: "team_foul.record",
       };
     }
+  }
+
+  if (command.type === "personal_foul.record") {
+    const teamId = command.payload?.teamId;
+    const playerId = command.payload?.playerId;
+    if (teamId === next.game.homeTeam.id) next.fouls.home += 1;
+    if (teamId === next.game.awayTeam.id) next.fouls.away += 1;
+    const existing = next.playerFouls.find(
+      (foul) => foul.game_roster_player_id === playerId,
+    );
+    const player = next.roster.find((item) => item.id === playerId);
+    if (existing) {
+      existing.personal_fouls += 1;
+    } else if (
+      player &&
+      typeof playerId === "string" &&
+      typeof teamId === "string"
+    ) {
+      next.playerFouls.push({
+        fouled_out: false,
+        game_roster_player_id: playerId,
+        jersey_number: player.jersey_number,
+        name: player.name,
+        personal_fouls: 1,
+        team_id: teamId,
+      });
+    }
+    next.latestReversibleEvent = {
+      id: "optimistic",
+      payload: command.payload ?? {},
+      summary: `${player?.name ?? "Player"} personal foul`,
+      type: "personal_foul.record",
+    };
   }
 
   if (command.type === "timeout.record") {
@@ -214,14 +245,22 @@ function applyOptimisticCommand(
       if (teamId === next.game.awayTeam.id) next.scores.away -= points;
     }
 
-    if (event?.type === "team_foul.record") {
+    if (
+      event?.type === "team_foul.record" ||
+      event?.type === "personal_foul.record"
+    ) {
       const teamId = event.payload.teamId;
       if (teamId === next.game.homeTeam.id) next.fouls.home -= 1;
       if (teamId === next.game.awayTeam.id) next.fouls.away -= 1;
-      next.fouls.homeInPenalty =
-        next.fouls.home >= next.fouls.penaltyAt;
-      next.fouls.awayInPenalty =
-        next.fouls.away >= next.fouls.penaltyAt;
+      next.fouls.homeInPenalty = next.fouls.home >= next.fouls.penaltyAt;
+      next.fouls.awayInPenalty = next.fouls.away >= next.fouls.penaltyAt;
+      if (event.type === "personal_foul.record") {
+        const player = next.playerFouls.find(
+          (foul) => foul.game_roster_player_id === event.payload.playerId,
+        );
+        if (player)
+          player.personal_fouls = Math.max(0, player.personal_fouls - 1);
+      }
     }
 
     if (event?.type === "timeout.record") {
@@ -254,7 +293,10 @@ function applyOptimisticCommand(
   return next;
 }
 
-function formatCommandConfirmation(command: OptimisticCommand, state: ScoringState) {
+function formatCommandConfirmation(
+  command: OptimisticCommand,
+  state: ScoringState,
+) {
   if (command.type === "score.record") {
     const points = command.payload?.points;
     const teamId = command.payload?.teamId;
@@ -372,10 +414,7 @@ function createIdempotencyKey() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-export function useScoringStateQuery(
-  organizationId?: string,
-  gameId?: string,
-) {
+export function useScoringStateQuery(organizationId?: string, gameId?: string) {
   return useQuery({
     enabled: Boolean(organizationId && gameId),
     queryFn: () => scoringService.getState(organizationId!, gameId!),
@@ -446,8 +485,7 @@ export function useLiveScoring(organizationId?: string, gameId?: string) {
       scoringService.heartbeatControl(organizationId!, gameId!, {
         controlToken: local.controlToken!,
       }),
-    onSuccess: (control) =>
-      dispatch({ control, type: "control-heartbeat" }),
+    onSuccess: (control) => dispatch({ control, type: "control-heartbeat" }),
   });
   const heartbeatMutateRef = React.useRef(heartbeatMutation.mutate);
 
@@ -491,10 +529,7 @@ export function useLiveScoring(organizationId?: string, gameId?: string) {
       if (!organizationId || !gameId || !local.state) {
         return { status: "ignored" };
       }
-      if (
-        local.offlineSince &&
-        Date.now() - local.offlineSince > 90 * 1000
-      ) {
+      if (local.offlineSince && Date.now() - local.offlineSince > 90 * 1000) {
         return { status: "blocked" };
       }
 
@@ -537,8 +572,7 @@ export function useLiveScoring(organizationId?: string, gameId?: string) {
           if (
             canRetryNextPeriodAfterRefresh({
               commandType: command.type,
-              gameClockRemainingMs:
-                refreshed.data.clock.gameClockRemainingMs,
+              gameClockRemainingMs: refreshed.data.clock.gameClockRemainingMs,
             })
           ) {
             const retryPayload: ScoringCommandPayload = {

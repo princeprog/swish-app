@@ -52,6 +52,10 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
 import { useOrganizationsQuery } from "@/hooks/use-organization";
 import {
   type SendScoringCommandResult,
@@ -130,6 +134,7 @@ function TeamScorePanel({
   fouls,
   name,
   onFoul,
+  onPlayerFoul,
   onScore,
   onTimeout,
   score,
@@ -138,19 +143,29 @@ function TeamScorePanel({
   inPenalty,
   timeoutDisabled,
   timeoutsRemaining,
+  players,
 }: {
   disabled: boolean;
   fouls: number;
   inPenalty: boolean;
   name: string;
   onFoul: () => void;
+  onPlayerFoul: (playerId: string) => void;
   onScore: (points: 1 | 2 | 3) => void;
   onTimeout: () => void;
   score: number;
   side: TeamSide;
   timeoutDisabled: boolean;
   timeoutsRemaining: number;
+  players: Array<{
+    fouledOut: boolean;
+    fouls: number;
+    id: string;
+    jerseyNumber: string;
+    name: string;
+  }>;
 }) {
+  const [selectedPlayerId, setSelectedPlayerId] = React.useState("");
   return (
     <Card className="md:min-h-[640px] md:flex-1 md:justify-center">
       <CardHeader>
@@ -214,12 +229,48 @@ function TeamScorePanel({
               </span>
             </div>
           </div>
+          <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+            <NativeSelect
+              aria-label={`Choose ${name} player for a personal foul`}
+              disabled={disabled || players.length === 0}
+              value={selectedPlayerId || "unselected"}
+              onChange={(event) => setSelectedPlayerId(event.target.value)}
+            >
+              <NativeSelectOption value="unselected">
+                Choose player
+              </NativeSelectOption>
+              {players.map((player) => (
+                <NativeSelectOption
+                  key={player.id}
+                  value={player.id}
+                  disabled={player.fouledOut}
+                >
+                  #{player.jerseyNumber} {player.name} · {player.fouls} fouls
+                  {player.fouledOut ? " · Fouled out" : ""}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+            <Button
+              disabled={
+                disabled ||
+                !selectedPlayerId ||
+                selectedPlayerId === "unselected"
+              }
+              onClick={() => {
+                onPlayerFoul(selectedPlayerId);
+                setSelectedPlayerId("");
+              }}
+            >
+              Player foul
+            </Button>
+          </div>
           <Button
-            className="h-12 w-full text-base md:h-16 md:text-2xl"
+            className="mt-2 h-10 w-full text-sm"
             disabled={disabled}
+            variant="outline"
             onClick={onFoul}
           >
-            Team foul
+            Unattributed team / bench foul
           </Button>
         </div>
 
@@ -236,6 +287,85 @@ function TeamScorePanel({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function PeriodScoreBreakdown({
+  awayTeam,
+  homeTeam,
+  periods,
+}: {
+  awayTeam: string;
+  homeTeam: string;
+  periods: ScoringState["periodScores"];
+}) {
+  if (periods.length === 0) return null;
+
+  return (
+    <section
+      aria-label="Period score breakdown"
+      className="border-b bg-muted/20 px-4 py-3 md:px-8"
+    >
+      <div className="mx-auto max-w-6xl overflow-x-auto">
+        <table className="w-full min-w-max text-center text-sm">
+          <caption className="sr-only">
+            Running score for each completed and active period
+          </caption>
+          <thead className="text-xs uppercase text-muted-foreground">
+            <tr>
+              <th className="pr-5 text-left font-medium" scope="col">
+                Team
+              </th>
+              {periods.map((period) => (
+                <th
+                  className="min-w-12 px-2 font-medium"
+                  key={`${period.period_number}-${period.overtime_number}`}
+                  scope="col"
+                >
+                  {period.overtime_number > 0
+                    ? `OT${period.overtime_number}`
+                    : `Q${period.period_number}`}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="font-mono font-semibold tabular-nums">
+            <tr>
+              <th
+                className="max-w-40 truncate pr-5 text-left font-sans"
+                scope="row"
+              >
+                {homeTeam}
+              </th>
+              {periods.map((period) => (
+                <td
+                  className="px-2 py-1"
+                  key={`${period.period_number}-${period.overtime_number}`}
+                >
+                  {period.home_score}
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <th
+                className="max-w-40 truncate pr-5 text-left font-sans"
+                scope="row"
+              >
+                {awayTeam}
+              </th>
+              {periods.map((period) => (
+                <td
+                  className="px-2 py-1"
+                  key={`${period.period_number}-${period.overtime_number}`}
+                >
+                  {period.away_score}
+                </td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 
@@ -861,6 +991,39 @@ export function ScorekeeperGameDetailScreen({
     });
   }
 
+  function foulPlayer(side: TeamSide, playerId: string) {
+    if (!displayedState) return;
+    sendCommand("personal_foul.record", {
+      playerId,
+      teamId:
+        side === "home"
+          ? displayedState.game.homeTeam.id
+          : displayedState.game.awayTeam.id,
+    });
+  }
+
+  function teamPlayers(side: TeamSide) {
+    if (!displayedState) return [];
+    const teamId =
+      side === "home"
+        ? displayedState.game.homeTeam.id
+        : displayedState.game.awayTeam.id;
+    return displayedState.roster
+      .filter((player) => player.team_id === teamId)
+      .map((player) => {
+        const foul = displayedState.playerFouls.find(
+          (item) => item.game_roster_player_id === player.id,
+        );
+        return {
+          fouledOut: foul?.fouled_out ?? false,
+          fouls: foul?.personal_fouls ?? 0,
+          id: player.id,
+          jerseyNumber: player.jersey_number,
+          name: player.name,
+        };
+      });
+  }
+
   function timeoutTeam(side: TeamSide) {
     if (!displayedState) return;
 
@@ -1068,119 +1231,124 @@ export function ScorekeeperGameDetailScreen({
         <main className="min-h-screen bg-background p-4 text-foreground md:p-8">
           <ComponentReveal asChild variant="subtle">
             <div className="mx-auto grid max-w-4xl gap-4">
-          <Button
-            className="w-fit"
-            variant="ghost"
-            onClick={() => router.push(`/organizations/${slug}/scorekeeper`)}
-          >
-            <ArrowLeft className="size-5" />
-            Back to assignments
-          </Button>
+              <Button
+                className="w-fit"
+                variant="ghost"
+                onClick={() =>
+                  router.push(`/organizations/${slug}/scorekeeper`)
+                }
+              >
+                <ArrowLeft className="size-5" />
+                Back to assignments
+              </Button>
 
-          <Card>
-            <CardHeader>
-              <Badge className="w-fit" variant="secondary">
-                Pregame review
-              </Badge>
-              <CardTitle className="text-2xl md:text-4xl">{matchup}</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-5 md:grid-cols-2">
-              <div className="space-y-3">
-                <p className="text-sm font-medium uppercase text-muted-foreground">
-                  Clock setup
-                </p>
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div className="rounded-md border p-3">
-                    <p className="text-muted-foreground">Quarter</p>
-                    <p className="font-mono text-2xl">
-                      {displayedState.config.periodDurationMs / 60000}:00
+              <Card>
+                <CardHeader>
+                  <Badge className="w-fit" variant="secondary">
+                    Pregame review
+                  </Badge>
+                  <CardTitle className="text-2xl md:text-4xl">
+                    {matchup}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-5 md:grid-cols-2">
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium uppercase text-muted-foreground">
+                      Clock setup
+                    </p>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="rounded-md border p-3">
+                        <p className="text-muted-foreground">Quarter</p>
+                        <p className="font-mono text-2xl">
+                          {displayedState.config.periodDurationMs / 60000}:00
+                        </p>
+                      </div>
+                      <div className="rounded-md border p-3">
+                        <p className="text-muted-foreground">Shot clock</p>
+                        <p className="font-mono text-2xl">
+                          {displayedState.config.shotClockEnabled
+                            ? `${displayedState.config.shotClockFullMs / 1000}s`
+                            : "Not used"}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Timeouts: {displayedState.config.timeoutsFirstHalf} in the
+                      first half, {displayedState.config.timeoutsSecondHalf} in
+                      the second half, and{" "}
+                      {displayedState.config.timeoutsPerOvertime}
+                      each overtime.
                     </p>
                   </div>
-                  <div className="rounded-md border p-3">
-                    <p className="text-muted-foreground">Shot clock</p>
-                    <p className="font-mono text-2xl">
-                      {displayedState.config.shotClockEnabled
-                        ? `${displayedState.config.shotClockFullMs / 1000}s`
-                        : "Not used"}
-                    </p>
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Timeouts: {displayedState.config.timeoutsFirstHalf} in the
-                  first half, {displayedState.config.timeoutsSecondHalf} in the
-                  second half, and {displayedState.config.timeoutsPerOvertime}
-                  each overtime.
-                </p>
-              </div>
 
-              <div className="space-y-3">
-                <p className="text-sm font-medium uppercase text-muted-foreground">
-                  Control
-                </p>
-                <Badge
-                  variant={
-                    displayedState.control.controlledByMe
-                      ? "default"
-                      : "secondary"
-                  }
-                >
-                  {displayedState.control.controlledByMe
-                    ? "Controlled by this device"
-                    : displayedState.control.status === "claimed"
-                      ? "Controlled by another device"
-                      : "Available"}
-                </Badge>
-                <AlertDialog
-                  open={startDialogOpen}
-                  onOpenChange={setStartDialogOpen}
-                >
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      className="h-12 w-full text-base"
-                      disabled={
-                        !canStart && !displayedState.control.controlledByMe
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium uppercase text-muted-foreground">
+                      Control
+                    </p>
+                    <Badge
+                      variant={
+                        displayedState.control.controlledByMe
+                          ? "default"
+                          : "secondary"
                       }
                     >
-                      <Play className="size-5" />
-                      Start Game
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogMedia className="bg-primary/10 text-primary">
-                        <Play className="size-8" />
-                      </AlertDialogMedia>
-                      <AlertDialogTitle>Start this game?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Once you start, the game clock
-                        {displayedState.config.shotClockEnabled
-                          ? " and shot clock"
-                          : ""}{" "}
-                        will begin. Make sure both teams are ready before
-                        continuing.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
+                      {displayedState.control.controlledByMe
+                        ? "Controlled by this device"
+                        : displayedState.control.status === "claimed"
+                          ? "Controlled by another device"
+                          : "Available"}
+                    </Badge>
+                    <AlertDialog
+                      open={startDialogOpen}
+                      onOpenChange={setStartDialogOpen}
+                    >
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          className="h-12 w-full text-base"
+                          disabled={
+                            !canStart && !displayedState.control.controlledByMe
+                          }
+                        >
+                          <Play className="size-5" />
+                          Start Game
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogMedia className="bg-primary/10 text-primary">
+                            <Play className="size-8" />
+                          </AlertDialogMedia>
+                          <AlertDialogTitle>Start this game?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Once you start, the game clock
+                            {displayedState.config.shotClockEnabled
+                              ? " and shot clock"
+                              : ""}{" "}
+                            will begin. Make sure both teams are ready before
+                            continuing.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
 
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        disabled={scoring.isClaimingControl}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          void toggleClock().then(() => {
-                            setStartDialogOpen(false);
-                          });
-                        }}
-                      >
-                        <Play className="size-4" />
-                        Start live scoring
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </CardContent>
-          </Card>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            disabled={scoring.isClaimingControl}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              void toggleClock().then(() => {
+                                setStartDialogOpen(false);
+                              });
+                            }}
+                          >
+                            <Play className="size-4" />
+                            Start live scoring
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </ComponentReveal>
         </main>
@@ -1194,269 +1362,291 @@ export function ScorekeeperGameDetailScreen({
         <RevealGroup className="contents" pace="compact">
           <ComponentReveal asChild variant="subtle">
             <header className="flex h-16 items-center justify-between border-b bg-background px-4 md:h-20 md:px-8">
-        <Button
-          aria-label="Back to assignments"
-          size="icon"
-          variant="ghost"
-          onClick={() => router.push(`/organizations/${slug}/scorekeeper`)}
-        >
-          <ArrowLeft className="size-6" />
-        </Button>
-        <h1 className="truncate px-3 text-center text-base font-semibold md:text-2xl">
-          {matchup}
-        </h1>
-        <div className="flex items-center gap-3">
-          <Badge
-            className={
-              displayedState.game.status === "live"
-                ? "border-red-600 bg-red-600 text-white hover:bg-red-600"
-                : undefined
-            }
-            variant={
-              displayedState.game.status === "live" ? "default" : "secondary"
-            }
-          >
-            LIVE
-          </Badge>
-          <ConsoleMoreSheet
-            canFinalize={canFinalize}
-            onClaim={() => scoring.claimControl("Scorekeeper device")}
-            onCommand={sendCommand}
-            onFullscreen={() => void enterFullscreen()}
-            onTakeover={() => {
-              const reason = prompt("Reason for takeover");
-              if (reason) {
-                scoring.takeoverControl({
-                  deviceLabel: "Scorekeeper device",
-                  reason,
-                });
-              }
-            }}
-            pendingCount={scoring.local.pendingCommands.length}
-            soundEnabled={soundEnabled}
-            state={displayedState}
-            toggleSound={() => setSoundEnabled((value) => !value)}
-          />
-        </div>
+              <Button
+                aria-label="Back to assignments"
+                size="icon"
+                variant="ghost"
+                onClick={() =>
+                  router.push(`/organizations/${slug}/scorekeeper`)
+                }
+              >
+                <ArrowLeft className="size-6" />
+              </Button>
+              <h1 className="truncate px-3 text-center text-base font-semibold md:text-2xl">
+                {matchup}
+              </h1>
+              <div className="flex items-center gap-3">
+                <Badge
+                  className={
+                    displayedState.game.status === "live"
+                      ? "border-red-600 bg-red-600 text-white hover:bg-red-600"
+                      : undefined
+                  }
+                  variant={
+                    displayedState.game.status === "live"
+                      ? "default"
+                      : "secondary"
+                  }
+                >
+                  LIVE
+                </Badge>
+                <ConsoleMoreSheet
+                  canFinalize={canFinalize}
+                  onClaim={() => scoring.claimControl("Scorekeeper device")}
+                  onCommand={sendCommand}
+                  onFullscreen={() => void enterFullscreen()}
+                  onTakeover={() => {
+                    const reason = prompt("Reason for takeover");
+                    if (reason) {
+                      scoring.takeoverControl({
+                        deviceLabel: "Scorekeeper device",
+                        reason,
+                      });
+                    }
+                  }}
+                  pendingCount={scoring.local.pendingCommands.length}
+                  soundEnabled={soundEnabled}
+                  state={displayedState}
+                  toggleSound={() => setSoundEnabled((value) => !value)}
+                />
+              </div>
             </header>
           </ComponentReveal>
 
-      {scoring.isSendingCommand || scoring.local.lastConfirmedAction ? (
-        <ComponentReveal asChild variant="subtle">
-          <div
-            className="border-b bg-muted/40 px-4 py-2 text-sm md:px-8"
-            role="status"
-          >
-            <div className="mx-auto flex max-w-6xl items-center gap-2 font-medium">
-              {scoring.isSendingCommand ? (
-                <Loader2 className="size-4 animate-spin text-primary" />
-              ) : (
-                <CheckCircle2 className="size-4 text-primary" />
-              )}
-              <span>
-                {scoring.isSendingCommand
-                  ? "Saving scoring update…"
-                  : scoring.local.lastConfirmedAction}
-              </span>
-            </div>
-          </div>
-        </ComponentReveal>
-      ) : null}
-
-      <RevealGroup
-        asChild
-        className="grid gap-3 p-3 md:min-h-[calc(100vh-5rem)] md:grid-cols-[minmax(0,1fr)_280px_minmax(0,1fr)] md:items-stretch"
-        pace="compact"
-      >
-        <div>
-          <ComponentReveal asChild variant="subtle">
-            <div className="md:hidden">
-          <ClockConsole
-            onClockToggle={toggleClock}
-            onResetShotClock={resetShotClock}
-            onShotClockToggle={toggleShotClock}
-            periodLabel={displayedState.period.label}
-            running={displayedState.clock.gameClockRunning}
-            shotClock={displayedState.clock.shotClockRemainingMs}
-            shotClockEnabled={displayedState.config.shotClockEnabled}
-            shotClockFullMs={displayedState.config.shotClockFullMs}
-            shotClockRunning={displayedState.clock.shotClockRunning}
-            shotClockShortMs={displayedState.config.shotClockShortMs}
-            time={formatClock(displayedState.clock.gameClockRemainingMs)}
-            disabled={clockControlsDisabled}
-            gameClockExpired={gameClockExpired}
-            shotClockExpired={shotClockExpired}
-          />
-            </div>
-          </ComponentReveal>
-
-          <ComponentReveal variant="subtle">
-            <TeamScorePanel
-          fouls={displayedState.fouls.home}
-          name={displayedState.game.homeTeam.name}
-          onFoul={() => foulTeam("home")}
-          onScore={(points) => scoreTeam("home", points)}
-          onTimeout={() => timeoutTeam("home")}
-          score={displayedState.scores.home}
-          side="home"
-          disabled={controlsDisabled || periodActionsDisabled}
-          inPenalty={displayedState.fouls.homeInPenalty}
-          timeoutDisabled={
-            controlsDisabled ||
-            periodActionsDisabled ||
-            !timeoutPhaseValid ||
-            displayedState.timeouts.home.remaining <= 0
-          }
-          timeoutsRemaining={displayedState.timeouts.home.remaining}
-            />
-          </ComponentReveal>
-
-          <ComponentReveal asChild variant="subtle">
-            <div className="hidden md:block">
-              <ClockConsole
-            onClockToggle={toggleClock}
-            onResetShotClock={resetShotClock}
-            onShotClockToggle={toggleShotClock}
-            periodLabel={displayedState.period.label}
-            running={displayedState.clock.gameClockRunning}
-            shotClock={displayedState.clock.shotClockRemainingMs}
-            shotClockEnabled={displayedState.config.shotClockEnabled}
-            shotClockFullMs={displayedState.config.shotClockFullMs}
-            shotClockRunning={displayedState.clock.shotClockRunning}
-            shotClockShortMs={displayedState.config.shotClockShortMs}
-            time={formatClock(displayedState.clock.gameClockRemainingMs)}
-            disabled={clockControlsDisabled}
-            gameClockExpired={gameClockExpired}
-            shotClockExpired={shotClockExpired}
-              />
-            </div>
-          </ComponentReveal>
-
-          <ComponentReveal variant="subtle">
-            <TeamScorePanel
-          fouls={displayedState.fouls.away}
-          name={displayedState.game.awayTeam.name}
-          onFoul={() => foulTeam("away")}
-          onScore={(points) => scoreTeam("away", points)}
-          onTimeout={() => timeoutTeam("away")}
-          score={displayedState.scores.away}
-          side="away"
-          disabled={controlsDisabled || periodActionsDisabled}
-          inPenalty={displayedState.fouls.awayInPenalty}
-          timeoutDisabled={
-            controlsDisabled ||
-            periodActionsDisabled ||
-            !timeoutPhaseValid ||
-            displayedState.timeouts.away.remaining <= 0
-          }
-          timeoutsRemaining={displayedState.timeouts.away.remaining}
-            />
-          </ComponentReveal>
-        </div>
-      </RevealGroup>
-
-      <AlertDialog
-        open={timeoutDialogSide !== null}
-        onOpenChange={(open) => {
-          if (isRecordingTimeout) return;
-          if (!open) {
-            setTimeoutDialogSide(null);
-            setTimeoutDialogError(null);
-          }
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogMedia
-              className={
-                timeoutDialog?.blocked
-                  ? "bg-destructive/10 text-destructive"
-                  : "bg-primary/10 text-primary"
-              }
-            >
-              <Clock3 className="size-8" />
-            </AlertDialogMedia>
-            <AlertDialogTitle>{timeoutDialog?.title}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {timeoutDialog?.description}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-
-          {timeoutDialogError ? (
-            <div
-              className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
-              role="alert"
-            >
-              {timeoutDialogError}
-            </div>
+          {scoring.isSendingCommand || scoring.local.lastConfirmedAction ? (
+            <ComponentReveal asChild variant="subtle">
+              <div
+                className="border-b bg-muted/40 px-4 py-2 text-sm md:px-8"
+                role="status"
+              >
+                <div className="mx-auto flex max-w-6xl items-center gap-2 font-medium">
+                  {scoring.isSendingCommand ? (
+                    <Loader2 className="size-4 animate-spin text-primary" />
+                  ) : (
+                    <CheckCircle2 className="size-4 text-primary" />
+                  )}
+                  <span>
+                    {scoring.isSendingCommand
+                      ? "Saving scoring update…"
+                      : scoring.local.lastConfirmedAction}
+                  </span>
+                </div>
+              </div>
+            </ComponentReveal>
           ) : null}
 
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isRecordingTimeout}>
-              {timeoutDialog?.blocked ? "Close" : "Cancel"}
-            </AlertDialogCancel>
-            {timeoutDialog && !timeoutDialog.blocked ? (
-              <AlertDialogAction
-                disabled={isRecordingTimeout}
-                onClick={(event) => {
-                  event.preventDefault();
-                  void recordTimeout();
-                }}
-              >
-                {isRecordingTimeout ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" />
-                    Recording
-                  </>
-                ) : (
-                  timeoutDialog.confirmLabel
-                )}
-              </AlertDialogAction>
-            ) : null}
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+          <PeriodScoreBreakdown
+            awayTeam={displayedState.game.awayTeam.name}
+            homeTeam={displayedState.game.homeTeam.name}
+            periods={displayedState.periodScores}
+          />
 
-      <footer className="sticky bottom-0 flex items-center justify-between border-t bg-background px-4 py-3 text-sm md:hidden">
-        <div className="flex min-w-0 items-center gap-2">
-          {scoring.local.lastConfirmedAction ? (
-            <CheckCircle2 className="size-6 shrink-0 text-primary" />
-          ) : isOffline ? (
-            <WifiOff className="size-6 shrink-0 text-muted-foreground" />
-          ) : (
-            <Wifi className="size-6 shrink-0 text-primary" />
-          )}
-          <span className="truncate font-semibold">
-            {scoring.local.lastConfirmedAction ??
-              (scoring.offlineLockActive
-                ? "Reconnect to continue"
-                : isOffline
-                  ? `${scoring.local.pendingCommands.length} queued`
-                  : "Online")}
-          </span>
-        </div>
-        <Button
-          disabled={!displayedState.latestReversibleEvent || controlsDisabled}
-          size="sm"
-          variant="ghost"
-          onClick={undoLatest}
-        >
-          <RotateCcw className="size-4" />
-          Undo
-        </Button>
-      </footer>
+          <RevealGroup
+            asChild
+            className="grid gap-3 p-3 md:min-h-[calc(100vh-5rem)] md:grid-cols-[minmax(0,1fr)_280px_minmax(0,1fr)] md:items-stretch"
+            pace="compact"
+          >
+            <div>
+              <ComponentReveal asChild variant="subtle">
+                <div className="md:hidden">
+                  <ClockConsole
+                    onClockToggle={toggleClock}
+                    onResetShotClock={resetShotClock}
+                    onShotClockToggle={toggleShotClock}
+                    periodLabel={displayedState.period.label}
+                    running={displayedState.clock.gameClockRunning}
+                    shotClock={displayedState.clock.shotClockRemainingMs}
+                    shotClockEnabled={displayedState.config.shotClockEnabled}
+                    shotClockFullMs={displayedState.config.shotClockFullMs}
+                    shotClockRunning={displayedState.clock.shotClockRunning}
+                    shotClockShortMs={displayedState.config.shotClockShortMs}
+                    time={formatClock(
+                      displayedState.clock.gameClockRemainingMs,
+                    )}
+                    disabled={clockControlsDisabled}
+                    gameClockExpired={gameClockExpired}
+                    shotClockExpired={shotClockExpired}
+                  />
+                </div>
+              </ComponentReveal>
 
-      <div className="fixed bottom-8 left-1/2 z-20 hidden w-[260px] -translate-x-1/2 md:block">
-        <Button
-          className="h-14 w-full"
-          variant="outline"
-          disabled={!displayedState.latestReversibleEvent || controlsDisabled}
-          onClick={undoLatest}
-        >
-          <RotateCcw className="size-5" />
-          Undo {displayedState.latestReversibleEvent?.summary ?? ""}
-        </Button>
-      </div>
+              <ComponentReveal variant="subtle">
+                <TeamScorePanel
+                  fouls={displayedState.fouls.home}
+                  name={displayedState.game.homeTeam.name}
+                  onFoul={() => foulTeam("home")}
+                  onPlayerFoul={(playerId) => foulPlayer("home", playerId)}
+                  onScore={(points) => scoreTeam("home", points)}
+                  onTimeout={() => timeoutTeam("home")}
+                  score={displayedState.scores.home}
+                  side="home"
+                  disabled={controlsDisabled || periodActionsDisabled}
+                  inPenalty={displayedState.fouls.homeInPenalty}
+                  timeoutDisabled={
+                    controlsDisabled ||
+                    periodActionsDisabled ||
+                    !timeoutPhaseValid ||
+                    displayedState.timeouts.home.remaining <= 0
+                  }
+                  timeoutsRemaining={displayedState.timeouts.home.remaining}
+                  players={teamPlayers("home")}
+                />
+              </ComponentReveal>
+
+              <ComponentReveal asChild variant="subtle">
+                <div className="hidden md:block">
+                  <ClockConsole
+                    onClockToggle={toggleClock}
+                    onResetShotClock={resetShotClock}
+                    onShotClockToggle={toggleShotClock}
+                    periodLabel={displayedState.period.label}
+                    running={displayedState.clock.gameClockRunning}
+                    shotClock={displayedState.clock.shotClockRemainingMs}
+                    shotClockEnabled={displayedState.config.shotClockEnabled}
+                    shotClockFullMs={displayedState.config.shotClockFullMs}
+                    shotClockRunning={displayedState.clock.shotClockRunning}
+                    shotClockShortMs={displayedState.config.shotClockShortMs}
+                    time={formatClock(
+                      displayedState.clock.gameClockRemainingMs,
+                    )}
+                    disabled={clockControlsDisabled}
+                    gameClockExpired={gameClockExpired}
+                    shotClockExpired={shotClockExpired}
+                  />
+                </div>
+              </ComponentReveal>
+
+              <ComponentReveal variant="subtle">
+                <TeamScorePanel
+                  fouls={displayedState.fouls.away}
+                  name={displayedState.game.awayTeam.name}
+                  onFoul={() => foulTeam("away")}
+                  onPlayerFoul={(playerId) => foulPlayer("away", playerId)}
+                  onScore={(points) => scoreTeam("away", points)}
+                  onTimeout={() => timeoutTeam("away")}
+                  score={displayedState.scores.away}
+                  side="away"
+                  disabled={controlsDisabled || periodActionsDisabled}
+                  inPenalty={displayedState.fouls.awayInPenalty}
+                  timeoutDisabled={
+                    controlsDisabled ||
+                    periodActionsDisabled ||
+                    !timeoutPhaseValid ||
+                    displayedState.timeouts.away.remaining <= 0
+                  }
+                  timeoutsRemaining={displayedState.timeouts.away.remaining}
+                  players={teamPlayers("away")}
+                />
+              </ComponentReveal>
+            </div>
+          </RevealGroup>
+
+          <AlertDialog
+            open={timeoutDialogSide !== null}
+            onOpenChange={(open) => {
+              if (isRecordingTimeout) return;
+              if (!open) {
+                setTimeoutDialogSide(null);
+                setTimeoutDialogError(null);
+              }
+            }}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogMedia
+                  className={
+                    timeoutDialog?.blocked
+                      ? "bg-destructive/10 text-destructive"
+                      : "bg-primary/10 text-primary"
+                  }
+                >
+                  <Clock3 className="size-8" />
+                </AlertDialogMedia>
+                <AlertDialogTitle>{timeoutDialog?.title}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {timeoutDialog?.description}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+
+              {timeoutDialogError ? (
+                <div
+                  className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+                  role="alert"
+                >
+                  {timeoutDialogError}
+                </div>
+              ) : null}
+
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isRecordingTimeout}>
+                  {timeoutDialog?.blocked ? "Close" : "Cancel"}
+                </AlertDialogCancel>
+                {timeoutDialog && !timeoutDialog.blocked ? (
+                  <AlertDialogAction
+                    disabled={isRecordingTimeout}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      void recordTimeout();
+                    }}
+                  >
+                    {isRecordingTimeout ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin" />
+                        Recording
+                      </>
+                    ) : (
+                      timeoutDialog.confirmLabel
+                    )}
+                  </AlertDialogAction>
+                ) : null}
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          <footer className="sticky bottom-0 flex items-center justify-between border-t bg-background px-4 py-3 text-sm md:hidden">
+            <div className="flex min-w-0 items-center gap-2">
+              {scoring.local.lastConfirmedAction ? (
+                <CheckCircle2 className="size-6 shrink-0 text-primary" />
+              ) : isOffline ? (
+                <WifiOff className="size-6 shrink-0 text-muted-foreground" />
+              ) : (
+                <Wifi className="size-6 shrink-0 text-primary" />
+              )}
+              <span className="truncate font-semibold">
+                {scoring.local.lastConfirmedAction ??
+                  (scoring.offlineLockActive
+                    ? "Reconnect to continue"
+                    : isOffline
+                      ? `${scoring.local.pendingCommands.length} queued`
+                      : "Online")}
+              </span>
+            </div>
+            <Button
+              disabled={
+                !displayedState.latestReversibleEvent || controlsDisabled
+              }
+              size="sm"
+              variant="ghost"
+              onClick={undoLatest}
+            >
+              <RotateCcw className="size-4" />
+              Undo
+            </Button>
+          </footer>
+
+          <div className="fixed bottom-8 left-1/2 z-20 hidden w-[260px] -translate-x-1/2 md:block">
+            <Button
+              className="h-14 w-full"
+              variant="outline"
+              disabled={
+                !displayedState.latestReversibleEvent || controlsDisabled
+              }
+              onClick={undoLatest}
+            >
+              <RotateCcw className="size-5" />
+              Undo {displayedState.latestReversibleEvent?.summary ?? ""}
+            </Button>
+          </div>
         </RevealGroup>
       </main>
     </PageEntrance>
