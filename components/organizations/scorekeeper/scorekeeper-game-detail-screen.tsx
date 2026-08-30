@@ -90,7 +90,7 @@ function formatClock(ms: number) {
 }
 
 function useDisplayedScoringState(state: ScoringState | null) {
-  const [tick, setTick] = React.useState(Date.now());
+  const [tick, setTick] = React.useState(0);
 
   React.useEffect(() => {
     const interval = window.setInterval(() => setTick(Date.now()), 250);
@@ -99,7 +99,7 @@ function useDisplayedScoringState(state: ScoringState | null) {
   }, []);
 
   return React.useMemo(() => {
-    if (!state) return null;
+    if (!state || tick === 0) return state;
 
     return materializeClientScoringState(state, tick);
   }, [state, tick]);
@@ -506,7 +506,7 @@ function ConsoleMoreSheet({
   onFullscreen,
   onReopen,
   onTakeover,
-  pendingCount,
+  mutationsDisabled,
   soundEnabled,
   state,
   toggleSound,
@@ -523,7 +523,7 @@ function ConsoleMoreSheet({
   onFullscreen: () => void;
   onReopen: (reason: string) => Promise<SendScoringCommandResult>;
   onTakeover: () => void;
-  pendingCount: number;
+  mutationsDisabled: boolean;
   soundEnabled: boolean;
   state: ScoringState;
   toggleSound: () => void;
@@ -571,13 +571,6 @@ function ConsoleMoreSheet({
       return;
     }
 
-    if (result.status === "queued") {
-      setFinalizeError(
-        "You appear to be offline. Finalizing was saved on this device and will sync when the connection returns.",
-      );
-      return;
-    }
-
     if (result.status === "blocked") {
       setFinalizeError(
         "Reconnect before finalizing this game. Official results need to reach the server right away.",
@@ -605,7 +598,7 @@ function ConsoleMoreSheet({
       if (result.status === "confirmed") {
         setReopenDialogOpen(false);
         setReopenReason("");
-      } else if (result.status === "queued" || result.status === "blocked") {
+      } else if (result.status === "blocked") {
         setReopenError(
           "Reconnect before reopening this official result. No correction can begin until the server confirms it.",
         );
@@ -658,13 +651,6 @@ function ConsoleMoreSheet({
       return;
     }
 
-    if (result.status === "queued") {
-      setPeriodDialogError(
-        "You appear to be offline. Period changes need to sync before continuing.",
-      );
-      return;
-    }
-
     if (result.status === "blocked") {
       setPeriodDialogError(
         "Reconnect before changing the period. The official game clock needs to be checked by the server.",
@@ -698,10 +684,18 @@ function ConsoleMoreSheet({
               Control
             </h3>
             <div className="grid grid-cols-2 gap-2">
-              <Button onClick={onClaim} variant="outline">
+              <Button
+                disabled={mutationsDisabled}
+                onClick={onClaim}
+                variant="outline"
+              >
                 Claim
               </Button>
-              <Button onClick={onTakeover} variant="outline">
+              <Button
+                disabled={mutationsDisabled}
+                onClick={onTakeover}
+                variant="outline"
+              >
                 Takeover
               </Button>
               <Button onClick={onFullscreen} variant="outline">
@@ -717,6 +711,7 @@ function ConsoleMoreSheet({
                         : "shot_clock.start",
                     )
                   }
+                  disabled={mutationsDisabled}
                   variant="outline"
                 >
                   {state.clock.shotClockRunning ? "Pause shot" : "Start shot"}
@@ -735,6 +730,7 @@ function ConsoleMoreSheet({
                   setPeriodDialogError(null);
                   setPeriodDialogAction("end");
                 }}
+                disabled={mutationsDisabled}
                 variant="outline"
               >
                 End period
@@ -744,6 +740,7 @@ function ConsoleMoreSheet({
                   setPeriodDialogError(null);
                   setPeriodDialogAction("next");
                 }}
+                disabled={mutationsDisabled}
                 variant="outline"
               >
                 Next period
@@ -759,7 +756,9 @@ function ConsoleMoreSheet({
                 }}
               >
                 <AlertDialogTrigger asChild>
-                  <Button disabled={!canFinalize}>Finalize</Button>
+                  <Button disabled={!canFinalize || mutationsDisabled}>
+                    Finalize
+                  </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
@@ -824,7 +823,7 @@ function ConsoleMoreSheet({
                       Cancel
                     </AlertDialogCancel>
                     <AlertDialogAction
-                      disabled={isFinalizing}
+                      disabled={isFinalizing || mutationsDisabled}
                       onClick={(event) => {
                         event.preventDefault();
                         void finalizeGame();
@@ -880,7 +879,7 @@ function ConsoleMoreSheet({
                   </AlertDialogCancel>
                   {periodDialog && !periodDialog.blocked ? (
                     <AlertDialogAction
-                      disabled={isSendingPeriodCommand}
+                      disabled={isSendingPeriodCommand || mutationsDisabled}
                       onClick={(event) => {
                         event.preventDefault();
                         void sendPeriodCommand(periodDialogAction ?? "end");
@@ -912,7 +911,11 @@ function ConsoleMoreSheet({
                 }}
               >
                 <AlertDialogTrigger asChild>
-                  <Button className="w-full" variant="outline">
+                  <Button
+                    className="w-full"
+                    disabled={mutationsDisabled}
+                    variant="outline"
+                  >
                     <RotateCcw className="size-4" />
                     Reopen official game
                   </Button>
@@ -963,6 +966,7 @@ function ConsoleMoreSheet({
                     <AlertDialogAction
                       disabled={
                         isReopening ||
+                        mutationsDisabled ||
                         Boolean(getGameReopenReasonError(reopenReason))
                       }
                       onClick={(event) => {
@@ -999,7 +1003,8 @@ function ConsoleMoreSheet({
               <Switch checked={soundEnabled} onCheckedChange={toggleSound} />
             </label>
             <p className="text-sm text-muted-foreground">
-              Queued actions: {pendingCount}
+              Official scoring changes are recorded after the server confirms
+              them.
             </p>
           </section>
         </div>
@@ -1064,7 +1069,7 @@ export function ScorekeeperGameDetailScreen({
     }
   }
 
-  function playBuzzer() {
+  const playBuzzer = React.useCallback(() => {
     if (!soundEnabled) return;
     const context = new AudioContext();
     const oscillator = context.createOscillator();
@@ -1072,7 +1077,7 @@ export function ScorekeeperGameDetailScreen({
     oscillator.frequency.value = 440;
     oscillator.start();
     oscillator.stop(context.currentTime + 0.12);
-  }
+  }, [soundEnabled]);
 
   React.useEffect(() => {
     if (!displayedState || displayedState.clock.shotClockRemainingMs > 0) {
@@ -1085,7 +1090,7 @@ export function ScorekeeperGameDetailScreen({
 
     lastShotViolationVersion.current = displayedState.version;
     playBuzzer();
-  }, [displayedState, soundEnabled]);
+  }, [displayedState, playBuzzer]);
 
   function sendCommand(
     type: Parameters<typeof scoring.sendCommand>[0]["type"],
@@ -1186,13 +1191,6 @@ export function ScorekeeperGameDetailScreen({
       return;
     }
 
-    if (result.status === "queued") {
-      setTimeoutDialogError(
-        "You appear to be offline. The timeout was saved on this device and will sync when the connection returns.",
-      );
-      return;
-    }
-
     if (result.status === "blocked") {
       setTimeoutDialogError(
         "Reconnect before recording a timeout. Timeouts need to reach the server right away.",
@@ -1214,8 +1212,13 @@ export function ScorekeeperGameDetailScreen({
       displayedState.control.status === "claimed";
 
     if (!hasActiveControl) {
-      const control = await scoring.claimControl("Scorekeeper device");
-      controlToken = control.controlToken;
+      try {
+        const control = await scoring.claimControl("Scorekeeper device");
+        if (!control) return;
+        controlToken = control.controlToken;
+      } catch {
+        return;
+      }
     }
     vibrate();
     void scoring.sendCommand({
@@ -1266,6 +1269,7 @@ export function ScorekeeperGameDetailScreen({
               reason: `Official result correction: ${reason}`,
             })
           : await scoring.claimControl("Admin correction device");
+      if (!control) return { status: "blocked" } as const;
       controlToken = control.controlToken;
     }
 
@@ -1352,11 +1356,12 @@ export function ScorekeeperGameDetailScreen({
     displayedState.phase === "period_break" &&
     displayedState.period.number >= displayedState.config.regulationPeriods &&
     displayedState.scores.home !== displayedState.scores.away &&
-    scoring.local.pendingCommands.length === 0;
+    !scoring.isSendingCommand &&
+    scoring.local.connection === "ready";
   const canReopen =
     organization.access.permissions.includes("game.score.override") &&
     displayedState.phase === "final";
-  const isOffline = Boolean(scoring.local.offlineSince);
+  const isOffline = scoring.local.connection === "offline";
   const controlsDisabled =
     displayedState.phase === "final" ||
     scoring.offlineLockActive ||
@@ -1375,10 +1380,17 @@ export function ScorekeeperGameDetailScreen({
   const shotClockExpired =
     displayedState.config.shotClockEnabled &&
     displayedState.clock.shotClockRemainingMs === 0;
+  const mutationsDisabled =
+    scoring.offlineLockActive ||
+    scoring.isSendingCommand ||
+    scoring.isClaimingControl ||
+    scoring.isTakingOverControl;
 
   if (displayedState.phase === "pregame") {
     const canStart =
-      !scoring.offlineLockActive && displayedState.control.status !== "claimed";
+      !mutationsDisabled &&
+      (displayedState.control.status !== "claimed" ||
+        displayedState.control.controlledByMe);
 
     return (
       <PageEntrance asChild variant="subtle">
@@ -1459,9 +1471,7 @@ export function ScorekeeperGameDetailScreen({
                       <AlertDialogTrigger asChild>
                         <Button
                           className="h-12 w-full text-base"
-                          disabled={
-                            !canStart && !displayedState.control.controlledByMe
-                          }
+                          disabled={!canStart}
                         >
                           <Play className="size-5" />
                           Start Game
@@ -1486,7 +1496,7 @@ export function ScorekeeperGameDetailScreen({
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
                           <AlertDialogAction
-                            disabled={scoring.isClaimingControl}
+                            disabled={mutationsDisabled}
                             onClick={(event) => {
                               event.preventDefault();
                               void toggleClock().then(() => {
@@ -1560,7 +1570,7 @@ export function ScorekeeperGameDetailScreen({
                       });
                     }
                   }}
-                  pendingCount={scoring.local.pendingCommands.length}
+                  mutationsDisabled={mutationsDisabled}
                   soundEnabled={soundEnabled}
                   state={displayedState}
                   toggleSound={() => setSoundEnabled((value) => !value)}
@@ -1739,7 +1749,7 @@ export function ScorekeeperGameDetailScreen({
                 </AlertDialogCancel>
                 {timeoutDialog && !timeoutDialog.blocked ? (
                   <AlertDialogAction
-                    disabled={isRecordingTimeout}
+                    disabled={isRecordingTimeout || mutationsDisabled}
                     onClick={(event) => {
                       event.preventDefault();
                       void recordTimeout();
@@ -1770,11 +1780,15 @@ export function ScorekeeperGameDetailScreen({
               )}
               <span className="truncate font-semibold">
                 {scoring.local.lastConfirmedAction ??
-                  (scoring.offlineLockActive
-                    ? "Reconnect to continue"
-                    : isOffline
-                      ? `${scoring.local.pendingCommands.length} queued`
-                      : "Online")}
+                  (scoring.local.connection === "reconnecting"
+                    ? "Reconnecting…"
+                    : scoring.local.connection === "pending"
+                      ? "Saving scoring update…"
+                      : scoring.offlineLockActive
+                        ? "Reconnect to continue"
+                        : isOffline
+                          ? "Reconnect to continue"
+                          : "Online")}
               </span>
             </div>
             <Button

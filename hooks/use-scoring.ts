@@ -4,15 +4,12 @@ import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
-  scoringCommandQueue,
-  type QueuedScoringCommand,
-} from "@/services/scoring-command-queue";
-import {
-  isQueueableScoringError,
-  rebaseClientScoringState,
-} from "@/lib/scoring-live-display";
+  type ScoringConnectionState,
+  canSendScoringCommand,
+  hasFreshServerState,
+  transitionScoringConnection,
+} from "@/lib/scoring-connection-policy";
 import { getFriendlyScoringCommandErrorMessage } from "@/lib/scoring-command-errors";
-import { canRetryNextPeriodAfterRefresh } from "@/lib/scorekeeper-period-controls";
 import {
   scoringService,
   type ScoringCommandPayload,
@@ -30,13 +27,12 @@ export const SCORING_QUERY_KEYS = {
 
 type LocalScoringState = {
   controlToken: string | null;
+  connection: ScoringConnectionState;
   lastConfirmedAction: string | null;
-  offlineSince: number | null;
-  pendingCommands: QueuedScoringCommand[];
   state: ScoringState | null;
 };
 
-type OptimisticCommand = {
+type ScoringCommandInput = {
   controlToken?: string;
   payload?: Record<string, unknown>;
   type: ScoringCommandType;
@@ -44,7 +40,6 @@ type OptimisticCommand = {
 
 export type SendScoringCommandResult =
   | { status: "confirmed"; state: ScoringState }
-  | { status: "queued" }
   | { message?: string; state?: ScoringState; status: "failed" }
   | { status: "blocked" }
   | { status: "ignored" };
@@ -56,245 +51,13 @@ type LiveScoringAction =
       control: Pick<ScoringControlResponse, "expiresAt" | "sessionId">;
       type: "control-heartbeat";
     }
-  | { command: OptimisticCommand; idempotencyKey: string; type: "optimistic" }
   | { action: string; state: ScoringState; type: "command-confirmed" }
-  | { pendingCommands: QueuedScoringCommand[]; type: "pending-loaded" }
-  | { command: QueuedScoringCommand; type: "command-queued" }
-  | { type: "queue-cleared" }
+  | { type: "command-started" }
   | { type: "offline" }
   | { type: "online" };
 
-function applyOptimisticCommand(
-  state: ScoringState,
-  command: OptimisticCommand,
-): ScoringState {
-  let next: ScoringState = structuredClone(state);
-
-  if (command.type === "score.record") {
-    const teamId = command.payload?.teamId;
-    const points = Number(command.payload?.points ?? 0);
-
-    if (teamId === next.game.homeTeam.id) {
-      next.scores.home += points;
-      next.latestReversibleEvent = {
-        id: "optimistic",
-        payload: command.payload ?? {},
-        summary: `${next.game.homeTeam.name} +${points}`,
-        type: "score.record",
-      };
-    }
-
-    if (teamId === next.game.awayTeam.id) {
-      next.scores.away += points;
-      next.latestReversibleEvent = {
-        id: "optimistic",
-        payload: command.payload ?? {},
-        summary: `${next.game.awayTeam.name} +${points}`,
-        type: "score.record",
-      };
-    }
-  }
-
-  if (command.type === "team_foul.record") {
-    const teamId = command.payload?.teamId;
-
-    if (teamId === next.game.homeTeam.id) {
-      next.fouls.home += 1;
-      next.fouls.homeInPenalty = next.fouls.home >= next.fouls.penaltyAt;
-      next.latestReversibleEvent = {
-        id: "optimistic",
-        payload: command.payload ?? {},
-        summary: `${next.game.homeTeam.name} team foul`,
-        type: "team_foul.record",
-      };
-    }
-
-    if (teamId === next.game.awayTeam.id) {
-      next.fouls.away += 1;
-      next.fouls.awayInPenalty = next.fouls.away >= next.fouls.penaltyAt;
-      next.latestReversibleEvent = {
-        id: "optimistic",
-        payload: command.payload ?? {},
-        summary: `${next.game.awayTeam.name} team foul`,
-        type: "team_foul.record",
-      };
-    }
-  }
-
-  if (command.type === "personal_foul.record") {
-    const teamId = command.payload?.teamId;
-    const playerId = command.payload?.playerId;
-    if (teamId === next.game.homeTeam.id) next.fouls.home += 1;
-    if (teamId === next.game.awayTeam.id) next.fouls.away += 1;
-    const existing = next.playerFouls.find(
-      (foul) => foul.game_roster_player_id === playerId,
-    );
-    const player = next.roster.find((item) => item.id === playerId);
-    if (existing) {
-      existing.personal_fouls += 1;
-    } else if (
-      player &&
-      typeof playerId === "string" &&
-      typeof teamId === "string"
-    ) {
-      next.playerFouls.push({
-        fouled_out: false,
-        game_roster_player_id: playerId,
-        jersey_number: player.jersey_number,
-        name: player.name,
-        personal_fouls: 1,
-        team_id: teamId,
-      });
-    }
-    next.latestReversibleEvent = {
-      id: "optimistic",
-      payload: command.payload ?? {},
-      summary: `${player?.name ?? "Player"} personal foul`,
-      type: "personal_foul.record",
-    };
-  }
-
-  if (command.type === "timeout.record") {
-    next = rebaseClientScoringState(next, Date.now());
-    const teamId = command.payload?.teamId;
-
-    if (teamId === next.game.homeTeam.id) {
-      next.timeouts.home.used += 1;
-      next.timeouts.home.remaining = Math.max(
-        0,
-        next.timeouts.home.remaining - 1,
-      );
-      next.latestReversibleEvent = {
-        id: "optimistic",
-        payload: command.payload ?? {},
-        summary: `${next.game.homeTeam.name} timeout`,
-        type: "timeout.record",
-      };
-    }
-
-    if (teamId === next.game.awayTeam.id) {
-      next.timeouts.away.used += 1;
-      next.timeouts.away.remaining = Math.max(
-        0,
-        next.timeouts.away.remaining - 1,
-      );
-      next.latestReversibleEvent = {
-        id: "optimistic",
-        payload: command.payload ?? {},
-        summary: `${next.game.awayTeam.name} timeout`,
-        type: "timeout.record",
-      };
-    }
-
-    next.phase = "paused";
-    next.clock.gameClockRunning = false;
-    next.clock.shotClockRunning = false;
-    next.clock.gameClockStartedAt = null;
-    next.clock.shotClockStartedAt = null;
-  }
-
-  if (command.type === "game.start" || command.type === "clocks.start") {
-    next = rebaseClientScoringState(next, Date.now());
-    const now = next.serverTime;
-    next.phase = "live";
-    next.clock.gameClockRunning = true;
-    next.clock.shotClockRunning = next.config.shotClockEnabled;
-    next.clock.gameClockStartedAt = now;
-    next.clock.shotClockStartedAt = next.config.shotClockEnabled ? now : null;
-  }
-
-  if (command.type === "clocks.pause") {
-    next = rebaseClientScoringState(next, Date.now());
-    next.phase = next.phase === "pregame" ? "pregame" : "paused";
-    next.clock.gameClockRunning = false;
-    next.clock.shotClockRunning = false;
-    next.clock.gameClockStartedAt = null;
-    next.clock.shotClockStartedAt = null;
-  }
-
-  if (command.type === "shot_clock.reset") {
-    next = rebaseClientScoringState(next, Date.now());
-    next.clock.shotClockRemainingMs =
-      command.payload?.resetTo === "short"
-        ? next.config.shotClockShortMs
-        : next.config.shotClockFullMs;
-    next.clock.shotClockStartedAt = next.clock.shotClockRunning
-      ? next.serverTime
-      : null;
-  }
-
-  if (command.type === "shot_clock.pause") {
-    next = rebaseClientScoringState(next, Date.now());
-    next.clock.shotClockRunning = false;
-    next.clock.shotClockStartedAt = null;
-  }
-
-  if (command.type === "shot_clock.start") {
-    next = rebaseClientScoringState(next, Date.now());
-    next.clock.shotClockRunning = true;
-    next.clock.shotClockStartedAt = next.serverTime;
-  }
-
-  if (command.type === "event.reverse") {
-    const event = next.latestReversibleEvent;
-
-    if (event?.type === "score.record") {
-      const teamId = event.payload.teamId;
-      const points = Number(event.payload.points ?? 0);
-      if (teamId === next.game.homeTeam.id) next.scores.home -= points;
-      if (teamId === next.game.awayTeam.id) next.scores.away -= points;
-    }
-
-    if (
-      event?.type === "team_foul.record" ||
-      event?.type === "personal_foul.record"
-    ) {
-      const teamId = event.payload.teamId;
-      if (teamId === next.game.homeTeam.id) next.fouls.home -= 1;
-      if (teamId === next.game.awayTeam.id) next.fouls.away -= 1;
-      next.fouls.homeInPenalty = next.fouls.home >= next.fouls.penaltyAt;
-      next.fouls.awayInPenalty = next.fouls.away >= next.fouls.penaltyAt;
-      if (event.type === "personal_foul.record") {
-        const player = next.playerFouls.find(
-          (foul) => foul.game_roster_player_id === event.payload.playerId,
-        );
-        if (player)
-          player.personal_fouls = Math.max(0, player.personal_fouls - 1);
-      }
-    }
-
-    if (event?.type === "timeout.record") {
-      const teamId = event.payload.teamId;
-      if (teamId === next.game.homeTeam.id) {
-        next.timeouts.home.used = Math.max(0, next.timeouts.home.used - 1);
-        next.timeouts.home.remaining = Math.min(
-          next.timeouts.allowancePerTeam,
-          next.timeouts.home.remaining + 1,
-        );
-      }
-      if (teamId === next.game.awayTeam.id) {
-        next.timeouts.away.used = Math.max(0, next.timeouts.away.used - 1);
-        next.timeouts.away.remaining = Math.min(
-          next.timeouts.allowancePerTeam,
-          next.timeouts.away.remaining + 1,
-        );
-      }
-      next.phase = "paused";
-      next.clock.gameClockRunning = false;
-      next.clock.shotClockRunning = false;
-      next.clock.gameClockStartedAt = null;
-      next.clock.shotClockStartedAt = null;
-    }
-
-    next.latestReversibleEvent = null;
-  }
-
-  next.version += 1;
-  return next;
-}
-
 function formatCommandConfirmation(
-  command: OptimisticCommand,
+  command: ScoringCommandInput,
   state: ScoringState,
 ) {
   if (command.type === "score.record") {
@@ -345,7 +108,14 @@ function liveScoringReducer(
 ): LocalScoringState {
   switch (action.type) {
     case "server-state":
-      return { ...current, state: action.state };
+      return {
+        ...current,
+        connection: transitionScoringConnection(
+          current.connection,
+          "server-state-confirmed",
+        ),
+        state: action.state,
+      };
     case "control-claimed":
       return {
         ...current,
@@ -377,34 +147,28 @@ function liveScoringReducer(
             }
           : current.state,
       };
-    case "optimistic":
-      if (!current.state) return current;
-      return {
-        ...current,
-        lastConfirmedAction: null,
-        state: applyOptimisticCommand(current.state, action.command),
-      };
+    case "command-started":
+      return { ...current, connection: "pending", lastConfirmedAction: null };
     case "command-confirmed":
       return {
         ...current,
         lastConfirmedAction: action.action,
-        offlineSince: null,
+        connection: transitionScoringConnection(
+          current.connection,
+          "command-confirmed",
+        ),
         state: action.state,
       };
-    case "pending-loaded":
-      return { ...current, pendingCommands: action.pendingCommands };
-    case "command-queued":
+    case "offline":
       return {
         ...current,
-        offlineSince: current.offlineSince ?? Date.now(),
-        pendingCommands: [...current.pendingCommands, action.command],
+        connection: transitionScoringConnection(current.connection, "offline"),
       };
-    case "queue-cleared":
-      return { ...current, pendingCommands: [] };
-    case "offline":
-      return { ...current, offlineSince: current.offlineSince ?? Date.now() };
     case "online":
-      return { ...current, offlineSince: null };
+      return {
+        ...current,
+        connection: transitionScoringConnection(current.connection, "online"),
+      };
     default:
       return current;
   }
@@ -416,6 +180,10 @@ function createIdempotencyKey() {
   }
 
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function browserIsOffline() {
+  return typeof navigator !== "undefined" && !navigator.onLine;
 }
 
 export function useScoringStateQuery(organizationId?: string, gameId?: string) {
@@ -434,34 +202,48 @@ export function useScoringStateQuery(organizationId?: string, gameId?: string) {
 export function useLiveScoring(organizationId?: string, gameId?: string) {
   const queryClient = useQueryClient();
   const stateQuery = useScoringStateQuery(organizationId, gameId);
+  const refetchStateRef = React.useRef(stateQuery.refetch);
+  const commandInFlightRef = React.useRef(false);
+  const controlInFlightRef = React.useRef(false);
+  const heartbeatInFlightRef = React.useRef(false);
   const [local, dispatch] = React.useReducer(liveScoringReducer, {
     controlToken: null,
+    connection:
+      typeof navigator !== "undefined" && !navigator.onLine
+        ? "offline"
+        : "reconnecting",
     lastConfirmedAction: null,
-    offlineSince: null,
-    pendingCommands: [],
     state: null,
   });
 
   React.useEffect(() => {
-    if (stateQuery.data) {
-      dispatch({ state: stateQuery.data, type: "server-state" });
-    }
-  }, [stateQuery.data]);
+    refetchStateRef.current = stateQuery.refetch;
+  }, [stateQuery.refetch]);
 
   React.useEffect(() => {
-    if (!organizationId || !gameId) return;
-
-    void scoringCommandQueue
-      .list(organizationId, gameId)
-      .then((pendingCommands) =>
-        dispatch({ pendingCommands, type: "pending-loaded" }),
-      )
-      .catch(() => undefined);
-  }, [gameId, organizationId]);
+    if (
+      stateQuery.isSuccess &&
+      stateQuery.isFetchedAfterMount &&
+      stateQuery.data &&
+      !browserIsOffline()
+    ) {
+      dispatch({ state: stateQuery.data, type: "server-state" });
+    }
+  }, [stateQuery.data, stateQuery.isFetchedAfterMount, stateQuery.isSuccess]);
 
   React.useEffect(() => {
     const markOffline = () => dispatch({ type: "offline" });
-    const markOnline = () => dispatch({ type: "online" });
+    const markOnline = () => {
+      dispatch({ type: "online" });
+      void refetchStateRef
+        .current()
+        .then((result) => {
+          if (hasFreshServerState(result)) {
+            dispatch({ state: result.data, type: "server-state" });
+          }
+        })
+        .catch(() => undefined);
+    };
 
     window.addEventListener("offline", markOffline);
     window.addEventListener("online", markOnline);
@@ -472,16 +254,36 @@ export function useLiveScoring(organizationId?: string, gameId?: string) {
     };
   }, []);
 
+  const resyncFromServer = React.useCallback(async () => {
+    dispatch({ type: "online" });
+    try {
+      const result = await refetchStateRef.current();
+      if (hasFreshServerState(result)) {
+        dispatch({ state: result.data, type: "server-state" });
+      }
+      return result;
+    } catch {
+      // Keep the console in reconnecting state until a later fresh refresh succeeds.
+      return undefined;
+    }
+  }, []);
+
   const claimControlMutation = useMutation({
     mutationFn: (deviceLabel?: string) =>
       scoringService.claimControl(organizationId!, gameId!, { deviceLabel }),
     onSuccess: (control) => dispatch({ control, type: "control-claimed" }),
+    onError: () => {
+      void resyncFromServer();
+    },
   });
 
   const takeoverControlMutation = useMutation({
     mutationFn: (input: { deviceLabel?: string; reason: string }) =>
       scoringService.takeoverControl(organizationId!, gameId!, input),
     onSuccess: (control) => dispatch({ control, type: "control-claimed" }),
+    onError: () => {
+      void resyncFromServer();
+    },
   });
 
   const heartbeatMutation = useMutation({
@@ -489,7 +291,14 @@ export function useLiveScoring(organizationId?: string, gameId?: string) {
       scoringService.heartbeatControl(organizationId!, gameId!, {
         controlToken: local.controlToken!,
       }),
-    onSuccess: (control) => dispatch({ control, type: "control-heartbeat" }),
+    onSuccess: (control) => {
+      heartbeatInFlightRef.current = false;
+      dispatch({ control, type: "control-heartbeat" });
+    },
+    onError: () => {
+      heartbeatInFlightRef.current = false;
+      void resyncFromServer();
+    },
   });
   const heartbeatMutateRef = React.useRef(heartbeatMutation.mutate);
 
@@ -501,11 +310,6 @@ export function useLiveScoring(organizationId?: string, gameId?: string) {
     mutationFn: (command: ScoringCommandPayload) =>
       scoringService.executeCommand(organizationId!, gameId!, command),
     onSuccess: async (response, command) => {
-      await scoringCommandQueue.remove(
-        organizationId!,
-        gameId!,
-        command.idempotencyKey,
-      );
       dispatch({
         action: formatCommandConfirmation(command, response.state),
         state: response.state,
@@ -519,21 +323,44 @@ export function useLiveScoring(organizationId?: string, gameId?: string) {
   });
 
   React.useEffect(() => {
-    if (!local.controlToken || !organizationId || !gameId) return;
+    if (
+      !local.controlToken ||
+      !organizationId ||
+      !gameId ||
+      local.connection !== "ready"
+    ) {
+      return;
+    }
 
     const interval = window.setInterval(() => {
-      heartbeatMutateRef.current();
+      if (!browserIsOffline() && !heartbeatInFlightRef.current) {
+        heartbeatInFlightRef.current = true;
+        heartbeatMutateRef.current();
+      }
     }, 15000);
 
     return () => window.clearInterval(interval);
-  }, [gameId, local.controlToken, organizationId]);
+  }, [gameId, local.connection, local.controlToken, organizationId]);
 
   const sendCommand = React.useCallback(
-    async (command: OptimisticCommand): Promise<SendScoringCommandResult> => {
+    async (command: ScoringCommandInput): Promise<SendScoringCommandResult> => {
       if (!organizationId || !gameId || !local.state) {
         return { status: "ignored" };
       }
-      if (local.offlineSince && Date.now() - local.offlineSince > 90 * 1000) {
+      if (commandInFlightRef.current) return { status: "blocked" };
+      if (browserIsOffline()) {
+        dispatch({ type: "offline" });
+        return { status: "blocked" };
+      }
+      const decision = canSendScoringCommand({
+        connection: local.connection,
+        controlValid:
+          Boolean(command.controlToken) ||
+          (local.state.control.controlledByMe &&
+            local.state.control.status === "claimed"),
+        mutationPending: commandMutation.isPending,
+      });
+      if (!decision.allowed) {
         return { status: "blocked" };
       }
 
@@ -545,105 +372,110 @@ export function useLiveScoring(organizationId?: string, gameId?: string) {
         payload: command.payload,
         type: command.type,
       };
-      const queuedCommand = {
-        command: payload,
-        gameId,
-        organizationId,
-        queuedAt: Date.now(),
-      };
-
-      dispatch({
-        command,
-        idempotencyKey: payload.idempotencyKey,
-        type: "optimistic",
-      });
+      commandInFlightRef.current = true;
+      dispatch({ type: "command-started" });
 
       try {
         const response = await commandMutation.mutateAsync(payload);
         return { state: response.state, status: "confirmed" };
       } catch (error) {
-        if (isQueueableScoringError(error)) {
-          await scoringCommandQueue.add(queuedCommand);
-          dispatch({ command: queuedCommand, type: "command-queued" });
-          return { status: "queued" };
+        const refreshed = await resyncFromServer();
+        if (refreshed && hasFreshServerState(refreshed)) {
+          return {
+            message:
+              error instanceof TypeError
+                ? "We could not confirm that update. The latest official game state was reloaded; review it before trying again."
+                : (getFriendlyScoringCommandErrorMessage(error) ?? undefined),
+            state: refreshed.data,
+            status: "failed",
+          };
         }
-
-        const failureMessage = getFriendlyScoringCommandErrorMessage(error);
-        const refreshed = await stateQuery.refetch();
-        if (refreshed.data) {
-          dispatch({ state: refreshed.data, type: "server-state" });
-
-          if (
-            canRetryNextPeriodAfterRefresh({
-              commandType: command.type,
-              gameClockRemainingMs: refreshed.data.clock.gameClockRemainingMs,
-            })
-          ) {
-            const retryPayload: ScoringCommandPayload = {
-              controlToken:
-                command.controlToken ?? local.controlToken ?? undefined,
-              expectedVersion: refreshed.data.version,
-              idempotencyKey: createIdempotencyKey(),
-              occurredAt: new Date().toISOString(),
-              payload: command.payload,
-              type: command.type,
-            };
-
-            try {
-              const retryResponse =
-                await commandMutation.mutateAsync(retryPayload);
-              return { state: retryResponse.state, status: "confirmed" };
-            } catch (retryError) {
-              return {
-                message:
-                  getFriendlyScoringCommandErrorMessage(retryError) ??
-                  failureMessage ??
-                  undefined,
-                state: refreshed.data,
-                status: "failed",
-              };
-            }
-          }
-        }
-        return { message: failureMessage ?? undefined, status: "failed" };
+        return {
+          message:
+            error instanceof TypeError
+              ? "We could not confirm that update. Reconnect to continue. No scoring change was recorded."
+              : (getFriendlyScoringCommandErrorMessage(error) ?? undefined),
+          status: "failed",
+        };
+      } finally {
+        commandInFlightRef.current = false;
       }
     },
     [
       commandMutation,
       gameId,
+      local.connection,
       local.controlToken,
-      local.offlineSince,
       local.state,
       organizationId,
-      stateQuery,
+      resyncFromServer,
     ],
   );
 
-  const flushQueue = React.useCallback(async () => {
-    if (!organizationId || !gameId) return;
-
-    const pending = await scoringCommandQueue.list(organizationId, gameId);
-
-    for (const item of pending) {
-      await commandMutation.mutateAsync(item.command);
-    }
-
-    await scoringCommandQueue.clear(organizationId, gameId);
-    dispatch({ type: "queue-cleared" });
-  }, [commandMutation, gameId, organizationId]);
+  const connectionAllowsMutations = local.connection === "ready";
+  const guardedClaimControl = React.useCallback(
+    (deviceLabel?: string) => {
+      if (
+        !connectionAllowsMutations ||
+        browserIsOffline() ||
+        controlInFlightRef.current ||
+        claimControlMutation.isPending ||
+        takeoverControlMutation.isPending
+      ) {
+        if (browserIsOffline()) dispatch({ type: "offline" });
+        return Promise.resolve(undefined);
+      }
+      controlInFlightRef.current = true;
+      return claimControlMutation
+        .mutateAsync(deviceLabel)
+        .catch(() => undefined)
+        .finally(() => {
+          controlInFlightRef.current = false;
+        });
+    },
+    [
+      claimControlMutation,
+      connectionAllowsMutations,
+      takeoverControlMutation.isPending,
+    ],
+  );
+  const guardedTakeoverControl = React.useCallback(
+    (input: { deviceLabel?: string; reason: string }) => {
+      if (
+        !connectionAllowsMutations ||
+        browserIsOffline() ||
+        controlInFlightRef.current ||
+        claimControlMutation.isPending ||
+        takeoverControlMutation.isPending
+      ) {
+        if (browserIsOffline()) dispatch({ type: "offline" });
+        return Promise.resolve(undefined);
+      }
+      controlInFlightRef.current = true;
+      return takeoverControlMutation
+        .mutateAsync(input)
+        .catch(() => undefined)
+        .finally(() => {
+          controlInFlightRef.current = false;
+        });
+    },
+    [
+      claimControlMutation.isPending,
+      connectionAllowsMutations,
+      takeoverControlMutation,
+    ],
+  );
 
   return {
-    claimControl: claimControlMutation.mutateAsync,
-    flushQueue,
+    claimControl: guardedClaimControl,
     heartbeatStatus: heartbeatMutation.status,
     isClaimingControl: claimControlMutation.isPending,
+    isTakingOverControl: takeoverControlMutation.isPending,
     isSendingCommand: commandMutation.isPending,
     local,
-    offlineLockActive: Boolean(
-      local.offlineSince && Date.now() - local.offlineSince > 90 * 1000,
-    ),
+    offlineLockActive: !connectionAllowsMutations,
     query: stateQuery,
     sendCommand,
-    takeoverControl: takeoverControlMutation.mutateAsync,
+    takeoverControl: guardedTakeoverControl,
   };
 }

@@ -24,30 +24,3 @@ export function materializeClientScoringState(
 
   return next;
 }
-
-export function rebaseClientScoringState(
-  state: ScoringState,
-  clientNowMs: number,
-): ScoringState {
-  const next = materializeClientScoringState(state, clientNowMs);
-  const nowIso = new Date(clientNowMs).toISOString();
-
-  next.serverTime = nowIso;
-  if (next.clock.gameClockRunning) {
-    next.clock.gameClockStartedAt = nowIso;
-  }
-  if (next.clock.shotClockRunning) {
-    next.clock.shotClockStartedAt = nowIso;
-  }
-
-  return next;
-}
-
-export function isQueueableScoringError(error: unknown) {
-  return !(
-    typeof error === "object" &&
-    error !== null &&
-    "name" in error &&
-    error.name === "ApiRequestError"
-  );
-}
