@@ -7,13 +7,14 @@ import {
   ShieldCheckIcon,
   TrophyIcon,
   UsersIcon,
-} from "lucide-react"
+} from "lucide-react";
 
 export const docNavItems = [
   {
     href: "/docs",
     label: "Overview",
-    description: "The product goal, audience, MVP loop, and operating principles.",
+    description:
+      "The product goal, audience, MVP loop, and operating principles.",
   },
   {
     href: "/docs/architecture",
@@ -23,12 +24,14 @@ export const docNavItems = [
   {
     href: "/docs/diagrams",
     label: "Diagrams",
-    description: "ERD, user flow, access flow, invitation flow, and scoring event flow.",
+    description:
+      "ERD, user flow, access flow, invitation flow, and scoring event flow.",
   },
   {
     href: "/docs/readiness",
     label: "Readiness",
-    description: "User stories, permissions, lifecycle rules, and API boundaries.",
+    description:
+      "User stories, permissions, lifecycle rules, and API boundaries.",
   },
   {
     href: "/docs/roadmap",
@@ -40,7 +43,7 @@ export const docNavItems = [
     label: "Success",
     description: "What a successful first real league looks like.",
   },
-]
+];
 
 export const coreLoop = [
   "Create league",
@@ -50,15 +53,16 @@ export const coreLoop = [
   "Score games",
   "Auto-update standings and playoffs",
   "Publish public league pages",
-]
+];
 
 export const primaryUsers = [
   "League organizer or commissioner",
   "Barangay, school, or company sports admin",
-  "Scorer or table official",
+  "Scorekeeper or table official",
+  "Statistician or box-score recorder",
   "Coach or team captain",
   "Player and public viewer",
-]
+];
 
 export const domainCards = [
   {
@@ -92,12 +96,12 @@ export const domainCards = [
       "Centralizes least-privilege checks for admins, scorers, coaches, players, and public viewers.",
   },
   {
-    title: "Insights Later",
+    title: "Statistics And Awards",
     icon: BarChart3Icon,
     description:
-      "Keeps future reports, exports, advanced stats, and historical analytics outside the MVP critical path.",
+      "Owns independent player box scores, score reconciliation, leaders, and confirmed Player of the Game awards.",
   },
-]
+];
 
 export const roadmapMilestones = [
   {
@@ -108,24 +112,24 @@ export const roadmapMilestones = [
   {
     name: "Schedule and format builder",
     outcome:
-      "Admins can encode round-robin/manual formats, tiebreaker order, qualifiers, and playoff seed models.",
+      "Admins can generate single/double round robin, crossover, and single/double-elimination matchups, then assign court times and staff.",
   },
   {
     name: "Responsive score table",
     outcome:
-      "Scorers can record points, fouls, quarter changes, corrections, and finalization from phone/tablet/laptop.",
+      "Scorekeepers record official scoring and fouls while a separate statistician records reconciled player box scores.",
   },
   {
     name: "Standings and brackets",
     outcome:
-      "Finalized games recalculate standings, explain tiebreakers, and advance single-elimination brackets.",
+      "Finalized games recalculate standings, explain tiebreakers, and advance single- or double-elimination brackets safely.",
   },
   {
     name: "Public portal and pilot readiness",
     outcome:
-      "Leagues can share reliable public pages with schedules, results, rosters, standings, brackets, and leaders.",
+      "Leagues share schedules, results, rosters, standings, brackets, leaders, and confirmed game awards from official records.",
   },
-]
+];
 
 export const successSignals = [
   {
@@ -143,4 +147,4 @@ export const successSignals = [
     icon: UsersIcon,
     text: "Organizers, scorers, coaches, players, and public viewers each know where to go and what is official.",
   },
-]
+];

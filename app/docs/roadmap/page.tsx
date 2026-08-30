@@ -4,16 +4,16 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { DocsShell } from "@/app/docs/_components/docs-shell"
-import { roadmapMilestones } from "@/lib/project-docs"
+} from "@/components/ui/card";
+import { DocsShell } from "@/app/docs/_components/docs-shell";
+import { roadmapMilestones } from "@/lib/project-docs";
 
 export default function RoadmapPage() {
   return (
     <DocsShell
       eyebrow="MVP roadmap"
       title="Build the league operations loop in five slices."
-      summary="The roadmap keeps the MVP broad enough to run a real league, but thin enough to avoid registration, payments, offline mode, and advanced stats too early."
+      summary="The MVP now covers the complete operational loop: competition generation, separate score and statistics consoles, official progression, awards, and public records."
     >
       <div className="flex flex-col gap-4">
         {roadmapMilestones.map((milestone, index) => (
@@ -40,11 +40,12 @@ export default function RoadmapPage() {
         <CardContent className="grid gap-3 text-sm md:grid-cols-2">
           {[
             "Team registration forms",
-            "Payments, waivers, receipts, and document uploads",
-            "Offline-first scoring and sync",
-            "Full box score stats and shot charts",
+            "Payments, waivers, receipts, and evidence uploads",
+            "Document-based team compliance requirements",
+            "Full offline-first scoring and conflict sync",
+            "Shooting attempts, blocks, minutes, shot charts, and advanced analytics",
             "Native mobile apps",
-            "Automated schedule generation",
+            "Automated venue and time-slot optimization",
           ].map((item) => (
             <p key={item} className="rounded-md border bg-card p-3">
               {item}
@@ -53,5 +54,5 @@ export default function RoadmapPage() {
         </CardContent>
       </Card>
     </DocsShell>
-  )
+  );
 }

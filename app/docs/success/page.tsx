@@ -4,9 +4,9 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { DocsShell } from "@/app/docs/_components/docs-shell"
-import { successSignals } from "@/lib/project-docs"
+} from "@/components/ui/card";
+import { DocsShell } from "@/app/docs/_components/docs-shell";
+import { successSignals } from "@/lib/project-docs";
 
 export default function SuccessPage() {
   return (
@@ -37,17 +37,19 @@ export default function SuccessPage() {
         <CardContent className="flex flex-col gap-4 text-sm leading-6 text-muted-foreground">
           <p>
             A commissioner creates a league, adds known teams and players,
-            configures the format, schedules games, assigns scorers, and shares
-            the public page. Scorers record games online and finalize results.
+            configures pools and the format, generates matchups, schedules
+            games, assigns scorekeepers and statisticians, and shares the public
+            page. Staff record official scores and reconciled box scores online.
           </p>
           <p>
             Standings update from finalized games, unresolved ties ask for an
             admin decision with a visible reason, playoff brackets progress
             correctly, and public viewers can see official schedules, rosters,
-            results, standings, and brackets without private information.
+            results, standings, brackets, leaders, and Player of the Game
+            selections without private information.
           </p>
         </CardContent>
       </Card>
     </DocsShell>
-  )
+  );
 }

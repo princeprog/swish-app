@@ -28,6 +28,8 @@ import {
   publicDataBoundary,
   scorekeeperWorkspaceFlow,
   scoringEvents,
+  statisticianWorkspaceFlow,
+  statisticsEvents,
   standingsRules,
 } from "@/lib/readiness-docs";
 
@@ -35,16 +37,16 @@ export default function ReadinessPage() {
   return (
     <DocsShell
       eyebrow="Implementation readiness"
-      title="The missing planning details before building the MVP."
-      summary="This page turns the product idea into implementation-ready rules: user stories, permissions, game lifecycle, scoring events, standings behavior, public data boundaries, pilot scope, and API ownership."
+      title="The operating contract for the MVP."
+      summary="This page records the implemented rules for setup, competition generation, scorekeeping, statistics, official results, public data, and the two pilot formats."
     >
       <Card>
         <CardHeader>
           <CardTitle>MVP User Stories</CardTitle>
           <CardDescription>
-            These stories define the first usable product slice without drifting
-            into deferred registration, payments, offline mode, or advanced
-            stats.
+            These stories define the complete pilot loop while registration,
+            payments, evidence compliance, offline sync, and advanced analytics
+            remain deferred.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3">
@@ -81,6 +83,7 @@ export default function ReadinessPage() {
                 <TableHead>Owner</TableHead>
                 <TableHead>Admin</TableHead>
                 <TableHead>Scorekeeper</TableHead>
+                <TableHead>Statistician</TableHead>
                 <TableHead>Team manager</TableHead>
                 <TableHead>Legacy player</TableHead>
                 <TableHead>Public</TableHead>
@@ -95,6 +98,7 @@ export default function ReadinessPage() {
                   <TableCell>{row.owner}</TableCell>
                   <TableCell>{row.admin}</TableCell>
                   <TableCell>{row.scorer}</TableCell>
+                  <TableCell>{row.statistician}</TableCell>
                   <TableCell>{row.coach}</TableCell>
                   <TableCell>{row.player}</TableCell>
                   <TableCell>{row.publicViewer}</TableCell>
@@ -176,8 +180,7 @@ export default function ReadinessPage() {
           <CardTitle>In-App Notification Event Catalog</CardTitle>
           <CardDescription>
             Launch events are wired to access, roster, schedule, and scoring
-            workflows. Reserved events keep stable names for later standings
-            and playoff work without expanding that scope today.
+            workflows, including official standings and playoff progression.
           </CardDescription>
         </CardHeader>
         <CardContent className="overflow-auto">
@@ -221,6 +224,28 @@ export default function ReadinessPage() {
         <CardContent>
           <ul className="grid gap-3">
             {scorekeeperWorkspaceFlow.map((item) => (
+              <li
+                key={item}
+                className="rounded-md border bg-card p-3 text-sm leading-6"
+              >
+                {item}
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Dedicated Statistician Workspace</CardTitle>
+          <CardDescription>
+            Player box scores stay independent from the official scoreboard and
+            must reconcile before finalization.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ul className="grid gap-3">
+            {statisticianWorkspaceFlow.map((item) => (
               <li
                 key={item}
                 className="rounded-md border bg-card p-3 text-sm leading-6"
@@ -280,6 +305,26 @@ export default function ReadinessPage() {
             ))}
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Statistics Event Contract</CardTitle>
+            <CardDescription>
+              Statistician events are versioned, idempotent, reversible, and
+              separate from official score commands.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3">
+            {statisticsEvents.map((event) => (
+              <div key={event.type} className="rounded-md border p-3">
+                <p className="font-mono text-xs font-medium">{event.type}</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  Rule: {event.rule}
+                </p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -331,8 +376,8 @@ export default function ReadinessPage() {
           <CardHeader>
             <CardTitle>First Pilot Definition</CardTitle>
             <CardDescription>
-              Implementation should optimize for this concrete season shape
-              before expanding into broader tournament cases.
+              Completion requires both concrete tournament shapes, including a
+              forced reset final.
             </CardDescription>
           </CardHeader>
           <CardContent>

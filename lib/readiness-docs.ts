@@ -9,30 +9,37 @@ export const mvpUserStories = [
   {
     role: "League Admin",
     story:
-      "As a league admin, I can configure a guided basketball format, tiebreaker order, qualifier counts, and playoff shape so the system knows how teams advance.",
+      "As a league admin, I can configure pools, round-robin qualification, crossover seeds, tiebreaker order, and single- or double-elimination playoffs so the system knows how teams advance.",
     acceptance:
       "The format is saved, visible in admin review, and unresolved tie cases require a manual decision before rankings are official.",
   },
   {
     role: "League Admin",
     story:
-      "As a league admin, I can create and publish scheduled games with teams, venue, date, time, and an optional primary scorekeeper so the league schedule is clear.",
+      "As a league admin, I can generate matchups and assign a venue, date, time, primary scorekeeper, and optional statistician so every ready game can be played.",
     acceptance:
-      "Scheduled games appear in admin and public views with clear status labels, and scorekeeper assignment is managed from Schedules.",
+      "Generated matchups remain in Needs scheduling until assigned, and team or venue overlaps are rejected using the season slot duration.",
   },
   {
     role: "Scorekeeper",
     story:
-      "As a scorekeeper, I can open an assigned game and record team points, team fouls, team timeouts, clocks, quarter changes, corrections, and finalization events.",
+      "As a scorekeeper, I can open an assigned game and record official team points, player or bench fouls, timeouts, clocks, periods, corrections, and finalization events.",
     acceptance:
-      "Every accepted scoring command creates an append-only event and updates a current-state projection; player attribution and timeout-duration countdowns remain deferred.",
+      "Every accepted scoring command creates an append-only event, starts from a published roster snapshot, and updates period, player-foul, team-foul, and official-score projections.",
+  },
+  {
+    role: "Statistician",
+    story:
+      "As an assigned statistician, I can record player points, rebounds, assists, steals, and turnovers without changing the official scoreboard.",
+    acceptance:
+      "The stat sheet uses separate device control and append-only events, reconciles player points to both official team scores, and requires an audited override for a discrepancy.",
   },
   {
     role: "League Admin",
     story:
       "As a league admin, I can reopen a finalized game and enter a correction reason so disputes are handled without hiding history.",
     acceptance:
-      "Reopen and re-finalize actions are recorded, and standings update only after the corrected game is finalized again.",
+      "Reopen and re-finalize actions are recorded, dependent playoff games are protected, and standings update only after the corrected game is finalized again.",
   },
   {
     role: "Public Viewer",
@@ -49,6 +56,7 @@ export const permissionMatrix = [
     owner: "Full",
     admin: "No",
     scorer: "No",
+    statistician: "No",
     coach: "No",
     player: "No",
     publicViewer: "No",
@@ -58,6 +66,7 @@ export const permissionMatrix = [
     owner: "Full",
     admin: "Full",
     scorer: "No",
+    statistician: "No",
     coach: "No",
     player: "No",
     publicViewer: "Public only",
@@ -67,6 +76,7 @@ export const permissionMatrix = [
     owner: "Full",
     admin: "Full",
     scorer: "No",
+    statistician: "No",
     coach: "Assigned team roster",
     player: "No",
     publicViewer: "Public only",
@@ -76,6 +86,7 @@ export const permissionMatrix = [
     owner: "Full",
     admin: "Full",
     scorer: "View assigned games",
+    statistician: "View assigned games",
     coach: "Games involving assigned teams",
     player: "No",
     publicViewer: "Public only",
@@ -85,6 +96,17 @@ export const permissionMatrix = [
     owner: "Admin override",
     admin: "Admin override",
     scorer: "Assigned games with active control",
+    statistician: "No",
+    coach: "No",
+    player: "No",
+    publicViewer: "No",
+  },
+  {
+    capability: "Record assigned player statistics",
+    owner: "Admin override",
+    admin: "Admin override",
+    scorer: "No",
+    statistician: "Assigned games with active control",
     coach: "No",
     player: "No",
     publicViewer: "No",
@@ -94,6 +116,7 @@ export const permissionMatrix = [
     owner: "Yes",
     admin: "Yes",
     scorer: "If permitted",
+    statistician: "No",
     coach: "No",
     player: "No",
     publicViewer: "No",
@@ -103,6 +126,17 @@ export const permissionMatrix = [
     owner: "Yes",
     admin: "Yes",
     scorer: "No",
+    statistician: "No",
+    coach: "No",
+    player: "No",
+    publicViewer: "No",
+  },
+  {
+    capability: "Confirm Player of the Game",
+    owner: "Yes",
+    admin: "Yes",
+    scorer: "No",
+    statistician: "Assigned statistician",
     coach: "No",
     player: "No",
     publicViewer: "No",
@@ -112,6 +146,7 @@ export const permissionMatrix = [
     owner: "Yes",
     admin: "Yes",
     scorer: "No",
+    statistician: "No",
     coach: "No",
     player: "No",
     publicViewer: "No",
@@ -121,6 +156,7 @@ export const permissionMatrix = [
     owner: "Yes",
     admin: "Yes",
     scorer: "Yes",
+    statistician: "Yes",
     coach: "Yes",
     player: "Yes",
     publicViewer: "Yes when public",
@@ -177,7 +213,12 @@ export const scoringEvents = [
   {
     type: "team_foul.record",
     payload: "gameId, teamId, period, clocks, actorMemberId",
-    rule: "Increments current-period team fouls for the selected team and marks penalty at four team fouls.",
+    rule: "Records an unattributed bench or team foul, increments the current-period team total, and marks the configured penalty threshold.",
+  },
+  {
+    type: "personal_foul.record",
+    payload: "gameId, teamId, rosterPlayerId, period, clocks, actorMemberId",
+    rule: "Attributes the foul to the published game roster, derives the team-foul total, and marks foul-out at the season limit.",
   },
   {
     type: "timeout.record",
@@ -211,7 +252,7 @@ export const scoringEvents = [
   {
     type: "game.finalize",
     payload: "gameId, finalHomeScore, finalAwayScore, actorMemberId",
-    rule: "Requires paused clocks, completed regulation or overtime, no queued commands, and a non-tied score.",
+    rule: "Requires completed regulation or overtime, a non-tied score, roster snapshots, and a reconciled or explicitly overridden assigned stat sheet.",
   },
   {
     type: "game.reopen",
@@ -220,12 +261,31 @@ export const scoringEvents = [
   },
 ];
 
+export const statisticsEvents = [
+  {
+    type: "player.points",
+    rule: "Adds 1, 2, or 3 points to one rostered player's box score without mutating the official team score.",
+  },
+  {
+    type: "player.rebound / assist / steal / turnover",
+    rule: "Adds one attributed box-score statistic through the statistician's independent append-only event stream.",
+  },
+  {
+    type: "event.reverse",
+    rule: "Reverses a statistic event without deleting its original history or changing official scoring events.",
+  },
+  {
+    type: "sheet.submit",
+    rule: "Reconciles player points for both teams to the official score projection before game finalization.",
+  },
+];
+
 export const standingsRules = [
   "Only Final games affect official standings.",
   "A win is awarded to the team with the higher final score.",
   "Postponed and Cancelled games do not affect standings in the MVP.",
   "Forfeits are deferred unless the pilot league requires them before launch.",
-  "Default tiebreaker order is win-loss record, head-to-head result, point differential, points scored, then manual admin decision.",
+  "Default tiebreaker order is win percentage, head-to-head mini-table, point differential, points scored, then an audited manual admin decision.",
   "If a 3+ team head-to-head tie cannot be resolved clearly, the system must request a manual admin decision with a reason.",
   "Manual decisions must be visible to admins and summarized for public viewers without exposing private audit internals.",
 ];
@@ -233,11 +293,11 @@ export const standingsRules = [
 export const publicDataBoundary = [
   {
     category: "Public",
-    data: "League name, organization name, divisions, team names, rosters, schedule, game statuses, finalized scores, standings, brackets, and basic leaders.",
+    data: "League name, organization name, divisions, team names, published rosters, schedule, game statuses, finalized scores, standings, brackets, leaders, and confirmed Player of the Game awards.",
   },
   {
     category: "Private",
-    data: "Role invites, invite tokens, admin notes, scorekeeper assignment internals, correction audit details, user contact details, and private dispute notes.",
+    data: "Role invites, invite tokens, admin notes, scorekeeper/statistician assignments and device sessions, correction reasons, audit details, contact details, and private dispute notes.",
   },
   {
     category: "Conditional",
@@ -248,15 +308,15 @@ export const publicDataBoundary = [
 export const invitationFlow = [
   "Only the active organization owner can invite, resend, revoke, assign team-manager team scopes, suspend members, or transfer ownership.",
   "A user has one role per organization, but may hold a different role in another organization.",
-  "Invitations are sent for admin, team manager, or scorekeeper roles only; ownership moves through explicit transfer.",
+  "Invitations are sent for admin, team manager, scorekeeper, or statistician roles; ownership moves through explicit transfer.",
   "Invitation tokens are single-use, stored only as hashes, expire after seven days, and require the signed-in email to match.",
-  "Team managers are scoped to assigned teams and rosters. Scorekeepers are scoped to games assigned from the Schedules page.",
+  "Team managers are scoped to assigned teams and rosters. Scorekeepers and statisticians are scoped independently to games assigned from Schedules.",
   "After invitation acceptance, users land in the workspace that matches their role for that organization.",
 ];
 
 export const notificationRoleRules = [
   {
-    role: "Owner, admin, team manager, and scorekeeper",
+    role: "Owner, admin, team manager, scorekeeper, and statistician",
     rule: "Receive a global inbox that follows the signed-in user across organizations. Operational fan-out uses the member's current role and team or game scope.",
   },
   {
@@ -279,47 +339,252 @@ export const notificationDeliveryRules = [
 ];
 
 export const notificationEventCatalog = [
-  { event: "access.invitation_received", recipients: "Matched user or normalized invite email", priority: "Action", phase: "Launch" },
-  { event: "access.invitation_resent", recipients: "Invitee", priority: "Action", phase: "Launch" },
-  { event: "access.invitation_expiring", recipients: "Invitee", priority: "Urgent", phase: "Launch" },
-  { event: "access.invitation_scope_changed", recipients: "Invitee", priority: "Important", phase: "Launch" },
-  { event: "access.invitation_revoked", recipients: "Invitee", priority: "Important", phase: "Launch" },
-  { event: "access.invitation_accepted", recipients: "Inviter and current owner", priority: "Informational", phase: "Launch" },
-  { event: "access.member_role_changed", recipients: "Affected member", priority: "Important", phase: "Launch" },
-  { event: "access.member_team_scope_changed", recipients: "Affected team manager", priority: "Important", phase: "Launch" },
-  { event: "access.member_suspended", recipients: "Affected member", priority: "Urgent", phase: "Launch" },
-  { event: "access.member_reactivated", recipients: "Affected member", priority: "Informational", phase: "Launch" },
-  { event: "access.ownership_received", recipients: "New owner", priority: "Urgent", phase: "Launch" },
-  { event: "access.ownership_transferred", recipients: "Previous owner", priority: "Important", phase: "Launch" },
-  { event: "roster.deadline_set", recipients: "Assigned team managers", priority: "Important", phase: "Launch" },
-  { event: "roster.deadline_changed", recipients: "Assigned team managers", priority: "Important", phase: "Launch" },
-  { event: "roster.deadline_reminder", recipients: "Assigned manager at 72 and 24 hours", priority: "Action", phase: "Launch" },
-  { event: "roster.overdue", recipients: "Assigned manager, owner, and admins", priority: "Urgent", phase: "Launch" },
-  { event: "roster.submitted", recipients: "Owner and roster reviewers", priority: "Action", phase: "Launch" },
-  { event: "roster.returned", recipients: "Assigned manager with review note", priority: "Action", phase: "Launch" },
-  { event: "roster.approved", recipients: "Assigned manager", priority: "Informational", phase: "Launch" },
-  { event: "roster.published", recipients: "Assigned manager", priority: "Informational", phase: "Launch" },
-  { event: "roster.amendment_started", recipients: "Assigned manager", priority: "Action", phase: "Launch" },
-  { event: "schedule.scorekeeper_assigned", recipients: "Newly assigned scorekeeper", priority: "Action", phase: "Launch" },
-  { event: "schedule.scorekeeper_unassigned", recipients: "Previous scorekeeper", priority: "Important", phase: "Launch" },
-  { event: "schedule.game_published", recipients: "Affected managers and scorekeeper", priority: "Informational", phase: "Launch" },
-  { event: "schedule.game_changed", recipients: "Affected managers and scorekeeper", priority: "Important", phase: "Launch" },
-  { event: "schedule.game_postponed", recipients: "Affected managers and scorekeeper", priority: "Urgent", phase: "Launch" },
-  { event: "schedule.game_removed", recipients: "Affected published-game recipients", priority: "Urgent", phase: "Launch" },
-  { event: "schedule.game_reminder", recipients: "Managers and scorekeeper at 24 hours and 1 hour", priority: "Action", phase: "Launch" },
-  { event: "schedule.unassigned_game_reminder", recipients: "Owner and admins", priority: "Urgent", phase: "Launch" },
-  { event: "scoring.control_taken_over", recipients: "Displaced scorekeeper", priority: "Urgent", phase: "Launch" },
-  { event: "scoring.game_finalized", recipients: "Managers of both teams", priority: "Informational", phase: "Launch" },
-  { event: "scoring.game_reopened", recipients: "Managers, scorekeeper, owner, and admins", priority: "Urgent", phase: "Launch" },
-  { event: "scoring.result_corrected", recipients: "Managers, owner, and admins", priority: "Important", phase: "Launch" },
-  { event: "standings.tie_requires_decision", recipients: "Owner and competition admins", priority: "Action", phase: "Reserved" },
-  { event: "standings.tie_decision_published", recipients: "Affected team managers", priority: "Informational", phase: "Reserved" },
-  { event: "playoffs.qualification_confirmed", recipients: "Qualifying team managers", priority: "Informational", phase: "Reserved" },
-  { event: "playoffs.matchup_set", recipients: "Both team managers and scorekeeper", priority: "Action", phase: "Reserved" },
-  { event: "playoffs.matchup_changed", recipients: "Previously and newly affected recipients", priority: "Important", phase: "Reserved" },
-  { event: "playoffs.team_advanced", recipients: "Advancing team manager", priority: "Informational", phase: "Reserved" },
-  { event: "playoffs.team_eliminated", recipients: "Eliminated team manager", priority: "Informational", phase: "Reserved" },
-  { event: "playoffs.champion_confirmed", recipients: "Champion manager, owner, and admins", priority: "Informational", phase: "Reserved" },
+  {
+    event: "access.invitation_received",
+    recipients: "Matched user or normalized invite email",
+    priority: "Action",
+    phase: "Launch",
+  },
+  {
+    event: "access.invitation_resent",
+    recipients: "Invitee",
+    priority: "Action",
+    phase: "Launch",
+  },
+  {
+    event: "access.invitation_expiring",
+    recipients: "Invitee",
+    priority: "Urgent",
+    phase: "Launch",
+  },
+  {
+    event: "access.invitation_scope_changed",
+    recipients: "Invitee",
+    priority: "Important",
+    phase: "Launch",
+  },
+  {
+    event: "access.invitation_revoked",
+    recipients: "Invitee",
+    priority: "Important",
+    phase: "Launch",
+  },
+  {
+    event: "access.invitation_accepted",
+    recipients: "Inviter and current owner",
+    priority: "Informational",
+    phase: "Launch",
+  },
+  {
+    event: "access.member_role_changed",
+    recipients: "Affected member",
+    priority: "Important",
+    phase: "Launch",
+  },
+  {
+    event: "access.member_team_scope_changed",
+    recipients: "Affected team manager",
+    priority: "Important",
+    phase: "Launch",
+  },
+  {
+    event: "access.member_suspended",
+    recipients: "Affected member",
+    priority: "Urgent",
+    phase: "Launch",
+  },
+  {
+    event: "access.member_reactivated",
+    recipients: "Affected member",
+    priority: "Informational",
+    phase: "Launch",
+  },
+  {
+    event: "access.ownership_received",
+    recipients: "New owner",
+    priority: "Urgent",
+    phase: "Launch",
+  },
+  {
+    event: "access.ownership_transferred",
+    recipients: "Previous owner",
+    priority: "Important",
+    phase: "Launch",
+  },
+  {
+    event: "roster.deadline_set",
+    recipients: "Assigned team managers",
+    priority: "Important",
+    phase: "Launch",
+  },
+  {
+    event: "roster.deadline_changed",
+    recipients: "Assigned team managers",
+    priority: "Important",
+    phase: "Launch",
+  },
+  {
+    event: "roster.deadline_reminder",
+    recipients: "Assigned manager at 72 and 24 hours",
+    priority: "Action",
+    phase: "Launch",
+  },
+  {
+    event: "roster.overdue",
+    recipients: "Assigned manager, owner, and admins",
+    priority: "Urgent",
+    phase: "Launch",
+  },
+  {
+    event: "roster.submitted",
+    recipients: "Owner and roster reviewers",
+    priority: "Action",
+    phase: "Launch",
+  },
+  {
+    event: "roster.returned",
+    recipients: "Assigned manager with review note",
+    priority: "Action",
+    phase: "Launch",
+  },
+  {
+    event: "roster.approved",
+    recipients: "Assigned manager",
+    priority: "Informational",
+    phase: "Launch",
+  },
+  {
+    event: "roster.published",
+    recipients: "Assigned manager",
+    priority: "Informational",
+    phase: "Launch",
+  },
+  {
+    event: "roster.amendment_started",
+    recipients: "Assigned manager",
+    priority: "Action",
+    phase: "Launch",
+  },
+  {
+    event: "schedule.scorekeeper_assigned",
+    recipients: "Newly assigned scorekeeper",
+    priority: "Action",
+    phase: "Launch",
+  },
+  {
+    event: "schedule.scorekeeper_unassigned",
+    recipients: "Previous scorekeeper",
+    priority: "Important",
+    phase: "Launch",
+  },
+  {
+    event: "schedule.game_published",
+    recipients: "Affected managers and scorekeeper",
+    priority: "Informational",
+    phase: "Launch",
+  },
+  {
+    event: "schedule.game_changed",
+    recipients: "Affected managers and scorekeeper",
+    priority: "Important",
+    phase: "Launch",
+  },
+  {
+    event: "schedule.game_postponed",
+    recipients: "Affected managers and scorekeeper",
+    priority: "Urgent",
+    phase: "Launch",
+  },
+  {
+    event: "schedule.game_removed",
+    recipients: "Affected published-game recipients",
+    priority: "Urgent",
+    phase: "Launch",
+  },
+  {
+    event: "schedule.game_reminder",
+    recipients: "Managers and scorekeeper at 24 hours and 1 hour",
+    priority: "Action",
+    phase: "Launch",
+  },
+  {
+    event: "schedule.unassigned_game_reminder",
+    recipients: "Owner and admins",
+    priority: "Urgent",
+    phase: "Launch",
+  },
+  {
+    event: "scoring.control_taken_over",
+    recipients: "Displaced scorekeeper",
+    priority: "Urgent",
+    phase: "Launch",
+  },
+  {
+    event: "scoring.game_finalized",
+    recipients: "Managers of both teams",
+    priority: "Informational",
+    phase: "Launch",
+  },
+  {
+    event: "scoring.game_reopened",
+    recipients: "Managers, scorekeeper, owner, and admins",
+    priority: "Urgent",
+    phase: "Launch",
+  },
+  {
+    event: "scoring.result_corrected",
+    recipients: "Managers, owner, and admins",
+    priority: "Important",
+    phase: "Launch",
+  },
+  {
+    event: "standings.tie_requires_decision",
+    recipients: "Owner and competition admins",
+    priority: "Action",
+    phase: "Launch",
+  },
+  {
+    event: "standings.tie_decision_published",
+    recipients: "Affected team managers",
+    priority: "Informational",
+    phase: "Launch",
+  },
+  {
+    event: "playoffs.qualification_confirmed",
+    recipients: "Qualifying team managers",
+    priority: "Informational",
+    phase: "Launch",
+  },
+  {
+    event: "playoffs.matchup_set",
+    recipients: "Both team managers and assigned staff",
+    priority: "Action",
+    phase: "Launch",
+  },
+  {
+    event: "playoffs.matchup_changed",
+    recipients: "Previously and newly affected recipients",
+    priority: "Important",
+    phase: "Launch",
+  },
+  {
+    event: "playoffs.team_advanced",
+    recipients: "Advancing team manager",
+    priority: "Informational",
+    phase: "Launch",
+  },
+  {
+    event: "playoffs.team_eliminated",
+    recipients: "Eliminated team manager",
+    priority: "Informational",
+    phase: "Launch",
+  },
+  {
+    event: "playoffs.champion_confirmed",
+    recipients: "Champion manager, owner, and admins",
+    priority: "Informational",
+    phase: "Launch",
+  },
 ];
 
 export const scorekeeperWorkspaceFlow = [
@@ -338,15 +603,23 @@ export const scorekeeperWorkspaceFlow = [
   "Pregame scoring loads the season's latest game rules; starting the game stores a snapshot so later season edits cannot change a live or official game.",
 ];
 
+export const statisticianWorkspaceFlow = [
+  "Statisticians land at /organizations/[slug]/statistician and see only games assigned to them.",
+  "One statistician device controls a stat sheet at a time through claim, heartbeat, expiry, and audited takeover records.",
+  "Player points, rebounds, assists, steals, and turnovers use a separate append-only event stream and never change the official team score.",
+  "Submission compares each team's player-point total with the official score; owners and admins may approve a discrepancy only with a private audit reason.",
+  "Finalized sheets require official game reopening before correction so standings, downstream playoffs, and Player of the Game remain consistent.",
+  "After finalization, the system suggests Player of the Game using points + rebounds + assists + steals - turnovers, with the winning team breaking ties.",
+];
+
 export const pilotDefinition = [
-  "One league season with one organization and one primary division.",
-  "8 to 12 teams, manually entered by the league admin.",
-  "At least 8 players per team, with jersey numbers.",
-  "Manual schedule covering at least one round-robin stage.",
-  "At least two scorekeepers assigned to games from the Schedules page.",
-  "At least 10 finalized games used to calculate standings.",
-  "Top 4 single-elimination playoff bracket.",
-  "Public page shared with coaches, players, and viewers.",
+  "Eight teams split into Pools A and B with one single round-robin stage per pool.",
+  "A1 vs B2 and B1 vs A2 crossover semifinals feeding a single-elimination championship game.",
+  "Published roster snapshots with separate scorekeeper and statistician assignments.",
+  "Every official result has reconciled player points, deterministic standings, qualifiers, progression, leaders, and Player of the Game.",
+  "The public season page shows schedules, results, standings, bracket, leaders, teams, rosters, and awards without private staff or audit data.",
+  "A second direct-seeded eight-team double-elimination pilot forces and completes the reset final with no team eliminated before two losses.",
+  "Document-based team compliance remains parked; roster minimum/maximum rules, approval, eligibility, and published snapshots remain active.",
 ];
 
 export const apiBoundary = [
@@ -354,7 +627,7 @@ export const apiBoundary = [
     area: "Frontend",
     owner: "swish-app",
     boundary:
-      "Owns admin/public UI, scorekeeper shell, docs, form state, route structure, and API client calls.",
+      "Owns admin/public UI, scorekeeper and statistician shells, bracket views, docs, form state, route structure, and API client calls.",
   },
   {
     area: "Backend",
