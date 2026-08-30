@@ -3,6 +3,7 @@ import { apiService } from "@/services/api.service"
 import type { PaginatedResponse, PaginationParams } from "@/services/pagination"
 
 export type LeagueSeason = {
+  competition_defaults: LeagueSeasonCompetitionDefaults
   created_at: string
   id: string
   game_rules: LeagueSeasonGameRules
@@ -12,10 +13,45 @@ export type LeagueSeason = {
   slug: string
   status: string
   updated_at: string
+  schedule_slot_duration_minutes: number
+}
+
+export type QualifyingFormat =
+  | "none"
+  | "single_round_robin"
+  | "double_round_robin"
+export type PlayoffFormat =
+  | "none"
+  | "single_elimination"
+  | "double_elimination"
+export type TiebreakerRule =
+  | "win_percentage"
+  | "head_to_head"
+  | "point_differential"
+  | "points_for"
+  | "manual_decision"
+
+export type LeagueSeasonCompetitionDefaults = {
+  crossover_template: Array<{ awaySeed: string; homeSeed: string }>
+  playoff_format: PlayoffFormat
+  pool_count: number
+  qualifiers_per_pool: number
+  qualifying_format: QualifyingFormat
+  tiebreakers: TiebreakerRule[]
+}
+
+export type LeagueSeasonCompetitionDefaultsInput = {
+  crossoverTemplate: Array<{ awaySeed: string; homeSeed: string }>
+  playoffFormat: PlayoffFormat
+  poolCount: number
+  qualifiersPerPool: number
+  qualifyingFormat: QualifyingFormat
+  tiebreakers: TiebreakerRule[]
 }
 
 export type LeagueSeasonGameRules = {
   overtime_duration_ms: number
+  personal_foul_limit: number
   period_duration_ms: number
   regulation_periods: number
   shot_clock_enabled: boolean
@@ -29,6 +65,7 @@ export type LeagueSeasonGameRules = {
 
 export type LeagueSeasonGameRulesInput = {
   overtimeDurationMs: number
+  personalFoulLimit: number
   periodDurationMs: number
   regulationPeriods: number
   shotClockEnabled: boolean
@@ -41,10 +78,12 @@ export type LeagueSeasonGameRulesInput = {
 }
 
 export type CreateLeagueSeasonPayload = {
+  competitionDefaults: LeagueSeasonCompetitionDefaultsInput
   gameRules: LeagueSeasonGameRulesInput
   name: string
   organizationId: string
   publicEnabled?: boolean
+  scheduleSlotDurationMinutes: number
   slug: string
   status?: "draft" | "active" | "inactive"
 }

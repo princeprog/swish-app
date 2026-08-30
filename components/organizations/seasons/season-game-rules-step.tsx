@@ -138,6 +138,15 @@ export function SeasonGameRulesStep({
         <FieldLegend>Fouls and timeouts</FieldLegend>
         <FieldGroup className="grid gap-4 sm:grid-cols-2">
           <SeasonRuleNumberField
+            error={errorFor("personalFoulLimit")}
+            label="Personal-foul limit"
+            maximum={10}
+            minimum={1}
+            suffix="Player fouls before fouling out"
+            value={rules.personalFoulLimit}
+            onChange={(value) => update("personalFoulLimit", value)}
+          />
+          <SeasonRuleNumberField
             error={errorFor("teamFoulsBeforePenalty")}
             label="Team fouls before penalty"
             maximum={20}

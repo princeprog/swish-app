@@ -1,12 +1,17 @@
 import type {
   LeagueSeason,
   LeagueSeasonGameRulesInput,
+  LeagueSeasonCompetitionDefaultsInput,
+  PlayoffFormat,
+  QualifyingFormat,
+  TiebreakerRule,
 } from "@/services/league-season.service"
 
 export type SeasonStatus = "draft" | "active" | "inactive"
 
 export type SeasonGameRulesForm = {
   overtimeMinutes: number
+  personalFoulLimit: number
   periodMinutes: number
   regulationPeriods: number
   shotClockEnabled: boolean
@@ -18,12 +23,23 @@ export type SeasonGameRulesForm = {
   timeoutsSecondHalf: number
 }
 
+export type SeasonCompetitionForm = {
+  crossoverTemplate: Array<{ awaySeed: string; homeSeed: string }>
+  playoffFormat: PlayoffFormat
+  poolCount: number
+  qualifiersPerPool: number
+  qualifyingFormat: QualifyingFormat
+  scheduleSlotDurationMinutes: number
+  tiebreakers: TiebreakerRule[]
+}
+
 export type SeasonGameRulesValidationError = {
   field: keyof SeasonGameRulesForm
   message: string
 }
 
 export type SeasonFormValues = {
+  competition: SeasonCompetitionForm
   gameRules: SeasonGameRulesForm
   name: string
   publicEnabled: boolean
@@ -33,6 +49,7 @@ export type SeasonFormValues = {
 
 export const DEFAULT_SEASON_GAME_RULES: SeasonGameRulesForm = {
   overtimeMinutes: 5,
+  personalFoulLimit: 5,
   periodMinutes: 10,
   regulationPeriods: 4,
   shotClockEnabled: true,
@@ -42,6 +59,25 @@ export const DEFAULT_SEASON_GAME_RULES: SeasonGameRulesForm = {
   timeoutsFirstHalf: 2,
   timeoutsPerOvertime: 1,
   timeoutsSecondHalf: 3,
+}
+
+export const DEFAULT_SEASON_COMPETITION: SeasonCompetitionForm = {
+  crossoverTemplate: [
+    { awaySeed: "B2", homeSeed: "A1" },
+    { awaySeed: "A2", homeSeed: "B1" },
+  ],
+  playoffFormat: "single_elimination",
+  poolCount: 2,
+  qualifiersPerPool: 2,
+  qualifyingFormat: "single_round_robin",
+  scheduleSlotDurationMinutes: 90,
+  tiebreakers: [
+    "win_percentage",
+    "head_to_head",
+    "point_differential",
+    "points_for",
+    "manual_decision",
+  ],
 }
 
 export function slugifySeasonName(name: string): string {
@@ -55,6 +91,13 @@ export function slugifySeasonName(name: string): string {
 
 export function createSeasonFormValues(): SeasonFormValues {
   return {
+    competition: {
+      ...DEFAULT_SEASON_COMPETITION,
+      crossoverTemplate: DEFAULT_SEASON_COMPETITION.crossoverTemplate.map(
+        (matchup) => ({ ...matchup }),
+      ),
+      tiebreakers: [...DEFAULT_SEASON_COMPETITION.tiebreakers],
+    },
     gameRules: { ...DEFAULT_SEASON_GAME_RULES },
     name: "",
     publicEnabled: false,
@@ -65,8 +108,21 @@ export function createSeasonFormValues(): SeasonFormValues {
 
 export function seasonToFormValues(season: LeagueSeason): SeasonFormValues {
   return {
+    competition: {
+      crossoverTemplate: season.competition_defaults.crossover_template.map(
+        (matchup) => ({ ...matchup }),
+      ),
+      playoffFormat: season.competition_defaults.playoff_format,
+      poolCount: season.competition_defaults.pool_count,
+      qualifiersPerPool:
+        season.competition_defaults.qualifiers_per_pool,
+      qualifyingFormat: season.competition_defaults.qualifying_format,
+      scheduleSlotDurationMinutes: season.schedule_slot_duration_minutes,
+      tiebreakers: [...season.competition_defaults.tiebreakers],
+    },
     gameRules: {
       overtimeMinutes: season.game_rules.overtime_duration_ms / 60000,
+      personalFoulLimit: season.game_rules.personal_foul_limit,
       periodMinutes: season.game_rules.period_duration_ms / 60000,
       regulationPeriods: season.game_rules.regulation_periods,
       shotClockEnabled: season.game_rules.shot_clock_enabled,
@@ -90,6 +146,7 @@ export function toGameRulesInput(
 ): LeagueSeasonGameRulesInput {
   return {
     overtimeDurationMs: rules.overtimeMinutes * 60000,
+    personalFoulLimit: rules.personalFoulLimit,
     periodDurationMs: rules.periodMinutes * 60000,
     regulationPeriods: rules.regulationPeriods,
     shotClockEnabled: rules.shotClockEnabled,
@@ -99,6 +156,22 @@ export function toGameRulesInput(
     timeoutsFirstHalf: rules.timeoutsFirstHalf,
     timeoutsPerOvertime: rules.timeoutsPerOvertime,
     timeoutsSecondHalf: rules.timeoutsSecondHalf,
+  }
+}
+
+export function toCompetitionDefaultsInput(
+  competition: SeasonCompetitionForm,
+): LeagueSeasonCompetitionDefaultsInput {
+  return {
+    crossoverTemplate: competition.crossoverTemplate.map((matchup) => ({
+      awaySeed: matchup.awaySeed.trim().toUpperCase(),
+      homeSeed: matchup.homeSeed.trim().toUpperCase(),
+    })),
+    playoffFormat: competition.playoffFormat,
+    poolCount: competition.poolCount,
+    qualifiersPerPool: competition.qualifiersPerPool,
+    qualifyingFormat: competition.qualifyingFormat,
+    tiebreakers: [...competition.tiebreakers],
   }
 }
 
@@ -136,6 +209,13 @@ export function getSeasonGameRulesValidationError(
     return {
       field: "overtimeMinutes",
       message: "Overtime length must be between 1 and 30 minutes.",
+    }
+  }
+
+  if (!isWholeNumberInRange(rules.personalFoulLimit, 1, 10)) {
+    return {
+      field: "personalFoulLimit",
+      message: "The personal-foul limit must be between 1 and 10.",
     }
   }
 
@@ -180,6 +260,39 @@ export function getSeasonGameRulesValidationError(
     }
   }
 
+  return null
+}
+
+export function validateSeasonCompetition(
+  competition: SeasonCompetitionForm,
+): string | null {
+  if (!isWholeNumberInRange(competition.scheduleSlotDurationMinutes, 15, 1440)) {
+    return "The scheduling slot must be between 15 and 1,440 minutes."
+  }
+  if (!isWholeNumberInRange(competition.poolCount, 1, 16)) {
+    return "Choose between 1 and 16 pools."
+  }
+  if (!isWholeNumberInRange(competition.qualifiersPerPool, 1, 64)) {
+    return "Choose between 1 and 64 qualifiers per pool."
+  }
+  if (competition.tiebreakers[0] !== "win_percentage") {
+    return "Ranking must start with win percentage."
+  }
+  if (
+    competition.qualifyingFormat !== "none" &&
+    competition.playoffFormat !== "none"
+  ) {
+    const seeds = competition.crossoverTemplate.flatMap((matchup) => [
+      matchup.homeSeed.trim().toUpperCase(),
+      matchup.awaySeed.trim().toUpperCase(),
+    ])
+    if (seeds.length < 2 || seeds.some((seed) => !/^[A-Z]+[1-9]\d*$/.test(seed))) {
+      return "Each crossover slot must use a pool seed such as A1 or B2."
+    }
+    if (new Set(seeds).size !== seeds.length) {
+      return "Each pool seed can appear only once in the crossover."
+    }
+  }
   return null
 }
 

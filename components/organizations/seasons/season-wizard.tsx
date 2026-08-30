@@ -20,9 +20,11 @@ import {
   type SeasonGameRulesForm,
   type SeasonFormValues,
   validateSeasonDetails,
+  validateSeasonCompetition,
 } from "@/components/organizations/seasons/season-form-model"
 import { SeasonGameRulesStep } from "@/components/organizations/seasons/season-game-rules-step"
 import { SeasonDetailsStep } from "@/components/organizations/seasons/season-details-step"
+import { SeasonCompetitionStep } from "@/components/organizations/seasons/season-competition-step"
 
 type SeasonWizardProps = {
   errorMessage?: string | null
@@ -43,7 +45,7 @@ export function SeasonWizard({
   onSubmit,
   organizationName,
 }: SeasonWizardProps) {
-  const [step, setStep] = React.useState<1 | 2>(1)
+  const [step, setStep] = React.useState<1 | 2 | 3>(1)
   const [values, setValues] = React.useState(initialValues)
   const [validationError, setValidationError] = React.useState<string | null>(
     null,
@@ -68,10 +70,17 @@ export function SeasonWizard({
       return
     }
 
-    const error = getSeasonGameRulesValidationError(values.gameRules)
-    setValidationError(error?.message ?? null)
-    setInvalidRuleField(error?.field ?? null)
+    if (step === 2) {
+      const error = getSeasonGameRulesValidationError(values.gameRules)
+      setValidationError(error?.message ?? null)
+      setInvalidRuleField(error?.field ?? null)
 
+      if (!error) setStep(3)
+      return
+    }
+
+    const error = validateSeasonCompetition(values.competition)
+    setValidationError(error)
     if (error) return
 
     await onSubmit(values)
@@ -94,7 +103,7 @@ export function SeasonWizard({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-2" aria-label={`Step ${step} of 2`}>
+        <div className="flex flex-col gap-2" aria-label={`Step ${step} of 3`}>
           <div className="flex items-center justify-between gap-4 text-sm">
             <span className={cn(step !== 1 && "text-muted-foreground")}>
               1. Season details
@@ -102,8 +111,11 @@ export function SeasonWizard({
             <span className={cn(step !== 2 && "text-muted-foreground")}>
               2. Game rules
             </span>
+            <span className={cn(step !== 3 && "text-muted-foreground")}>
+              3. Competition
+            </span>
           </div>
-          <Progress value={step * 50} />
+          <Progress value={(step / 3) * 100} />
         </div>
 
         <form
@@ -117,7 +129,7 @@ export function SeasonWizard({
               values={values}
               onChange={setValues}
             />
-          ) : (
+          ) : step === 2 ? (
             <SeasonGameRulesStep
               invalidField={invalidRuleField}
               isEditing={mode === "edit"}
@@ -127,6 +139,14 @@ export function SeasonWizard({
                 setValidationError(null)
                 setInvalidRuleField(null)
                 setValues((current) => ({ ...current, gameRules }))
+              }}
+            />
+          ) : (
+            <SeasonCompetitionStep
+              competition={values.competition}
+              onChange={(competition) => {
+                setValidationError(null)
+                setValues((current) => ({ ...current, competition }))
               }}
             />
           )}
@@ -150,7 +170,7 @@ export function SeasonWizard({
                 onClick={() => {
                   setValidationError(null)
                   setInvalidRuleField(null)
-                  setStep(1)
+                  setStep((current) => (current === 3 ? 2 : 1))
                 }}
               >
                 <ArrowLeft data-icon="inline-start" />
@@ -160,7 +180,7 @@ export function SeasonWizard({
             <Button type="submit" disabled={isPending}>
               {isPending ? (
                 <Loader2 className="animate-spin" data-icon="inline-start" />
-              ) : step === 1 ? (
+              ) : step < 3 ? (
                 <ArrowRight data-icon="inline-end" />
               ) : (
                 <CalendarDays data-icon="inline-start" />
@@ -169,7 +189,7 @@ export function SeasonWizard({
                 ? mode === "create"
                   ? "Creating"
                   : "Saving"
-                : step === 1
+                : step < 3
                   ? "Continue"
                   : mode === "create"
                     ? "Create season"

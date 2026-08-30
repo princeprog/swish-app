@@ -13,6 +13,7 @@ import type { LeagueSeason } from "@/services/league-season.service"
 import {
   createSeasonFormValues,
   seasonToFormValues,
+  toCompetitionDefaultsInput,
   toGameRulesInput,
   type SeasonFormValues,
 } from "@/components/organizations/seasons/season-form-model"
@@ -26,15 +27,18 @@ export function SeasonCreateWizardModal({
   organization: Organization
 }) {
   const mutation = useCreateLeagueSeasonMutation(organization.id)
-  const initialValues = React.useMemo(createSeasonFormValues, [])
+  const initialValues = React.useMemo(() => createSeasonFormValues(), [])
 
   async function handleSubmit(values: SeasonFormValues) {
     try {
       const season = await mutation.mutateAsync({
+        competitionDefaults: toCompetitionDefaultsInput(values.competition),
         gameRules: toGameRulesInput(values.gameRules),
         name: values.name.trim(),
         organizationId: organization.id,
         publicEnabled: values.publicEnabled,
+        scheduleSlotDurationMinutes:
+          values.competition.scheduleSlotDurationMinutes,
         slug: values.slug.trim(),
         status: values.status,
       })
@@ -76,9 +80,12 @@ export function SeasonEditWizardModal({
       const updatedSeason = await mutation.mutateAsync({
         leagueSeasonId: season.id,
         payload: {
+          competitionDefaults: toCompetitionDefaultsInput(values.competition),
           gameRules: toGameRulesInput(values.gameRules),
           name: values.name.trim(),
           publicEnabled: values.publicEnabled,
+          scheduleSlotDurationMinutes:
+            values.competition.scheduleSlotDurationMinutes,
           slug: values.slug.trim(),
           status: values.status,
         },
