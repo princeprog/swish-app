@@ -121,6 +121,7 @@ export function SelectOrganizationScreen() {
                             Team manager
                           </SelectItem>
                           <SelectItem value="scorekeeper">Scorekeeper</SelectItem>
+                          <SelectItem value="statistician">Statistician</SelectItem>
                         </SelectGroup>
                       </SelectContent>
                     </Select>

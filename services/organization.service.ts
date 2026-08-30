@@ -15,7 +15,8 @@ export type OrganizationRole =
   | "owner"
   | "admin"
   | "team_manager"
-  | "scorekeeper";
+  | "scorekeeper"
+  | "statistician";
 
 export type OrganizationPermission =
   | "divisions.manage"

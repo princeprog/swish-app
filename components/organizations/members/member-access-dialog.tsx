@@ -29,7 +29,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Spinner } from "@/components/ui/spinner"
 import { TeamAssignmentPicker } from "./team-assignment-picker"
 
-const editableRoles = ["admin", "team_manager", "scorekeeper"] as const
+const editableRoles = ["admin", "team_manager", "scorekeeper", "statistician"] as const
 
 function roleLabel(role: string) {
   return role.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())

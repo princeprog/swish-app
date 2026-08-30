@@ -42,7 +42,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Spinner } from "@/components/ui/spinner"
 import { TeamAssignmentPicker, resolveTeamAssignmentIds } from "./team-assignment-picker"
 
-const staffRoles = ["admin", "team_manager", "scorekeeper"] as const
+const staffRoles = ["admin", "team_manager", "scorekeeper", "statistician"] as const
 type StaffRole = (typeof staffRoles)[number]
 
 function roleLabel(role: string) {

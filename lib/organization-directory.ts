@@ -35,6 +35,11 @@ const ROLE_DETAILS: Record<
     badgeLabel: "Scorekeeper",
     workspaceLabel: "Assigned game scoring",
   },
+  statistician: {
+    actionLabel: "Open stat sheets",
+    badgeLabel: "Statistician",
+    workspaceLabel: "Assigned player statistics",
+  },
   team_manager: {
     actionLabel: "Open team workspace",
     badgeLabel: "Team manager",

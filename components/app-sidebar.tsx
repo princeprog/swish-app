@@ -74,6 +74,7 @@ export function AppSidebar({ organization, ...props }: AppSidebarProps) {
 
   const permissions = organization?.access?.permissions ?? [];
   const isTeamManager = organization?.access?.role === "team_manager";
+  const isStatistician = organization?.access?.role === "statistician";
   const canManageCompetition = permissions.includes("schedule.manage");
   const canManagePeople =
     permissions.includes("teams.read") ||
@@ -103,6 +104,13 @@ export function AppSidebar({ organization, ...props }: AppSidebarProps) {
     {
       title: "Standings",
       url: `${workspaceBasePath}/standings${managerSeasonQuery}`,
+      icon: <TrophyIcon />,
+    },
+  ];
+  const statisticianNavMain = [
+    {
+      title: "Stat sheets",
+      url: `${workspaceBasePath}/statistician`,
       icon: <TrophyIcon />,
     },
   ];
@@ -205,7 +213,11 @@ export function AppSidebar({ organization, ...props }: AppSidebarProps) {
       : null,
   ].filter((item) => item !== null);
 
-  const navMain = isTeamManager ? managerNavMain : adminNavMain;
+  const navMain = isTeamManager
+    ? managerNavMain
+    : isStatistician
+      ? statisticianNavMain
+      : adminNavMain;
 
   return (
     <Sidebar collapsible="icon" {...props}>
