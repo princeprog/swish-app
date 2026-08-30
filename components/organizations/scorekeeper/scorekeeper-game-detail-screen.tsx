@@ -52,6 +52,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import {
   NativeSelect,
   NativeSelectOption,
@@ -69,6 +70,7 @@ import {
   type PeriodControlAction,
 } from "@/lib/scorekeeper-period-controls";
 import { getTimeoutControlDialog } from "@/lib/scorekeeper-timeout-controls";
+import { getGameReopenReasonError } from "@/lib/game-reopen";
 import { cn } from "@/lib/utils";
 import type { ScoringState } from "@/services/scoring.service";
 
@@ -498,9 +500,11 @@ function ClockConsole({
 
 function ConsoleMoreSheet({
   canFinalize,
+  canReopen,
   onClaim,
   onCommand,
   onFullscreen,
+  onReopen,
   onTakeover,
   pendingCount,
   soundEnabled,
@@ -508,6 +512,7 @@ function ConsoleMoreSheet({
   toggleSound,
 }: {
   canFinalize: boolean;
+  canReopen: boolean;
   onClaim: () => void;
   onCommand: (
     type: Parameters<
@@ -516,6 +521,7 @@ function ConsoleMoreSheet({
     payload?: Record<string, unknown>,
   ) => Promise<SendScoringCommandResult>;
   onFullscreen: () => void;
+  onReopen: (reason: string) => Promise<SendScoringCommandResult>;
   onTakeover: () => void;
   pendingCount: number;
   soundEnabled: boolean;
@@ -525,6 +531,10 @@ function ConsoleMoreSheet({
   const [finalizeDialogOpen, setFinalizeDialogOpen] = React.useState(false);
   const [finalizeError, setFinalizeError] = React.useState<string | null>(null);
   const [isFinalizing, setIsFinalizing] = React.useState(false);
+  const [isReopening, setIsReopening] = React.useState(false);
+  const [reopenDialogOpen, setReopenDialogOpen] = React.useState(false);
+  const [reopenError, setReopenError] = React.useState<string | null>(null);
+  const [reopenReason, setReopenReason] = React.useState("");
   const [periodDialogAction, setPeriodDialogAction] =
     React.useState<PeriodControlAction | null>(null);
   const [periodDialogError, setPeriodDialogError] = React.useState<
@@ -578,6 +588,41 @@ function ConsoleMoreSheet({
     setFinalizeError(
       "We couldn't finalize this game yet. The latest game state was reloaded, so please review the score and try again.",
     );
+  }
+
+  async function reopenGame() {
+    const reason = reopenReason.trim();
+    const reasonError = getGameReopenReasonError(reason);
+    if (reasonError) {
+      setReopenError(reasonError);
+      return;
+    }
+
+    setReopenError(null);
+    setIsReopening(true);
+    try {
+      const result = await onReopen(reason);
+      if (result.status === "confirmed") {
+        setReopenDialogOpen(false);
+        setReopenReason("");
+      } else if (result.status === "queued" || result.status === "blocked") {
+        setReopenError(
+          "Reconnect before reopening this official result. No correction can begin until the server confirms it.",
+        );
+      } else {
+        setReopenError(
+          result.status === "failed" && result.message
+            ? result.message
+            : "We couldn't reopen this game. Review any dependent playoff games and try again.",
+        );
+      }
+    } catch {
+      setReopenError(
+        "Something interrupted reopening this game. Please check your connection and try again.",
+      );
+    } finally {
+      setIsReopening(false);
+    }
   }
 
   async function sendPeriodCommand(action: PeriodControlAction) {
@@ -854,6 +899,88 @@ function ConsoleMoreSheet({
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+            {state.phase === "final" && canReopen ? (
+              <AlertDialog
+                open={reopenDialogOpen}
+                onOpenChange={(open) => {
+                  if (isReopening) return;
+                  setReopenDialogOpen(open);
+                  if (!open) {
+                    setReopenError(null);
+                    setReopenReason("");
+                  }
+                }}
+              >
+                <AlertDialogTrigger asChild>
+                  <Button className="w-full" variant="outline">
+                    <RotateCcw className="size-4" />
+                    Reopen official game
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogMedia className="bg-destructive/10 text-destructive">
+                      <RotateCcw className="size-8" />
+                    </AlertDialogMedia>
+                    <AlertDialogTitle>
+                      Reopen this official game?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      The result will leave the standings and playoff record
+                      until it is finalized again. Reopening is blocked when a
+                      dependent playoff game has already started.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <div className="space-y-2">
+                    <label
+                      className="text-sm font-medium"
+                      htmlFor="game-reopen-reason"
+                    >
+                      Correction reason
+                    </label>
+                    <Textarea
+                      id="game-reopen-reason"
+                      placeholder="Explain why the official result needs correction."
+                      value={reopenReason}
+                      onChange={(event) => setReopenReason(event.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      This reason is saved in the private audit record.
+                    </p>
+                  </div>
+                  {reopenError ? (
+                    <div
+                      className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+                      role="alert"
+                    >
+                      {reopenError}
+                    </div>
+                  ) : null}
+                  <AlertDialogFooter>
+                    <AlertDialogCancel disabled={isReopening}>
+                      Cancel
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                      disabled={
+                        isReopening ||
+                        Boolean(getGameReopenReasonError(reopenReason))
+                      }
+                      onClick={(event) => {
+                        event.preventDefault();
+                        void reopenGame();
+                      }}
+                    >
+                      {isReopening ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        <RotateCcw className="size-4" />
+                      )}
+                      {isReopening ? "Reopening…" : "Reopen game"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            ) : null}
           </section>
 
           <section className="space-y-3">
@@ -1127,6 +1254,28 @@ export function ScorekeeperGameDetailScreen({
     await document.documentElement.requestFullscreen?.();
   }
 
+  async function reopenOfficialGame(reason: string) {
+    if (!displayedState) return { status: "ignored" } as const;
+
+    let controlToken: string | undefined;
+    if (!displayedState.control.controlledByMe) {
+      const control =
+        displayedState.control.status === "claimed"
+          ? await scoring.takeoverControl({
+              deviceLabel: "Admin correction device",
+              reason: `Official result correction: ${reason}`,
+            })
+          : await scoring.claimControl("Admin correction device");
+      controlToken = control.controlToken;
+    }
+
+    return scoring.sendCommand({
+      controlToken,
+      payload: { reason },
+      type: "game.reopen",
+    });
+  }
+
   if (organizationsQuery.isLoading || (organization && isTeamManager)) {
     return <ScorekeeperLoadingState />;
   }
@@ -1204,12 +1353,17 @@ export function ScorekeeperGameDetailScreen({
     displayedState.period.number >= displayedState.config.regulationPeriods &&
     displayedState.scores.home !== displayedState.scores.away &&
     scoring.local.pendingCommands.length === 0;
+  const canReopen =
+    organization.access.permissions.includes("game.score.override") &&
+    displayedState.phase === "final";
   const isOffline = Boolean(scoring.local.offlineSince);
   const controlsDisabled =
+    displayedState.phase === "final" ||
     scoring.offlineLockActive ||
     !displayedState.control.controlledByMe ||
     displayedState.control.status !== "claimed";
   const clockControlsDisabled =
+    displayedState.phase === "final" ||
     scoring.offlineLockActive ||
     (displayedState.control.status === "claimed" &&
       !displayedState.control.controlledByMe);
@@ -1388,13 +1542,15 @@ export function ScorekeeperGameDetailScreen({
                       : "secondary"
                   }
                 >
-                  LIVE
+                  {displayedState.phase === "final" ? "FINAL" : "LIVE"}
                 </Badge>
                 <ConsoleMoreSheet
                   canFinalize={canFinalize}
+                  canReopen={canReopen}
                   onClaim={() => scoring.claimControl("Scorekeeper device")}
                   onCommand={sendCommand}
                   onFullscreen={() => void enterFullscreen()}
+                  onReopen={reopenOfficialGame}
                   onTakeover={() => {
                     const reason = prompt("Reason for takeover");
                     if (reason) {

@@ -332,6 +332,10 @@ function formatCommandConfirmation(
     return "Game finalized";
   }
 
+  if (command.type === "game.reopen") {
+    return "Game reopened for correction";
+  }
+
   return "Scoring action recorded";
 }
 

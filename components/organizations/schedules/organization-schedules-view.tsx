@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import * as React from "react";
 import { createPortal } from "react-dom";
 import {
@@ -430,6 +431,7 @@ function ScheduleSummaryCards({ schedules }: { schedules: Schedule[] }) {
 function ScheduleActionsPopover({
   canManageSchedule,
   game,
+  organizationSlug,
   onAssignScorekeeper,
   onDelete,
   onEdit,
@@ -438,6 +440,7 @@ function ScheduleActionsPopover({
 }: {
   canManageSchedule: boolean;
   game: Schedule;
+  organizationSlug: string;
   onAssignScorekeeper: () => void;
   onDelete: () => void;
   onEdit: () => void;
@@ -559,43 +562,55 @@ function ScheduleActionsPopover({
                       <FileText className="size-4" />
                       View game summary
                     </Button>
+                    {canManageSchedule ? (
+                      <Button
+                        asChild
+                        className="w-full justify-start"
+                        size="sm"
+                        variant="ghost"
+                      >
+                        <Link
+                          href={`/organizations/${organizationSlug}/scorekeeper/games/${game.id}`}
+                        >
+                          <History className="size-4" />
+                          Review scoring history
+                        </Link>
+                      </Button>
+                    ) : null}
                     <Button
-                      aria-disabled="true"
-                      className="w-full justify-start opacity-60"
-                      disabled
+                      asChild
+                      className="w-full justify-start"
                       size="sm"
-                      title="Scoring history is not available yet."
                       variant="ghost"
                     >
-                      <History className="size-4" />
-                      View scoring history
+                      <Link
+                        href={`/leagues/${organizationSlug}/${game.league_season_slug}`}
+                      >
+                        <Globe className="size-4" />
+                        View public league page
+                      </Link>
                     </Button>
-                    <Button
-                      aria-disabled="true"
-                      className="w-full justify-start opacity-60"
-                      disabled
-                      size="sm"
-                      title="Public game pages are not available yet."
-                      variant="ghost"
-                    >
-                      <Globe className="size-4" />
-                      View public page
-                    </Button>
-                    <Button
-                      aria-disabled="true"
-                      className="w-full justify-start opacity-60"
-                      disabled
-                      size="sm"
-                      title="Reopening finalized games is not available yet."
-                      variant="ghost"
-                    >
-                      <RotateCcw className="size-4" />
-                      Reopen game
-                    </Button>
-                    <div className="space-y-1 px-3 py-2 text-xs leading-5 text-muted-foreground">
-                      <p>Coming soon actions are not available yet.</p>
-                      <p>Final games are protected as official records.</p>
-                    </div>
+                    {canManageSchedule ? (
+                      <>
+                        <Button
+                          asChild
+                          className="w-full justify-start"
+                          size="sm"
+                          variant="ghost"
+                        >
+                          <Link
+                            href={`/organizations/${organizationSlug}/scorekeeper/games/${game.id}`}
+                          >
+                            <RotateCcw className="size-4" />
+                            Review and reopen game
+                          </Link>
+                        </Button>
+                        <div className="space-y-1 px-3 py-2 text-xs leading-5 text-muted-foreground">
+                          Final games remain protected until an owner or admin
+                          records a correction reason.
+                        </div>
+                      </>
+                    ) : null}
                   </>
                 ) : (
                   <>
@@ -699,6 +714,7 @@ function groupSchedulesByDay(games: Schedule[]) {
 function ScheduleBoard({
   canManageSchedule,
   games,
+  organizationSlug,
   onAssignScorekeeper,
   onDeleteGame,
   onEditGame,
@@ -707,6 +723,7 @@ function ScheduleBoard({
 }: {
   canManageSchedule: boolean;
   games: Schedule[];
+  organizationSlug: string;
   onAssignScorekeeper: (game: Schedule) => void;
   onDeleteGame: (game: Schedule) => void;
   onEditGame: (game: Schedule) => void;
@@ -883,6 +900,7 @@ function ScheduleBoard({
                         <ScheduleActionsPopover
                           canManageSchedule={canManageSchedule}
                           game={game}
+                          organizationSlug={organizationSlug}
                           onAssignScorekeeper={() => onAssignScorekeeper(game)}
                           onDelete={() => onDeleteGame(game)}
                           onEdit={() => onEditGame(game)}
@@ -2570,6 +2588,7 @@ export function OrganizationSchedulesView({
                     <ScheduleBoard
                       canManageSchedule={canManageSchedule}
                       games={schedules}
+                      organizationSlug={organization.slug}
                       onAssignScorekeeper={setGameToAssign}
                       onDeleteGame={setGameToDelete}
                       onEditGame={setGameToEdit}
