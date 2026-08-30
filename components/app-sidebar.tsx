@@ -136,6 +136,10 @@ export function AppSidebar({ organization, ...props }: AppSidebarProps) {
                     title: "Divisions",
                     url: `${workspaceBasePath}/divisions`,
                   },
+                  {
+                    title: "Format & playoffs",
+                    url: `${workspaceBasePath}/competition`,
+                  },
                 ]
               : []),
             ...(canViewSchedules
