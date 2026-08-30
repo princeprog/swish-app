@@ -378,7 +378,10 @@ export function PublicLeagueScreen({
   if (query.isLoading) {
     return (
       <main className="grid min-h-screen place-items-center">
-        <div className="flex items-center gap-2 text-muted-foreground">
+        <div
+          className="flex items-center gap-2 text-muted-foreground"
+          role="status"
+        >
           <Loader2 className="animate-spin" />
           Loading league…
         </div>
@@ -388,9 +391,11 @@ export function PublicLeagueScreen({
   if (query.isError || !query.data) {
     return (
       <main className="grid min-h-screen place-items-center p-6">
-        <Card className="max-w-md">
+        <Card className="max-w-md" role="alert">
           <CardHeader>
-            <CardTitle>League page unavailable</CardTitle>
+            <CardTitle>
+              <h1>League page unavailable</h1>
+            </CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
             This league may not be published yet. Check the link or contact the
