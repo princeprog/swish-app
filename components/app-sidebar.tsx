@@ -83,12 +83,6 @@ export function AppSidebar({ organization, ...props }: AppSidebarProps) {
     permissions.includes("standings.read") ||
     permissions.includes("standings.read.assigned_division");
   const canManageAccess = permissions.includes("members.manage");
-  const canManageCompliance = permissions.includes(
-    "compliance_requirements_manage",
-  );
-  const canSubmitCompliance = permissions.includes(
-    "compliance_submissions_submit_assigned",
-  );
 
   const managerNavMain = [
     {
@@ -111,15 +105,6 @@ export function AppSidebar({ organization, ...props }: AppSidebarProps) {
       url: `${workspaceBasePath}/standings${managerSeasonQuery}`,
       icon: <TrophyIcon />,
     },
-    ...(canSubmitCompliance
-      ? [
-          {
-            title: "Requirements",
-            url: `${workspaceBasePath}/requirements${managerSeasonQuery}`,
-            icon: <ShieldCheckIcon />,
-          },
-        ]
-      : []),
   ];
 
   const adminNavMain = [
@@ -149,14 +134,6 @@ export function AppSidebar({ organization, ...props }: AppSidebarProps) {
                   },
                   {
                     title: "Divisions",
-                    url: `${workspaceBasePath}/divisions`,
-                  },
-                ]
-              : []),
-            ...(canManageCompliance
-              ? [
-                  {
-                    title: "Requirements",
                     url: `${workspaceBasePath}/divisions`,
                   },
                 ]
