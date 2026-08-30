@@ -11,6 +11,7 @@ import {
   type ScorekeeperOption,
   type StatisticianOption,
   type UpdateScorekeeperAssignmentPayload,
+  type UpdateStatisticianAssignmentPayload,
   type UpdateSchedulePayload,
 } from "@/services/schedule.service";
 import { STANDINGS_QUERY_KEYS } from "@/hooks/use-standings";
@@ -53,10 +54,7 @@ export function useScheduleQuery(organizationId?: string, scheduleId?: string) {
   });
 }
 
-export function useScorekeepersQuery(
-  organizationId?: string,
-  enabled = true,
-) {
+export function useScorekeepersQuery(organizationId?: string, enabled = true) {
   return useQuery({
     enabled: Boolean(organizationId && enabled),
     queryFn: () => scheduleService.listScorekeepers(organizationId!),
@@ -65,10 +63,7 @@ export function useScorekeepersQuery(
   });
 }
 
-export function useStatisticiansQuery(
-  organizationId?: string,
-  enabled = true,
-) {
+export function useStatisticiansQuery(organizationId?: string, enabled = true) {
   return useQuery({
     enabled: Boolean(organizationId && enabled),
     queryFn: () => scheduleService.listStatisticians(organizationId!),
@@ -155,6 +150,26 @@ export function useUpdateScorekeeperAssignmentMutation(organizationId: string) {
   >({
     mutationFn: ({ payload, scheduleId }) =>
       scheduleService.updateScorekeeper(organizationId, scheduleId, payload),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: SCHEDULE_QUERY_KEYS.all(organizationId),
+      });
+    },
+  });
+}
+
+export function useUpdateStatisticianAssignmentMutation(
+  organizationId: string,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    Schedule,
+    unknown,
+    { payload: UpdateStatisticianAssignmentPayload; scheduleId: string }
+  >({
+    mutationFn: ({ payload, scheduleId }) =>
+      scheduleService.updateStatistician(organizationId, scheduleId, payload),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: SCHEDULE_QUERY_KEYS.all(organizationId),

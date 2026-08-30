@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { createPortal } from "react-dom"
+import * as React from "react";
+import { createPortal } from "react-dom";
 import {
   CalendarClock,
   CalendarRange,
@@ -21,19 +21,19 @@ import {
   Shield,
   Trash2,
   UserRoundCheck,
-} from "lucide-react"
-import { toast } from "sonner"
+} from "lucide-react";
+import { toast } from "sonner";
 
-import { AppSidebar } from "@/components/app-sidebar"
+import { AppSidebar } from "@/components/app-sidebar";
 import {
   ComponentReveal,
   PageEntrance,
   RevealGroup,
-} from "@/components/motion/page-motion"
-import { canManageOrganizationSchedule } from "@/components/organizations/schedules/schedule-access"
-import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+} from "@/components/motion/page-motion";
+import { canManageOrganizationSchedule } from "@/components/organizations/schedules/schedule-access";
+import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardAction,
@@ -41,7 +41,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -49,28 +49,31 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import {
   Empty,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@/components/ui/empty"
+} from "@/components/ui/empty";
 import {
   Field,
   FieldContent,
   FieldError,
   FieldLabel,
-} from "@/components/ui/field"
-import { Calendar } from "@/components/ui/calendar"
-import { Input } from "@/components/ui/input"
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
+} from "@/components/ui/field";
+import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -78,33 +81,36 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
-import { getApiErrorMessage } from "@/hooks/use-auth"
+} from "@/components/ui/select";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { getApiErrorMessage } from "@/hooks/use-auth";
 import {
   useCreateScheduleMutation,
   useDeleteScheduleMutation,
   useFinalizeScheduleGameMutation,
   useSchedulesQuery,
   useScorekeepersQuery,
+  useStatisticiansQuery,
   useUpdateScorekeeperAssignmentMutation,
+  useUpdateStatisticianAssignmentMutation,
   useUpdateScheduleMutation,
-} from "@/hooks/use-schedule"
+} from "@/hooks/use-schedule";
 import {
   canManuallyFinalizeScheduleGame,
   getManualFinalScoreValidationError,
   parseManualFinalScores,
-} from "@/lib/schedule-finalization"
-import type { Division } from "@/services/division.service"
-import type { LeagueSeason } from "@/services/league-season.service"
-import type { Organization } from "@/services/organization.service"
+} from "@/lib/schedule-finalization";
+import type { Division } from "@/services/division.service";
+import type { LeagueSeason } from "@/services/league-season.service";
+import type { Organization } from "@/services/organization.service";
 import type {
   Schedule,
   ScheduleListQuery,
   ScorekeeperOption,
-} from "@/services/schedule.service"
-import type { Team } from "@/services/team.service"
-import type { Venue } from "@/services/venue.service"
+  StatisticianOption,
+} from "@/services/schedule.service";
+import type { Team } from "@/services/team.service";
+import type { Venue } from "@/services/venue.service";
 
 type ScheduleStatus =
   | "draft"
@@ -113,84 +119,86 @@ type ScheduleStatus =
   | "final"
   | "reopened"
   | "postponed"
-  | "cancelled"
+  | "cancelled";
 
 function toLocalDateTimeInputValue(value: string) {
-  const date = new Date(value)
-  const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
-  return offsetDate.toISOString().slice(0, 16)
+  const date = new Date(value);
+  const offsetDate = new Date(
+    date.getTime() - date.getTimezoneOffset() * 60000,
+  );
+  return offsetDate.toISOString().slice(0, 16);
 }
 
 function getDateTimePickerDate(value: string) {
   if (!value) {
-    return undefined
+    return undefined;
   }
 
-  const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? undefined : date
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : date;
 }
 
 function formatDateTimePickerLabel(value: string) {
-  const date = getDateTimePickerDate(value)
+  const date = getDateTimePickerDate(value);
 
   if (!date) {
-    return "Select date and time"
+    return "Select date and time";
   }
 
   return new Intl.DateTimeFormat(undefined, {
     dateStyle: "medium",
     timeStyle: "short",
-  }).format(date)
+  }).format(date);
 }
 
 function getDateTimePickerTime(value: string) {
-  const date = getDateTimePickerDate(value) ?? new Date()
-  const hours = String(date.getHours()).padStart(2, "0")
-  const minutes = String(date.getMinutes()).padStart(2, "0")
+  const date = getDateTimePickerDate(value) ?? new Date();
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
 
-  return `${hours}:${minutes}`
+  return `${hours}:${minutes}`;
 }
 
 function updateDateTimePickerDate(value: string, nextDate: Date) {
-  const currentDate = getDateTimePickerDate(value) ?? new Date()
-  const combinedDate = new Date(nextDate)
+  const currentDate = getDateTimePickerDate(value) ?? new Date();
+  const combinedDate = new Date(nextDate);
 
-  combinedDate.setHours(currentDate.getHours(), currentDate.getMinutes(), 0, 0)
+  combinedDate.setHours(currentDate.getHours(), currentDate.getMinutes(), 0, 0);
 
-  return toLocalDateTimeInputValue(combinedDate.toISOString())
+  return toLocalDateTimeInputValue(combinedDate.toISOString());
 }
 
 function updateDateTimePickerTime(value: string, nextTime: string) {
-  const [hours, minutes] = nextTime.split(":").map(Number)
+  const [hours, minutes] = nextTime.split(":").map(Number);
 
   if (Number.isNaN(hours) || Number.isNaN(minutes)) {
-    return value
+    return value;
   }
 
-  const combinedDate = getDateTimePickerDate(value) ?? new Date()
-  combinedDate.setHours(hours, minutes, 0, 0)
+  const combinedDate = getDateTimePickerDate(value) ?? new Date();
+  combinedDate.setHours(hours, minutes, 0, 0);
 
-  return toLocalDateTimeInputValue(combinedDate.toISOString())
+  return toLocalDateTimeInputValue(combinedDate.toISOString());
 }
 
 function scheduleStatusTone(status: string) {
   switch (status) {
     case "draft":
-      return "border-zinc-600 bg-zinc-600 text-white dark:border-zinc-500 dark:bg-zinc-500 dark:text-white"
+      return "border-zinc-600 bg-zinc-600 text-white dark:border-zinc-500 dark:bg-zinc-500 dark:text-white";
     case "scheduled":
-      return "border-blue-600 bg-blue-600 text-white dark:border-blue-500 dark:bg-blue-500 dark:text-white"
+      return "border-blue-600 bg-blue-600 text-white dark:border-blue-500 dark:bg-blue-500 dark:text-white";
     case "final":
-      return "border-emerald-600 bg-emerald-600 text-white dark:border-emerald-500 dark:bg-emerald-500 dark:text-white"
+      return "border-emerald-600 bg-emerald-600 text-white dark:border-emerald-500 dark:bg-emerald-500 dark:text-white";
     case "live":
-      return "border-red-600 bg-red-600 text-white dark:border-red-500 dark:bg-red-500 dark:text-white"
+      return "border-red-600 bg-red-600 text-white dark:border-red-500 dark:bg-red-500 dark:text-white";
     case "postponed":
-      return "border-amber-600 bg-amber-600 text-white dark:border-amber-500 dark:bg-amber-500 dark:text-white"
+      return "border-amber-600 bg-amber-600 text-white dark:border-amber-500 dark:bg-amber-500 dark:text-white";
     case "cancelled":
-      return "border-rose-600 bg-rose-600 text-white dark:border-rose-500 dark:bg-rose-500 dark:text-white"
+      return "border-rose-600 bg-rose-600 text-white dark:border-rose-500 dark:bg-rose-500 dark:text-white";
     case "reopened":
-      return "border-violet-600 bg-violet-600 text-white dark:border-violet-500 dark:bg-violet-500 dark:text-white"
+      return "border-violet-600 bg-violet-600 text-white dark:border-violet-500 dark:bg-violet-500 dark:text-white";
     default:
-      return "border-zinc-600 bg-zinc-600 text-white dark:border-zinc-500 dark:bg-zinc-500 dark:text-white"
+      return "border-zinc-600 bg-zinc-600 text-white dark:border-zinc-500 dark:bg-zinc-500 dark:text-white";
   }
 }
 
@@ -198,23 +206,23 @@ function toTitleCase(value: string) {
   return value
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ")
+    .join(" ");
 }
 
 function canAssignScorekeeper(status: string) {
-  return ["draft", "scheduled", "postponed"].includes(status)
+  return ["draft", "scheduled", "postponed"].includes(status);
 }
 
-const scheduleActionsMenuWidth = 224
-const scheduleActionsMenuOffset = 8
-const scheduleActionsViewportGutter = 12
-const scheduleFilterControlClassName = "h-9 w-full"
+const scheduleActionsMenuWidth = 224;
+const scheduleActionsMenuOffset = 8;
+const scheduleActionsViewportGutter = 12;
+const scheduleFilterControlClassName = "h-9 w-full";
 
 function formatScheduleDateTime(value: string) {
   return new Date(value).toLocaleString([], {
     dateStyle: "medium",
     timeStyle: "short",
-  })
+  });
 }
 
 function getFinalGameOutcome(game: Schedule) {
@@ -222,70 +230,65 @@ function getFinalGameOutcome(game: Schedule) {
     return {
       detail: "The official score is not available.",
       winner: null,
-    }
+    };
   }
 
   if (game.home_score === game.away_score) {
     return {
       detail: "This game ended in a tie.",
       winner: null,
-    }
+    };
   }
 
   const winner =
     game.home_score > game.away_score
       ? game.home_team_name
-      : game.away_team_name
+      : game.away_team_name;
 
   return {
     detail: `${winner} won the game.`,
     winner,
-  }
+  };
 }
 
 function getScheduleActionsMenuPosition({
   menuRect,
   triggerRect,
 }: {
-  menuRect?: DOMRect
-  triggerRect: DOMRect
+  menuRect?: DOMRect;
+  triggerRect: DOMRect;
 }) {
-  const viewportWidth = window.innerWidth
-  const viewportHeight = window.innerHeight
-  const menuWidth = menuRect?.width ?? scheduleActionsMenuWidth
-  const menuHeight = menuRect?.height ?? 220
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const menuWidth = menuRect?.width ?? scheduleActionsMenuWidth;
+  const menuHeight = menuRect?.height ?? 220;
   const maxLeft = Math.max(
     scheduleActionsViewportGutter,
     viewportWidth - menuWidth - scheduleActionsViewportGutter,
-  )
+  );
   const left = Math.min(
-    Math.max(
-      triggerRect.right - menuWidth,
-      scheduleActionsViewportGutter,
-    ),
+    Math.max(triggerRect.right - menuWidth, scheduleActionsViewportGutter),
     maxLeft,
-  )
+  );
   const spaceBelow =
     viewportHeight -
     triggerRect.bottom -
     scheduleActionsMenuOffset -
-    scheduleActionsViewportGutter
+    scheduleActionsViewportGutter;
   const spaceAbove =
-    triggerRect.top -
-    scheduleActionsMenuOffset -
-    scheduleActionsViewportGutter
-  const opensBelow = spaceBelow >= menuHeight || spaceBelow >= spaceAbove
-  const availableHeight = Math.max(48, opensBelow ? spaceBelow : spaceAbove)
+    triggerRect.top - scheduleActionsMenuOffset - scheduleActionsViewportGutter;
+  const opensBelow = spaceBelow >= menuHeight || spaceBelow >= spaceAbove;
+  const availableHeight = Math.max(48, opensBelow ? spaceBelow : spaceAbove);
   const top = opensBelow
     ? triggerRect.bottom + scheduleActionsMenuOffset
-    : triggerRect.top - scheduleActionsMenuOffset
+    : triggerRect.top - scheduleActionsMenuOffset;
 
   return {
     left,
     maxHeight: availableHeight,
     transform: opensBelow ? "none" : "translateY(-100%)",
     top,
-  }
+  };
 }
 
 function ScheduleDateTimePicker({
@@ -293,11 +296,11 @@ function ScheduleDateTimePicker({
   value,
   onChange,
 }: {
-  id: string
-  value: string
-  onChange: (value: string) => void
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
 }) {
-  const selectedDate = getDateTimePickerDate(value)
+  const selectedDate = getDateTimePickerDate(value);
 
   return (
     <Popover>
@@ -318,7 +321,7 @@ function ScheduleDateTimePicker({
           selected={selectedDate}
           onSelect={(nextDate) => {
             if (nextDate) {
-              onChange(updateDateTimePickerDate(value, nextDate))
+              onChange(updateDateTimePickerDate(value, nextDate));
             }
           }}
         />
@@ -345,18 +348,18 @@ function ScheduleDateTimePicker({
         </div>
       </PopoverContent>
     </Popover>
-  )
+  );
 }
 
 function ScheduleSummaryCards({ schedules }: { schedules: Schedule[] }) {
-  const now = Date.now()
+  const now = Date.now();
   const upcomingGames = schedules.filter(
     (game) => new Date(game.starts_at).getTime() >= now,
-  ).length
+  ).length;
   const completedGames = schedules.filter(
     (game) => game.status === "final",
-  ).length
-  const venuesInUse = new Set(schedules.map((game) => game.venue_id)).size
+  ).length;
+  const venuesInUse = new Set(schedules.map((game) => game.venue_id)).size;
 
   const cards = [
     {
@@ -383,45 +386,45 @@ function ScheduleSummaryCards({ schedules }: { schedules: Schedule[] }) {
       title: "Venues in use",
       value: venuesInUse,
     },
-  ]
+  ];
 
   return (
     <RevealGroup asChild pace="compact" phase="secondary">
       <section className="grid gap-4 xl:grid-cols-4">
-      {cards.map((card) => {
-        const Icon = card.icon
+        {cards.map((card) => {
+          const Icon = card.icon;
 
-        return (
-          <ComponentReveal asChild key={card.title}>
-            <Card
-              size="sm"
-              className="rounded-lg border border-border/60 bg-card/90 py-3 shadow-none"
-            >
-              <CardHeader className="px-4 pb-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border/70 bg-background/70">
-                    <Icon className="size-3.5 text-muted-foreground" />
+          return (
+            <ComponentReveal asChild key={card.title}>
+              <Card
+                size="sm"
+                className="rounded-lg border border-border/60 bg-card/90 py-3 shadow-none"
+              >
+                <CardHeader className="px-4 pb-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border/70 bg-background/70">
+                      <Icon className="size-3.5 text-muted-foreground" />
+                    </div>
+                    <CardDescription className="text-sm font-medium leading-5 text-foreground/80">
+                      {card.title}
+                    </CardDescription>
                   </div>
-                  <CardDescription className="text-sm font-medium leading-5 text-foreground/80">
-                    {card.title}
-                  </CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-1 px-4 pt-0">
-                <div className="text-2xl font-semibold leading-none tracking-tight">
-                  {card.value}
-                </div>
-                <p className="text-xs leading-5 text-muted-foreground">
-                  {card.description}
-                </p>
-              </CardContent>
-            </Card>
-          </ComponentReveal>
-        )
-      })}
+                </CardHeader>
+                <CardContent className="space-y-1 px-4 pt-0">
+                  <div className="text-2xl font-semibold leading-none tracking-tight">
+                    {card.value}
+                  </div>
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    {card.description}
+                  </p>
+                </CardContent>
+              </Card>
+            </ComponentReveal>
+          );
+        })}
       </section>
     </RevealGroup>
-  )
+  );
 }
 
 function ScheduleActionsPopover({
@@ -433,35 +436,35 @@ function ScheduleActionsPopover({
   onFinalize,
   onViewSummary,
 }: {
-  canManageSchedule: boolean
-  game: Schedule
-  onAssignScorekeeper: () => void
-  onDelete: () => void
-  onEdit: () => void
-  onFinalize: () => void
-  onViewSummary: () => void
+  canManageSchedule: boolean;
+  game: Schedule;
+  onAssignScorekeeper: () => void;
+  onDelete: () => void;
+  onEdit: () => void;
+  onFinalize: () => void;
+  onViewSummary: () => void;
 }) {
-  const [open, setOpen] = React.useState(false)
-  const buttonRef = React.useRef<HTMLButtonElement | null>(null)
-  const menuRef = React.useRef<HTMLDivElement | null>(null)
+  const [open, setOpen] = React.useState(false);
+  const buttonRef = React.useRef<HTMLButtonElement | null>(null);
+  const menuRef = React.useRef<HTMLDivElement | null>(null);
   const [menuPosition, setMenuPosition] = React.useState<{
-    left: number
-    maxHeight: number
-    top: number
-    transform: string
-  } | null>(null)
+    left: number;
+    maxHeight: number;
+    top: number;
+    transform: string;
+  } | null>(null);
 
   React.useEffect(() => {
     if (!open) {
-      setMenuPosition(null)
-      return
+      setMenuPosition(null);
+      return;
     }
 
     function updatePosition() {
-      const rect = buttonRef.current?.getBoundingClientRect()
+      const rect = buttonRef.current?.getBoundingClientRect();
 
       if (!rect) {
-        return
+        return;
       }
 
       setMenuPosition(
@@ -469,47 +472,47 @@ function ScheduleActionsPopover({
           menuRect: menuRef.current?.getBoundingClientRect(),
           triggerRect: rect,
         }),
-      )
+      );
     }
 
-    updatePosition()
-    const animationFrame = window.requestAnimationFrame(updatePosition)
+    updatePosition();
+    const animationFrame = window.requestAnimationFrame(updatePosition);
 
     function handlePointerDown(event: MouseEvent) {
-      const target = event.target as HTMLElement | null
+      const target = event.target as HTMLElement | null;
 
       if (!target?.closest(`[data-schedule-actions="${game.id}"]`)) {
-        setOpen(false)
+        setOpen(false);
       }
     }
 
     function handleEscape(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        setOpen(false)
+        setOpen(false);
       }
     }
 
-    document.addEventListener("mousedown", handlePointerDown)
-    document.addEventListener("keydown", handleEscape)
-    window.addEventListener("resize", updatePosition)
-    window.addEventListener("scroll", updatePosition, true)
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleEscape);
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
 
     return () => {
-      window.cancelAnimationFrame(animationFrame)
-      document.removeEventListener("mousedown", handlePointerDown)
-      document.removeEventListener("keydown", handleEscape)
-      window.removeEventListener("resize", updatePosition)
-      window.removeEventListener("scroll", updatePosition, true)
-    }
-  }, [game.id, open])
+      window.cancelAnimationFrame(animationFrame);
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleEscape);
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [game.id, open]);
 
   if (!canManageSchedule) {
-    return null
+    return null;
   }
 
-  const assignmentLocked = !canAssignScorekeeper(game.status)
-  const canFinalizeManually = canManuallyFinalizeScheduleGame(game.status)
-  const isFinalGame = game.status === "final"
+  const assignmentLocked = !canAssignScorekeeper(game.status);
+  const canFinalizeManually = canManuallyFinalizeScheduleGame(game.status);
+  const isFinalGame = game.status === "final";
 
   return (
     <div
@@ -549,8 +552,8 @@ function ScheduleActionsPopover({
                       size="sm"
                       variant="ghost"
                       onClick={() => {
-                        setOpen(false)
-                        onViewSummary()
+                        setOpen(false);
+                        onViewSummary();
                       }}
                     >
                       <FileText className="size-4" />
@@ -601,8 +604,8 @@ function ScheduleActionsPopover({
                       size="sm"
                       variant="ghost"
                       onClick={() => {
-                        setOpen(false)
-                        onEdit()
+                        setOpen(false);
+                        onEdit();
                       }}
                     >
                       <PencilLine className="size-4" />
@@ -614,8 +617,8 @@ function ScheduleActionsPopover({
                         size="sm"
                         variant="ghost"
                         onClick={() => {
-                          setOpen(false)
-                          onFinalize()
+                          setOpen(false);
+                          onFinalize();
                         }}
                       >
                         <CheckCircle2 className="size-4" />
@@ -628,19 +631,19 @@ function ScheduleActionsPopover({
                       size="sm"
                       title={
                         assignmentLocked
-                          ? "Scorekeeper assignments lock after the game begins."
+                          ? "Game staff assignments lock after the game begins."
                           : undefined
                       }
                       variant="ghost"
                       onClick={() => {
-                        setOpen(false)
-                        onAssignScorekeeper()
+                        setOpen(false);
+                        onAssignScorekeeper();
                       }}
                     >
                       <UserRoundCheck className="size-4" />
-                      {game.scorekeeper_member_id
-                        ? "Change scorekeeper"
-                        : "Assign scorekeeper"}
+                      {game.scorekeeper_member_id || game.statistician_member_id
+                        ? "Change game staff"
+                        : "Assign game staff"}
                     </Button>
                     {assignmentLocked ? (
                       <p className="px-3 py-1.5 text-xs leading-5 text-muted-foreground">
@@ -652,8 +655,8 @@ function ScheduleActionsPopover({
                       size="sm"
                       variant="ghost"
                       onClick={() => {
-                        setOpen(false)
-                        onDelete()
+                        setOpen(false);
+                        onDelete();
                       }}
                     >
                       <Trash2 className="size-4" />
@@ -667,19 +670,19 @@ function ScheduleActionsPopover({
           )
         : null}
     </div>
-  )
+  );
 }
 
 function groupSchedulesByDay(games: Schedule[]) {
-  const groups = new Map<string, Schedule[]>()
+  const groups = new Map<string, Schedule[]>();
 
   for (const game of games) {
-    const key = new Date(game.starts_at).toDateString()
-    const entries = groups.get(key)
+    const key = new Date(game.starts_at).toDateString();
+    const entries = groups.get(key);
     if (entries) {
-      entries.push(game)
+      entries.push(game);
     } else {
-      groups.set(key, [game])
+      groups.set(key, [game]);
     }
   }
 
@@ -690,7 +693,7 @@ function groupSchedulesByDay(games: Schedule[]) {
         new Date(left.starts_at).getTime() -
         new Date(right.starts_at).getTime(),
     ),
-  }))
+  }));
 }
 
 function ScheduleBoard({
@@ -702,13 +705,13 @@ function ScheduleBoard({
   onFinalizeGame,
   onViewFinalSummary,
 }: {
-  canManageSchedule: boolean
-  games: Schedule[]
-  onAssignScorekeeper: (game: Schedule) => void
-  onDeleteGame: (game: Schedule) => void
-  onEditGame: (game: Schedule) => void
-  onFinalizeGame: (game: Schedule) => void
-  onViewFinalSummary: (game: Schedule) => void
+  canManageSchedule: boolean;
+  games: Schedule[];
+  onAssignScorekeeper: (game: Schedule) => void;
+  onDeleteGame: (game: Schedule) => void;
+  onEditGame: (game: Schedule) => void;
+  onFinalizeGame: (game: Schedule) => void;
+  onViewFinalSummary: (game: Schedule) => void;
 }) {
   if (games.length === 0) {
     return (
@@ -724,10 +727,10 @@ function ScheduleBoard({
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
-    )
+    );
   }
 
-  const groupedSchedules = groupSchedulesByDay(games)
+  const groupedSchedules = groupSchedulesByDay(games);
 
   return (
     <Card className="border border-border/60 bg-card/95 shadow-none">
@@ -761,8 +764,8 @@ function ScheduleBoard({
       <CardContent className="space-y-5">
         <div className="flex gap-2 overflow-x-auto pb-1">
           {groupedSchedules.map((group, index) => {
-            const date = new Date(group.dateKey)
-            const isFirst = index === 0
+            const date = new Date(group.dateKey);
+            const isFirst = index === 0;
 
             return (
               <button
@@ -783,13 +786,13 @@ function ScheduleBoard({
                   {date.toLocaleDateString([], { day: "numeric" })}
                 </span>
               </button>
-            )
+            );
           })}
         </div>
 
         <div className="space-y-5">
           {groupedSchedules.map((group) => {
-            const date = new Date(group.dateKey)
+            const date = new Date(group.dateKey);
 
             return (
               <section key={group.dateKey} className="space-y-3">
@@ -852,6 +855,12 @@ function ScheduleBoard({
 
                       <div className="space-y-1 text-sm">
                         <div>{game.division_name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          Score: {game.scorekeeper_name ?? "Unassigned"}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Stats: {game.statistician_name ?? "Unassigned"}
+                        </div>
                       </div>
 
                       <div className="space-y-1 text-sm">
@@ -874,9 +883,7 @@ function ScheduleBoard({
                         <ScheduleActionsPopover
                           canManageSchedule={canManageSchedule}
                           game={game}
-                          onAssignScorekeeper={() =>
-                            onAssignScorekeeper(game)
-                          }
+                          onAssignScorekeeper={() => onAssignScorekeeper(game)}
                           onDelete={() => onDeleteGame(game)}
                           onEdit={() => onEditGame(game)}
                           onFinalize={() => onFinalizeGame(game)}
@@ -887,23 +894,23 @@ function ScheduleBoard({
                   ))}
                 </div>
               </section>
-            )
+            );
           })}
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 function FinalGameSummaryModal({
   game,
   onClose,
 }: {
-  game: Schedule
-  onClose: () => void
+  game: Schedule;
+  onClose: () => void;
 }) {
-  const outcome = getFinalGameOutcome(game)
-  const hasOfficialScore = game.home_score !== null && game.away_score !== null
+  const outcome = getFinalGameOutcome(game);
+  const hasOfficialScore = game.home_score !== null && game.away_score !== null;
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -997,7 +1004,7 @@ function FinalGameSummaryModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
 function ManualFinalizeGameModal({
@@ -1005,52 +1012,52 @@ function ManualFinalizeGameModal({
   onClose,
   organizationId,
 }: {
-  game: Schedule
-  onClose: () => void
-  organizationId: string
+  game: Schedule;
+  onClose: () => void;
+  organizationId: string;
 }) {
   const finalizeScheduleGameMutation =
-    useFinalizeScheduleGameMutation(organizationId)
+    useFinalizeScheduleGameMutation(organizationId);
   const [homeScore, setHomeScore] = React.useState(
     game.home_score === null ? "" : String(game.home_score),
-  )
+  );
   const [awayScore, setAwayScore] = React.useState(
     game.away_score === null ? "" : String(game.away_score),
-  )
+  );
   const [validationError, setValidationError] = React.useState<string | null>(
     null,
-  )
+  );
   const [submissionError, setSubmissionError] = React.useState<string | null>(
     null,
-  )
-  const visibleError = validationError ?? submissionError
+  );
+  const visibleError = validationError ?? submissionError;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+    event.preventDefault();
 
     const nextValidationError = getManualFinalScoreValidationError({
       awayScore,
       homeScore,
-    })
+    });
 
     if (nextValidationError) {
-      setValidationError(nextValidationError)
-      setSubmissionError(null)
-      return
+      setValidationError(nextValidationError);
+      setSubmissionError(null);
+      return;
     }
 
-    setValidationError(null)
-    setSubmissionError(null)
+    setValidationError(null);
+    setSubmissionError(null);
 
     try {
       await finalizeScheduleGameMutation.mutateAsync({
         payload: parseManualFinalScores({ awayScore, homeScore }),
         scheduleId: game.id,
-      })
-      toast.success("Final score saved. This game is now official.")
-      onClose()
+      });
+      toast.success("Final score saved. This game is now official.");
+      onClose();
     } catch (error) {
-      setSubmissionError(getApiErrorMessage(error))
+      setSubmissionError(getApiErrorMessage(error));
     }
   }
 
@@ -1099,8 +1106,8 @@ function ManualFinalizeGameModal({
                       type="number"
                       value={homeScore}
                       onChange={(event) => {
-                        setHomeScore(event.target.value)
-                        setValidationError(null)
+                        setHomeScore(event.target.value);
+                        setValidationError(null);
                       }}
                     />
                   </FieldContent>
@@ -1121,8 +1128,8 @@ function ManualFinalizeGameModal({
                       type="number"
                       value={awayScore}
                       onChange={(event) => {
-                        setAwayScore(event.target.value)
-                        setValidationError(null)
+                        setAwayScore(event.target.value);
+                        setValidationError(null);
                       }}
                     />
                   </FieldContent>
@@ -1193,7 +1200,7 @@ function ManualFinalizeGameModal({
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
 function EditScheduleModal({
@@ -1205,87 +1212,87 @@ function EditScheduleModal({
   teams,
   venues,
 }: {
-  divisions: Division[]
-  game: Schedule
-  onClose: () => void
-  organizationId: string
-  seasons: LeagueSeason[]
-  teams: Team[]
-  venues: Venue[]
+  divisions: Division[];
+  game: Schedule;
+  onClose: () => void;
+  organizationId: string;
+  seasons: LeagueSeason[];
+  teams: Team[];
+  venues: Venue[];
 }) {
-  const updateScheduleMutation = useUpdateScheduleMutation(organizationId)
+  const updateScheduleMutation = useUpdateScheduleMutation(organizationId);
   const [leagueSeasonId, setLeagueSeasonId] = React.useState(
     game.league_season_id,
-  )
+  );
   const availableDivisions = React.useMemo(
     () =>
       divisions.filter(
         (division) => division.league_season_id === leagueSeasonId,
       ),
     [divisions, leagueSeasonId],
-  )
-  const [divisionId, setDivisionId] = React.useState(game.division_id)
+  );
+  const [divisionId, setDivisionId] = React.useState(game.division_id);
   const availableTeams = React.useMemo(
     () => teams.filter((team) => team.division_id === divisionId),
     [divisionId, teams],
-  )
+  );
   const availableVenues = React.useMemo(
     () => venues.filter((venue) => venue.league_season_id === leagueSeasonId),
     [leagueSeasonId, venues],
-  )
-  const [homeTeamId, setHomeTeamId] = React.useState(game.home_team_id)
-  const [awayTeamId, setAwayTeamId] = React.useState(game.away_team_id)
-  const [venueId, setVenueId] = React.useState(game.venue_id)
+  );
+  const [homeTeamId, setHomeTeamId] = React.useState(game.home_team_id);
+  const [awayTeamId, setAwayTeamId] = React.useState(game.away_team_id);
+  const [venueId, setVenueId] = React.useState(game.venue_id);
   const [startsAt, setStartsAt] = React.useState(
     toLocalDateTimeInputValue(game.starts_at),
-  )
+  );
   const [status, setStatus] = React.useState<ScheduleStatus>(
     game.status as ScheduleStatus,
-  )
+  );
   const [homeScore, setHomeScore] = React.useState(
     game.home_score === null ? "" : String(game.home_score),
-  )
+  );
   const [awayScore, setAwayScore] = React.useState(
     game.away_score === null ? "" : String(game.away_score),
-  )
+  );
   const [validationError, setValidationError] = React.useState<string | null>(
     null,
-  )
+  );
 
   React.useEffect(() => {
     const nextDivisionId =
       availableDivisions.find((division) => division.id === divisionId)?.id ??
       availableDivisions[0]?.id ??
-      ""
-    setDivisionId(nextDivisionId)
-  }, [availableDivisions, divisionId])
+      "";
+    setDivisionId(nextDivisionId);
+  }, [availableDivisions, divisionId]);
 
   React.useEffect(() => {
     const nextVenueId =
       availableVenues.find((venue) => venue.id === venueId)?.id ??
       availableVenues[0]?.id ??
-      ""
-    setVenueId(nextVenueId)
-  }, [availableVenues, venueId])
+      "";
+    setVenueId(nextVenueId);
+  }, [availableVenues, venueId]);
 
   React.useEffect(() => {
     const nextHomeTeamId =
       availableTeams.find((team) => team.id === homeTeamId)?.id ??
       availableTeams[0]?.id ??
-      ""
+      "";
     const nextAwayTeamId =
       availableTeams.find(
         (team) => team.id === awayTeamId && team.id !== nextHomeTeamId,
       )?.id ??
       availableTeams.find((team) => team.id !== nextHomeTeamId)?.id ??
-      ""
+      "";
 
-    setHomeTeamId(nextHomeTeamId)
-    setAwayTeamId(nextAwayTeamId)
-  }, [availableTeams, awayTeamId, homeTeamId])
+    setHomeTeamId(nextHomeTeamId);
+    setAwayTeamId(nextAwayTeamId);
+  }, [availableTeams, awayTeamId, homeTeamId]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+    event.preventDefault();
 
     if (
       !leagueSeasonId ||
@@ -1296,26 +1303,26 @@ function EditScheduleModal({
     ) {
       setValidationError(
         "Season, division, venue, and both teams are required.",
-      )
-      return
+      );
+      return;
     }
 
     if (homeTeamId === awayTeamId) {
-      setValidationError("Home and away teams must be different.")
-      return
+      setValidationError("Home and away teams must be different.");
+      return;
     }
 
     if (!startsAt) {
-      setValidationError("Game date and time are required.")
-      return
+      setValidationError("Game date and time are required.");
+      return;
     }
 
     if (status === "final" && (!homeScore || !awayScore)) {
-      setValidationError("Final games need both home and away scores.")
-      return
+      setValidationError("Final games need both home and away scores.");
+      return;
     }
 
-    setValidationError(null)
+    setValidationError(null);
 
     try {
       const updatedGame = await updateScheduleMutation.mutateAsync({
@@ -1331,14 +1338,14 @@ function EditScheduleModal({
           venueId,
         },
         scheduleId: game.id,
-      })
+      });
 
       toast.success(
         `Updated ${updatedGame.home_team_name} vs ${updatedGame.away_team_name}`,
-      )
-      onClose()
+      );
+      onClose();
     } catch (error) {
-      toast.error(getApiErrorMessage(error))
+      toast.error(getApiErrorMessage(error));
     }
   }
 
@@ -1368,9 +1375,7 @@ function EditScheduleModal({
 
               <div className="grid gap-4 md:grid-cols-2">
                 <Field>
-                  <FieldLabel htmlFor="edit-schedule-season">
-                    Season
-                  </FieldLabel>
+                  <FieldLabel htmlFor="edit-schedule-season">Season</FieldLabel>
                   <FieldContent>
                     <Select
                       value={leagueSeasonId}
@@ -1550,9 +1555,7 @@ function EditScheduleModal({
 
               <div className="grid gap-4 md:grid-cols-2">
                 <Field>
-                  <FieldLabel htmlFor="edit-schedule-status">
-                    Status
-                  </FieldLabel>
+                  <FieldLabel htmlFor="edit-schedule-status">Status</FieldLabel>
                   <FieldContent>
                     <Select
                       value={status}
@@ -1600,9 +1603,7 @@ function EditScheduleModal({
                           min={0}
                           type="number"
                           value={homeScore}
-                          onChange={(event) =>
-                            setHomeScore(event.target.value)
-                          }
+                          onChange={(event) => setHomeScore(event.target.value)}
                         />
                       </FieldContent>
                     </Field>
@@ -1617,9 +1618,7 @@ function EditScheduleModal({
                           min={0}
                           type="number"
                           value={awayScore}
-                          onChange={(event) =>
-                            setAwayScore(event.target.value)
-                          }
+                          onChange={(event) => setAwayScore(event.target.value)}
                         />
                       </FieldContent>
                     </Field>
@@ -1657,7 +1656,7 @@ function EditScheduleModal({
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
 function DeleteScheduleModal({
@@ -1665,19 +1664,19 @@ function DeleteScheduleModal({
   onClose,
   organizationId,
 }: {
-  game: Schedule
-  onClose: () => void
-  organizationId: string
+  game: Schedule;
+  onClose: () => void;
+  organizationId: string;
 }) {
-  const deleteScheduleMutation = useDeleteScheduleMutation(organizationId)
+  const deleteScheduleMutation = useDeleteScheduleMutation(organizationId);
 
   async function handleDelete() {
     try {
-      await deleteScheduleMutation.mutateAsync(game.id)
-      toast.success(`Deleted ${game.home_team_name} vs ${game.away_team_name}`)
-      onClose()
+      await deleteScheduleMutation.mutateAsync(game.id);
+      toast.success(`Deleted ${game.home_team_name} vs ${game.away_team_name}`);
+      onClose();
     } catch (error) {
-      toast.error(getApiErrorMessage(error))
+      toast.error(getApiErrorMessage(error));
     }
   }
 
@@ -1727,52 +1726,64 @@ function DeleteScheduleModal({
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
 
-function AssignScorekeeperModal({
+function AssignGameStaffModal({
   game,
   onClose,
   organizationId,
   scorekeepers,
+  statisticians,
 }: {
-  game: Schedule
-  onClose: () => void
-  organizationId: string
-  scorekeepers: ScorekeeperOption[]
+  game: Schedule;
+  onClose: () => void;
+  organizationId: string;
+  scorekeepers: ScorekeeperOption[];
+  statisticians: StatisticianOption[];
 }) {
-  const assignmentMutation =
-    useUpdateScorekeeperAssignmentMutation(organizationId)
+  const scorekeeperMutation =
+    useUpdateScorekeeperAssignmentMutation(organizationId);
+  const statisticianMutation =
+    useUpdateStatisticianAssignmentMutation(organizationId);
   const [scorekeeperMemberId, setScorekeeperMemberId] = React.useState(
     game.scorekeeper_member_id ?? "unassigned",
-  )
-  const assignmentLocked = !canAssignScorekeeper(game.status)
+  );
+  const [statisticianMemberId, setStatisticianMemberId] = React.useState(
+    game.statistician_member_id ?? "unassigned",
+  );
+  const assignmentLocked = !canAssignScorekeeper(game.status);
 
   async function handleSave(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+    event.preventDefault();
 
     if (assignmentLocked) {
-      return
+      return;
     }
 
     try {
-      const updatedGame = await assignmentMutation.mutateAsync({
-        payload: {
-          scorekeeperMemberId:
-            scorekeeperMemberId === "unassigned"
-              ? null
-              : scorekeeperMemberId,
-        },
-        scheduleId: game.id,
-      })
-      toast.success(
-        updatedGame.scorekeeper_name
-          ? `${updatedGame.scorekeeper_name} is assigned to this game.`
-          : "This game is now unassigned.",
-      )
-      onClose()
+      await Promise.all([
+        scorekeeperMutation.mutateAsync({
+          payload: {
+            scorekeeperMemberId:
+              scorekeeperMemberId === "unassigned" ? null : scorekeeperMemberId,
+          },
+          scheduleId: game.id,
+        }),
+        statisticianMutation.mutateAsync({
+          payload: {
+            statisticianMemberId:
+              statisticianMemberId === "unassigned"
+                ? null
+                : statisticianMemberId,
+          },
+          scheduleId: game.id,
+        }),
+      ]);
+      toast.success("Game staff assignments saved.");
+      onClose();
     } catch (error) {
-      toast.error(getApiErrorMessage(error))
+      toast.error(getApiErrorMessage(error));
     }
   }
 
@@ -1784,12 +1795,13 @@ function AssignScorekeeperModal({
             <UserRoundCheck className="size-5 text-muted-foreground" />
           </div>
           <DialogTitle className="text-lg">
-            {game.scorekeeper_member_id
-              ? "Change scorekeeper"
-              : "Assign scorekeeper"}
+            {game.scorekeeper_member_id || game.statistician_member_id
+              ? "Change game staff"
+              : "Assign game staff"}
           </DialogTitle>
           <DialogDescription>
-            Choose the scorekeeper responsible for this scheduled game.
+            Choose the officials responsible for the score and player stat
+            sheet.
           </DialogDescription>
         </DialogHeader>
 
@@ -1814,7 +1826,7 @@ function AssignScorekeeperModal({
               </FieldLabel>
               <FieldContent>
                 <Select
-                  disabled={assignmentLocked || assignmentMutation.isPending}
+                  disabled={assignmentLocked || scorekeeperMutation.isPending}
                   value={scorekeeperMemberId}
                   onValueChange={setScorekeeperMemberId}
                 >
@@ -1838,11 +1850,52 @@ function AssignScorekeeperModal({
               </FieldContent>
             </Field>
 
+            <Field>
+              <FieldLabel htmlFor="schedule-statistician-assignment">
+                Statistician
+              </FieldLabel>
+              <FieldContent>
+                <Select
+                  disabled={assignmentLocked || statisticianMutation.isPending}
+                  value={statisticianMemberId}
+                  onValueChange={setStatisticianMemberId}
+                >
+                  <SelectTrigger
+                    id="schedule-statistician-assignment"
+                    className="h-10 w-full"
+                  >
+                    <SelectValue placeholder="Choose a statistician" />
+                  </SelectTrigger>
+                  <SelectContent position="popper" align="start">
+                    <SelectGroup>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
+                      {statisticians.map((statistician) => (
+                        <SelectItem
+                          key={statistician.id}
+                          value={statistician.id}
+                        >
+                          {statistician.name || statistician.email}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </FieldContent>
+            </Field>
+
             <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-sm leading-6 text-muted-foreground">
-              Current assignment:{" "}
-              <span className="font-medium text-foreground">
-                {game.scorekeeper_name ?? "Unassigned"}
-              </span>
+              <p>
+                Scorekeeper:{" "}
+                <span className="font-medium text-foreground">
+                  {game.scorekeeper_name ?? "Unassigned"}
+                </span>
+              </p>
+              <p>
+                Statistician:{" "}
+                <span className="font-medium text-foreground">
+                  {game.statistician_name ?? "Unassigned"}
+                </span>
+              </p>
             </div>
 
             {scorekeepers.length === 0 ? (
@@ -1852,15 +1905,24 @@ function AssignScorekeeperModal({
               </FieldError>
             ) : null}
 
-            {assignmentLocked ? (
+            {statisticians.length === 0 ? (
               <FieldError>
-                Scorekeeper assignments lock after the game begins.
+                No active statisticians are available yet. Player statistics can
+                remain unassigned for this game.
               </FieldError>
             ) : null}
 
-            {assignmentMutation.isError ? (
+            {assignmentLocked ? (
               <FieldError>
-                {getApiErrorMessage(assignmentMutation.error)}
+                Game staff assignments lock after the game begins.
+              </FieldError>
+            ) : null}
+
+            {scorekeeperMutation.isError || statisticianMutation.isError ? (
+              <FieldError>
+                {getApiErrorMessage(
+                  scorekeeperMutation.error ?? statisticianMutation.error,
+                )}
               </FieldError>
             ) : null}
           </div>
@@ -1871,9 +1933,14 @@ function AssignScorekeeperModal({
             </Button>
             <Button
               type="submit"
-              disabled={assignmentLocked || assignmentMutation.isPending}
+              disabled={
+                assignmentLocked ||
+                scorekeeperMutation.isPending ||
+                statisticianMutation.isPending
+              }
             >
-              {assignmentMutation.isPending ? (
+              {scorekeeperMutation.isPending ||
+              statisticianMutation.isPending ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />
                   Saving
@@ -1889,7 +1956,7 @@ function AssignScorekeeperModal({
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
 function CreateScheduleModal({
@@ -1899,95 +1966,100 @@ function CreateScheduleModal({
   onSubmit,
   pending,
   scorekeepers,
+  statisticians,
   seasons,
   teams,
   venues,
 }: {
-  divisions: Division[]
-  errorMessage?: string | null
-  onClose: () => void
+  divisions: Division[];
+  errorMessage?: string | null;
+  onClose: () => void;
   onSubmit: (payload: {
-    awayTeamId: string
-    divisionId: string
-    homeTeamId: string
-    leagueSeasonId: string
-    scorekeeperMemberId: string | null
-    startsAt: string
-    venueId: string
-  }) => Promise<void>
-  pending: boolean
-  scorekeepers: ScorekeeperOption[]
-  seasons: LeagueSeason[]
-  teams: Team[]
-  venues: Venue[]
+    awayTeamId: string;
+    divisionId: string;
+    homeTeamId: string;
+    leagueSeasonId: string;
+    scorekeeperMemberId: string | null;
+    statisticianMemberId: string | null;
+    startsAt: string;
+    venueId: string;
+  }) => Promise<void>;
+  pending: boolean;
+  scorekeepers: ScorekeeperOption[];
+  statisticians: StatisticianOption[];
+  seasons: LeagueSeason[];
+  teams: Team[];
+  venues: Venue[];
 }) {
   const [leagueSeasonId, setLeagueSeasonId] = React.useState(
     seasons[0]?.id ?? "",
-  )
+  );
   const availableDivisions = React.useMemo(
     () =>
       divisions.filter(
         (division) => division.league_season_id === leagueSeasonId,
       ),
     [divisions, leagueSeasonId],
-  )
+  );
   const [divisionId, setDivisionId] = React.useState(
     availableDivisions[0]?.id ?? "",
-  )
+  );
   const availableTeams = React.useMemo(
     () => teams.filter((team) => team.division_id === divisionId),
     [divisionId, teams],
-  )
+  );
   const availableVenues = React.useMemo(
     () => venues.filter((venue) => venue.league_season_id === leagueSeasonId),
     [leagueSeasonId, venues],
-  )
-  const [homeTeamId, setHomeTeamId] = React.useState("")
-  const [awayTeamId, setAwayTeamId] = React.useState("")
-  const [venueId, setVenueId] = React.useState(availableVenues[0]?.id ?? "")
+  );
+  const [homeTeamId, setHomeTeamId] = React.useState("");
+  const [awayTeamId, setAwayTeamId] = React.useState("");
+  const [venueId, setVenueId] = React.useState(availableVenues[0]?.id ?? "");
   const [scorekeeperMemberId, setScorekeeperMemberId] =
-    React.useState("unassigned")
+    React.useState("unassigned");
+  const [statisticianMemberId, setStatisticianMemberId] =
+    React.useState("unassigned");
   const [startsAt, setStartsAt] = React.useState(
     toLocalDateTimeInputValue(new Date().toISOString()),
-  )
+  );
   const [validationError, setValidationError] = React.useState<string | null>(
     null,
-  )
+  );
 
   React.useEffect(() => {
     const nextDivisionId =
       availableDivisions.find((division) => division.id === divisionId)?.id ??
       availableDivisions[0]?.id ??
-      ""
-    setDivisionId(nextDivisionId)
-  }, [availableDivisions, divisionId])
+      "";
+    setDivisionId(nextDivisionId);
+  }, [availableDivisions, divisionId]);
 
   React.useEffect(() => {
     const nextVenueId =
       availableVenues.find((venue) => venue.id === venueId)?.id ??
       availableVenues[0]?.id ??
-      ""
-    setVenueId(nextVenueId)
-  }, [availableVenues, venueId])
+      "";
+    setVenueId(nextVenueId);
+  }, [availableVenues, venueId]);
 
   React.useEffect(() => {
     const nextHomeTeamId =
       availableTeams.find((team) => team.id === homeTeamId)?.id ??
       availableTeams[0]?.id ??
-      ""
+      "";
     const nextAwayTeamId =
       availableTeams.find(
         (team) => team.id === awayTeamId && team.id !== nextHomeTeamId,
       )?.id ??
       availableTeams.find((team) => team.id !== nextHomeTeamId)?.id ??
-      ""
+      "";
 
-    setHomeTeamId(nextHomeTeamId)
-    setAwayTeamId(nextAwayTeamId)
-  }, [availableTeams, awayTeamId, homeTeamId])
+    setHomeTeamId(nextHomeTeamId);
+    setAwayTeamId(nextAwayTeamId);
+  }, [availableTeams, awayTeamId, homeTeamId]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+    event.preventDefault();
 
     if (
       !leagueSeasonId ||
@@ -1998,21 +2070,21 @@ function CreateScheduleModal({
     ) {
       setValidationError(
         "Season, division, venue, and both teams are required.",
-      )
-      return
+      );
+      return;
     }
 
     if (homeTeamId === awayTeamId) {
-      setValidationError("Home and away teams must be different.")
-      return
+      setValidationError("Home and away teams must be different.");
+      return;
     }
 
     if (!startsAt) {
-      setValidationError("Game date and time are required.")
-      return
+      setValidationError("Game date and time are required.");
+      return;
     }
 
-    setValidationError(null)
+    setValidationError(null);
 
     await onSubmit({
       awayTeamId,
@@ -2021,9 +2093,11 @@ function CreateScheduleModal({
       leagueSeasonId,
       scorekeeperMemberId:
         scorekeeperMemberId === "unassigned" ? null : scorekeeperMemberId,
+      statisticianMemberId:
+        statisticianMemberId === "unassigned" ? null : statisticianMemberId,
       startsAt: new Date(startsAt).toISOString(),
       venueId,
-    })
+    });
   }
 
   return (
@@ -2192,6 +2266,34 @@ function CreateScheduleModal({
               </FieldContent>
             </Field>
 
+            <Field>
+              <FieldLabel htmlFor="schedule-statistician">
+                Statistician
+              </FieldLabel>
+              <FieldContent>
+                <NativeSelect
+                  className="w-full"
+                  id="schedule-statistician"
+                  value={statisticianMemberId}
+                  onChange={(event) =>
+                    setStatisticianMemberId(event.target.value)
+                  }
+                >
+                  <NativeSelectOption value="unassigned">
+                    Unassigned
+                  </NativeSelectOption>
+                  {statisticians.map((statistician) => (
+                    <NativeSelectOption
+                      key={statistician.id}
+                      value={statistician.id}
+                    >
+                      {statistician.name || statistician.email}
+                    </NativeSelectOption>
+                  ))}
+                </NativeSelect>
+              </FieldContent>
+            </Field>
+
             {validationError || errorMessage ? (
               <FieldError>{validationError ?? errorMessage}</FieldError>
             ) : null}
@@ -2218,7 +2320,7 @@ function CreateScheduleModal({
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
 export function OrganizationSchedulesView({
@@ -2228,27 +2330,29 @@ export function OrganizationSchedulesView({
   teams,
   venues,
 }: {
-  divisions: Division[]
-  organization: Organization
-  seasons: LeagueSeason[]
-  teams: Team[]
-  venues: Venue[]
+  divisions: Division[];
+  organization: Organization;
+  seasons: LeagueSeason[];
+  teams: Team[];
+  venues: Venue[];
 }) {
-  const createScheduleMutation = useCreateScheduleMutation(organization.id)
-  const [createModalOpen, setCreateModalOpen] = React.useState(false)
-  const [gameToAssign, setGameToAssign] = React.useState<Schedule | null>(null)
-  const [gameToDelete, setGameToDelete] = React.useState<Schedule | null>(null)
-  const [gameToEdit, setGameToEdit] = React.useState<Schedule | null>(null)
-  const [gameToFinalize, setGameToFinalize] =
-    React.useState<Schedule | null>(null)
-  const [gameToSummarize, setGameToSummarize] =
-    React.useState<Schedule | null>(null)
-  const [search, setSearch] = React.useState("")
-  const [divisionFilter, setDivisionFilter] = React.useState("all")
-  const [statusFilter, setStatusFilter] = React.useState("all")
+  const createScheduleMutation = useCreateScheduleMutation(organization.id);
+  const [createModalOpen, setCreateModalOpen] = React.useState(false);
+  const [gameToAssign, setGameToAssign] = React.useState<Schedule | null>(null);
+  const [gameToDelete, setGameToDelete] = React.useState<Schedule | null>(null);
+  const [gameToEdit, setGameToEdit] = React.useState<Schedule | null>(null);
+  const [gameToFinalize, setGameToFinalize] = React.useState<Schedule | null>(
+    null,
+  );
+  const [gameToSummarize, setGameToSummarize] = React.useState<Schedule | null>(
+    null,
+  );
+  const [search, setSearch] = React.useState("");
+  const [divisionFilter, setDivisionFilter] = React.useState("all");
+  const [statusFilter, setStatusFilter] = React.useState("all");
   const [sortBy, setSortBy] =
-    React.useState<NonNullable<ScheduleListQuery["sortBy"]>>("date")
-  const deferredSearch = React.useDeferredValue(search.trim())
+    React.useState<NonNullable<ScheduleListQuery["sortBy"]>>("date");
+  const deferredSearch = React.useDeferredValue(search.trim());
   const schedulesQueryParams = React.useMemo<ScheduleListQuery>(
     () => ({
       divisionId: divisionFilter === "all" ? undefined : divisionFilter,
@@ -2260,37 +2364,43 @@ export function OrganizationSchedulesView({
           : (statusFilter as NonNullable<ScheduleListQuery["status"]>),
     }),
     [deferredSearch, divisionFilter, sortBy, statusFilter],
-  )
+  );
   const schedulesQuery = useSchedulesQuery(
     organization.id,
     schedulesQueryParams,
-  )
-  const schedules = schedulesQuery.data ?? []
-  const canManageSchedule = canManageOrganizationSchedule(organization)
+  );
+  const schedules = schedulesQuery.data ?? [];
+  const canManageSchedule = canManageOrganizationSchedule(organization);
   const scorekeepersQuery = useScorekeepersQuery(
     organization.id,
     canManageSchedule,
-  )
-  const scorekeepers = scorekeepersQuery.data ?? []
+  );
+  const scorekeepers = scorekeepersQuery.data ?? [];
+  const statisticiansQuery = useStatisticiansQuery(
+    organization.id,
+    canManageSchedule,
+  );
+  const statisticians = statisticiansQuery.data ?? [];
 
   async function handleCreateSchedule(payload: {
-    awayTeamId: string
-    divisionId: string
-    homeTeamId: string
-    leagueSeasonId: string
-    scorekeeperMemberId: string | null
-    startsAt: string
-    venueId: string
+    awayTeamId: string;
+    divisionId: string;
+    homeTeamId: string;
+    leagueSeasonId: string;
+    scorekeeperMemberId: string | null;
+    statisticianMemberId: string | null;
+    startsAt: string;
+    venueId: string;
   }) {
     try {
       const game = await createScheduleMutation.mutateAsync({
         ...payload,
         status: "scheduled",
-      })
-      toast.success(`Created ${game.home_team_name} vs ${game.away_team_name}`)
-      setCreateModalOpen(false)
+      });
+      toast.success(`Created ${game.home_team_name} vs ${game.away_team_name}`);
+      setCreateModalOpen(false);
     } catch (error) {
-      toast.error(getApiErrorMessage(error))
+      toast.error(getApiErrorMessage(error));
     }
   }
 
@@ -2299,7 +2409,7 @@ export function OrganizationSchedulesView({
     seasons.length > 0 &&
     divisions.length > 0 &&
     teams.length >= 2 &&
-    venues.length > 0
+    venues.length > 0;
 
   return (
     <SidebarProvider>
@@ -2313,7 +2423,6 @@ export function OrganizationSchedulesView({
       />
       <SidebarInset>
         <WorkspaceHeader
-          
           organizationAccess={organization.access}
           organizationName={organization.name}
           organizationSlug={organization.slug}
@@ -2346,8 +2455,8 @@ export function OrganizationSchedulesView({
                     <CardHeader>
                       <CardTitle>Finish setup before adding games</CardTitle>
                       <CardDescription>
-                        Schedules need at least one season, division, venue, and two
-                        teams in the same division.
+                        Schedules need at least one season, division, venue, and
+                        two teams in the same division.
                       </CardDescription>
                     </CardHeader>
                   </Card>
@@ -2358,99 +2467,102 @@ export function OrganizationSchedulesView({
                 <RevealGroup className="contents" phase="tertiary">
                   <ComponentReveal asChild>
                     <div className="space-y-4">
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_minmax(160px,180px)_minmax(150px,170px)_minmax(190px,210px)]">
-                  <div className="relative md:col-span-2 xl:col-span-1">
-                    <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      aria-label="Search games"
-                      className={`${scheduleFilterControlClassName} pl-9`}
-                      placeholder="Search games..."
-                      value={search}
-                      onChange={(event) => setSearch(event.target.value)}
-                    />
-                  </div>
-                  <Select
-                    value={divisionFilter}
-                    onValueChange={setDivisionFilter}
-                  >
-                    <SelectTrigger
-                      aria-label="Filter by division"
-                      className={scheduleFilterControlClassName}
-                    >
-                      <SelectValue placeholder="All divisions" />
-                    </SelectTrigger>
-                    <SelectContent position="popper" align="start">
-                      <SelectGroup>
-                        <SelectItem value="all">All divisions</SelectItem>
-                        {divisions.map((division) => (
-                          <SelectItem key={division.id} value={division.id}>
-                            {division.name}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                  <Select
-                    value={statusFilter}
-                    onValueChange={setStatusFilter}
-                  >
-                    <SelectTrigger
-                      aria-label="Filter by status"
-                      className={scheduleFilterControlClassName}
-                    >
-                      <SelectValue placeholder="All status" />
-                    </SelectTrigger>
-                    <SelectContent position="popper" align="start">
-                      <SelectGroup>
-                        <SelectItem value="all">All status</SelectItem>
-                        {[
-                          "draft",
-                          "scheduled",
-                          "live",
-                          "final",
-                          "reopened",
-                          "postponed",
-                          "cancelled",
-                        ].map((status) => (
-                          <SelectItem key={status} value={status}>
-                            {status}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                  <Select
-                    value={sortBy}
-                    onValueChange={(value) =>
-                      setSortBy(
-                        value as NonNullable<
-                          ScheduleListQuery["sortBy"]
-                        >,
-                      )
-                    }
-                  >
-                    <SelectTrigger
-                      aria-label="Sort schedule"
-                      className={scheduleFilterControlClassName}
-                    >
-                      <SelectValue placeholder="Sort schedule" />
-                    </SelectTrigger>
-                    <SelectContent position="popper" align="start">
-                      <SelectGroup>
-                        <SelectItem value="date">
-                          Sort: Date (Earliest)
-                        </SelectItem>
-                        <SelectItem value="division">Sort: Division</SelectItem>
-                        <SelectItem value="venue">Sort: Venue</SelectItem>
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {schedulesQuery.isError ? (
-                  <FieldError>
-                    {getApiErrorMessage(schedulesQuery.error)}
-                  </FieldError>
-                ) : null}
+                      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_minmax(160px,180px)_minmax(150px,170px)_minmax(190px,210px)]">
+                        <div className="relative md:col-span-2 xl:col-span-1">
+                          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            aria-label="Search games"
+                            className={`${scheduleFilterControlClassName} pl-9`}
+                            placeholder="Search games..."
+                            value={search}
+                            onChange={(event) => setSearch(event.target.value)}
+                          />
+                        </div>
+                        <Select
+                          value={divisionFilter}
+                          onValueChange={setDivisionFilter}
+                        >
+                          <SelectTrigger
+                            aria-label="Filter by division"
+                            className={scheduleFilterControlClassName}
+                          >
+                            <SelectValue placeholder="All divisions" />
+                          </SelectTrigger>
+                          <SelectContent position="popper" align="start">
+                            <SelectGroup>
+                              <SelectItem value="all">All divisions</SelectItem>
+                              {divisions.map((division) => (
+                                <SelectItem
+                                  key={division.id}
+                                  value={division.id}
+                                >
+                                  {division.name}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                        <Select
+                          value={statusFilter}
+                          onValueChange={setStatusFilter}
+                        >
+                          <SelectTrigger
+                            aria-label="Filter by status"
+                            className={scheduleFilterControlClassName}
+                          >
+                            <SelectValue placeholder="All status" />
+                          </SelectTrigger>
+                          <SelectContent position="popper" align="start">
+                            <SelectGroup>
+                              <SelectItem value="all">All status</SelectItem>
+                              {[
+                                "draft",
+                                "scheduled",
+                                "live",
+                                "final",
+                                "reopened",
+                                "postponed",
+                                "cancelled",
+                              ].map((status) => (
+                                <SelectItem key={status} value={status}>
+                                  {status}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                        <Select
+                          value={sortBy}
+                          onValueChange={(value) =>
+                            setSortBy(
+                              value as NonNullable<ScheduleListQuery["sortBy"]>,
+                            )
+                          }
+                        >
+                          <SelectTrigger
+                            aria-label="Sort schedule"
+                            className={scheduleFilterControlClassName}
+                          >
+                            <SelectValue placeholder="Sort schedule" />
+                          </SelectTrigger>
+                          <SelectContent position="popper" align="start">
+                            <SelectGroup>
+                              <SelectItem value="date">
+                                Sort: Date (Earliest)
+                              </SelectItem>
+                              <SelectItem value="division">
+                                Sort: Division
+                              </SelectItem>
+                              <SelectItem value="venue">Sort: Venue</SelectItem>
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {schedulesQuery.isError ? (
+                        <FieldError>
+                          {getApiErrorMessage(schedulesQuery.error)}
+                        </FieldError>
+                      ) : null}
                     </div>
                   </ComponentReveal>
 
@@ -2482,6 +2594,7 @@ export function OrganizationSchedulesView({
           }
           pending={createScheduleMutation.isPending}
           scorekeepers={scorekeepers}
+          statisticians={statisticians}
           seasons={seasons}
           teams={teams}
           venues={venues}
@@ -2503,10 +2616,11 @@ export function OrganizationSchedulesView({
       ) : null}
 
       {gameToAssign ? (
-        <AssignScorekeeperModal
+        <AssignGameStaffModal
           game={gameToAssign}
           organizationId={organization.id}
           scorekeepers={scorekeepers}
+          statisticians={statisticians}
           onClose={() => setGameToAssign(null)}
         />
       ) : null}
@@ -2534,5 +2648,5 @@ export function OrganizationSchedulesView({
         />
       ) : null}
     </SidebarProvider>
-  )
+  );
 }

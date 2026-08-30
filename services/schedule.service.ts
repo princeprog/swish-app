@@ -25,6 +25,8 @@ export type Schedule = {
   published_at: string | null;
   scorekeeper_member_id: string | null;
   scorekeeper_name: string | null;
+  statistician_member_id: string | null;
+  statistician_name: string | null;
   starts_at: string;
   status: string;
   updated_at: string;
@@ -41,6 +43,7 @@ export type CreateSchedulePayload = {
   homeScore?: number;
   leagueSeasonId: string;
   scorekeeperMemberId?: string | null;
+  statisticianMemberId?: string | null;
   startsAt: string;
   status?:
     | "draft"
@@ -69,6 +72,9 @@ export type StatisticianOption = ScorekeeperOption;
 
 export type UpdateScorekeeperAssignmentPayload = {
   scorekeeperMemberId: string | null;
+};
+export type UpdateStatisticianAssignmentPayload = {
+  statisticianMemberId: string | null;
 };
 
 export type ScheduleListQuery = {
@@ -144,6 +150,16 @@ export const scheduleService = {
   ) =>
     apiService.put<Schedule, UpdateScorekeeperAssignmentPayload>(
       API_ENDPOINTS.schedules.scorekeeper(organizationId, scheduleId),
+      data,
+      { credentials: "include" },
+    ),
+  updateStatistician: (
+    organizationId: string,
+    scheduleId: string,
+    data: UpdateStatisticianAssignmentPayload,
+  ) =>
+    apiService.put<Schedule, UpdateStatisticianAssignmentPayload>(
+      `${API_ENDPOINTS.schedules.list(organizationId)}/${scheduleId}/statistician`,
       data,
       { credentials: "include" },
     ),
