@@ -26,6 +26,8 @@ export type OrganizationPermission =
   | "compliance_submissions_submit_assigned"
   | "game.score.assigned"
   | "game.score.override"
+  | "game.stats.assigned"
+  | "game.stats.override"
   | "games.read.assigned"
   | "members.manage"
   | "organization.manage"

@@ -83,6 +83,18 @@ export const statisticsService = {
       { deviceLabel },
       { credentials: "include" },
     ),
+  takeover: (
+    organizationId: string,
+    gameId: string,
+    data: { deviceLabel?: string; reason: string },
+  ) =>
+    apiService.post<{
+      controlToken: string;
+      expiresAt: string;
+      sessionId: string;
+    }>(`${endpoint(organizationId, gameId)}/control/takeover`, data, {
+      credentials: "include",
+    }),
   getState: (organizationId: string, gameId: string) =>
     apiService.get<StatisticsState>(endpoint(organizationId, gameId), {
       credentials: "include",
@@ -121,6 +133,16 @@ export const statisticsService = {
     apiService.post(
       `${endpoint(organizationId, gameId)}/submit`,
       { controlToken },
+      { credentials: "include" },
+    ),
+  overrideReconciliation: (
+    organizationId: string,
+    gameId: string,
+    reason: string,
+  ) =>
+    apiService.post(
+      `${endpoint(organizationId, gameId)}/reconciliation/override`,
+      { reason },
       { credentials: "include" },
     ),
   confirmPlayerOfGame: (

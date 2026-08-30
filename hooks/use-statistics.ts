@@ -47,6 +47,14 @@ export function useStatisticsConsole(organizationId?: string, gameId?: string) {
       statisticsService.claim(organizationId!, gameId!, "Statistics console"),
     onSuccess: (control) => setControlToken(control.controlToken),
   });
+  const takeover = useMutation({
+    mutationFn: (reason: string) =>
+      statisticsService.takeover(organizationId!, gameId!, {
+        deviceLabel: "Statistics console",
+        reason,
+      }),
+    onSuccess: (control) => setControlToken(control.controlToken),
+  });
   const record = useMutation({
     mutationFn: (command: {
       playerId?: string;
@@ -77,6 +85,15 @@ export function useStatisticsConsole(organizationId?: string, gameId?: string) {
     },
     onSuccess: async () => query.refetch(),
   });
+  const overrideReconciliation = useMutation({
+    mutationFn: (reason: string) =>
+      statisticsService.overrideReconciliation(
+        organizationId!,
+        gameId!,
+        reason,
+      ),
+    onSuccess: async () => query.refetch(),
+  });
   const confirmPlayerOfGame = useMutation({
     mutationFn: (data: { playerId: string; reason?: string }) =>
       statisticsService.confirmPlayerOfGame(organizationId!, gameId!, data),
@@ -99,8 +116,10 @@ export function useStatisticsConsole(organizationId?: string, gameId?: string) {
     claim,
     confirmPlayerOfGame,
     controlToken,
+    overrideReconciliation,
     query,
     record,
     submit,
+    takeover,
   };
 }

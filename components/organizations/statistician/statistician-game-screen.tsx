@@ -190,6 +190,7 @@ export function StatisticianGameScreen({
   );
   const gameQuery = useScheduleQuery(organization?.id, gameId);
   const gameConsole = useStatisticsConsole(organization?.id, gameId);
+  const [overrideReason, setOverrideReason] = React.useState("");
 
   if (!organization || gameQuery.isLoading || gameConsole.query.isLoading) {
     return <main className="p-8">Loading stat sheet…</main>;
@@ -231,6 +232,13 @@ export function StatisticianGameScreen({
       official: state.game.awayScore,
     },
   ];
+  const playerPointMismatch = teams.some(
+    (team) =>
+      team.official !== null && teamPlayerPoints(team.id) !== team.official,
+  );
+  const canOverrideReconciliation = ["owner", "admin"].includes(
+    organization.access.role,
+  );
 
   return (
     <SidebarProvider>
@@ -265,17 +273,46 @@ export function StatisticianGameScreen({
               {gameConsole.controlToken ? (
                 <Badge>Control active</Badge>
               ) : (
-                <Button
-                  disabled={gameConsole.claim.isPending}
-                  onClick={() => gameConsole.claim.mutate()}
-                >
-                  {gameConsole.claim.isPending ? (
-                    <Loader2 className="animate-spin" />
-                  ) : (
-                    <BarChart3 />
-                  )}
-                  Claim control
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    disabled={gameConsole.claim.isPending}
+                    onClick={() => gameConsole.claim.mutate()}
+                  >
+                    {gameConsole.claim.isPending ? (
+                      <Loader2 className="animate-spin" />
+                    ) : (
+                      <BarChart3 />
+                    )}
+                    Claim control
+                  </Button>
+                  <Button
+                    disabled={gameConsole.takeover.isPending}
+                    variant="outline"
+                    onClick={async () => {
+                      const reason = window.prompt(
+                        "Explain why this device needs to take over statistics control.",
+                      );
+                      if (!reason || reason.trim().length < 10) {
+                        if (reason) {
+                          toast.error(
+                            "Enter a reason of at least 10 characters.",
+                          );
+                        }
+                        return;
+                      }
+                      try {
+                        await gameConsole.takeover.mutateAsync(reason.trim());
+                        toast.success(
+                          "Statistics control moved to this device",
+                        );
+                      } catch (error) {
+                        toast.error(getApiErrorMessage(error));
+                      }
+                    }}
+                  >
+                    Take over
+                  </Button>
+                </div>
               )}
             </div>
           </section>
@@ -341,6 +378,63 @@ export function StatisticianGameScreen({
               </Card>
             ))}
           </div>
+
+          {playerPointMismatch &&
+          ["draft", "reopened"].includes(state.sheet.status) ? (
+            <Card className="border-amber-500/40">
+              <CardHeader>
+                <CardTitle>Player points need reconciliation</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Player points do not match both official team scores. Correct
+                  the stat events before submission
+                  {canOverrideReconciliation
+                    ? ", or approve the discrepancy with a league record note."
+                    : ". Ask a league administrator to approve a documented discrepancy if the stat sheet is correct."}
+                </p>
+                {canOverrideReconciliation ? (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="reconciliation-override-reason">
+                        Discrepancy reason
+                      </Label>
+                      <Textarea
+                        id="reconciliation-override-reason"
+                        placeholder="Explain the team score that is not attributed to a player."
+                        value={overrideReason}
+                        onChange={(event) =>
+                          setOverrideReason(event.target.value)
+                        }
+                      />
+                    </div>
+                    <Button
+                      disabled={
+                        overrideReason.trim().length < 10 ||
+                        gameConsole.overrideReconciliation.isPending
+                      }
+                      variant="outline"
+                      onClick={async () => {
+                        try {
+                          await gameConsole.overrideReconciliation.mutateAsync(
+                            overrideReason.trim(),
+                          );
+                          toast.success("Statistics discrepancy approved");
+                        } catch (error) {
+                          toast.error(getApiErrorMessage(error));
+                        }
+                      }}
+                    >
+                      {gameConsole.overrideReconciliation.isPending ? (
+                        <Loader2 className="animate-spin" />
+                      ) : null}
+                      Approve discrepancy
+                    </Button>
+                  </>
+                ) : null}
+              </CardContent>
+            </Card>
+          ) : null}
 
           <Card>
             <CardHeader>
