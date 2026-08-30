@@ -374,7 +374,7 @@ export function OrganizationStandingsView({
                       <EmptyMedia variant="icon">
                         <Trophy className="size-5" />
                       </EmptyMedia>
-                      <EmptyTitle>We couldn't load standings</EmptyTitle>
+                      <EmptyTitle>We couldn’t load standings</EmptyTitle>
                       <EmptyDescription>
                         {getApiErrorMessage(standingsQuery.error)}
                       </EmptyDescription>

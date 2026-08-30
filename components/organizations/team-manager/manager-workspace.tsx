@@ -250,7 +250,7 @@ function ManagerErrorState({
           <EmptyMedia variant="icon">
             <TrophyIcon className="size-5" />
           </EmptyMedia>
-          <EmptyTitle>We couldn't load your team workspace</EmptyTitle>
+          <EmptyTitle>We couldn’t load your team workspace</EmptyTitle>
           <EmptyDescription>{description}</EmptyDescription>
         </EmptyHeader>
       </Empty>
@@ -359,7 +359,7 @@ function ManagerPlayersContent({
           <ComponentReveal>
             <Empty>
               <EmptyHeader>
-                <EmptyTitle>We couldn't load players</EmptyTitle>
+                <EmptyTitle>We couldn’t load players</EmptyTitle>
                 <EmptyDescription>
                   {getApiErrorMessage(playersQuery.error)}
                 </EmptyDescription>
@@ -557,7 +557,7 @@ function ManagerScheduleContent({
       <ComponentReveal>
         <Empty className="border bg-card">
           <EmptyHeader>
-            <EmptyTitle>We couldn't load your schedule</EmptyTitle>
+            <EmptyTitle>We couldn’t load your schedule</EmptyTitle>
             <EmptyDescription>
               {getApiErrorMessage(schedulesQuery.error)}
             </EmptyDescription>
@@ -621,7 +621,7 @@ function ManagerStandingsContent({
       <ComponentReveal>
         <Empty className="border bg-card">
           <EmptyHeader>
-            <EmptyTitle>We couldn't load standings</EmptyTitle>
+            <EmptyTitle>We couldn’t load standings</EmptyTitle>
             <EmptyDescription>
               {getApiErrorMessage(standingsQuery.error)}
             </EmptyDescription>
