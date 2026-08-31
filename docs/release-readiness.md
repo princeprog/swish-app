@@ -28,6 +28,10 @@ production game-day use.
 - Frontend typecheck, production build, pure component/data tests (83 passing,
   1 intentionally skipped), zero-warning lint, and the high-severity production
   audit gate pass.
+- Frontend Playwright smoke pilots pass on both desktop and mobile projects (6
+  tests): guest auth redirects, public schedule/results/bracket/leaders tabs,
+  and the assigned scorekeeper pregame console using release-shaped API
+  fixtures.
 - The built Next.js server smoke check returns 200 for `/docs` and `/login`,
   and redirects unauthenticated `/` and `/organizations` requests to `/login`.
 - Official result reopening, generated fixture revisions, archived history,
@@ -36,13 +40,16 @@ production game-day use.
 
 ## Open release gates
 
-- A real browser Playwright/component harness is not installed in this
-  checkout, so authenticated desktop/mobile browser pilots are not verified.
+- The browser pilots currently use release-shaped fixtures intercepted at the
+  browser boundary. A full authenticated browser run against a live API and
+  the eight-team crossover plus direct double-elimination reset-final data is
+  still not verified end to end.
 - Production operations remain separate work: hosting, email delivery,
   monitoring, backups, restore drills, and game-day support procedures.
 
 ## Decision
 
 The code is suitable for a controlled, supervised pilot using the verified
-database workflows. Do not treat it as production-ready until the browser
-pilot is run and production operations are in place.
+database workflows and browser smoke coverage. Do not treat it as
+production-ready until the live-data browser pilot and production operations
+are in place.
