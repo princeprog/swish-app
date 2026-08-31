@@ -39,7 +39,7 @@ test("live pilot loads public data and both assigned staff workspaces", async ({
   await page.getByRole("tab", { name: "Bracket" }).click();
   await expect(page.getByText("Championship")).toBeVisible();
   await page.getByRole("tab", { name: "Teams & Rosters" }).click();
-  await expect(page.getByText("1 players").first()).toBeVisible();
+  await expect(page.getByText("1 player").first()).toBeVisible();
 
   await page.goto(
     `/organizations/${livePilot.organizationSlug}/scorekeeper/games/${livePilot.gameId}`,

@@ -344,7 +344,8 @@ function Teams({ divisions }: { divisions: PublicLeaguePortal["divisions"] }) {
                     {team.name}
                   </span>
                   <Badge variant="secondary">
-                    {team.players.length} players
+                    {team.players.length} player
+                    {team.players.length === 1 ? "" : "s"}
                   </Badge>
                 </summary>
                 <ol className="divide-y border-t px-4">
