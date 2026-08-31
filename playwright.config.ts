@@ -23,12 +23,12 @@ export default defineConfig({
   projects: [
     {
       name: "desktop",
-      testIgnore: "**/live.mvp.spec.ts",
+      testIgnore: "**/live.*.spec.ts",
       use: { ...devices["Desktop Chrome"] },
     },
     {
       name: "mobile",
-      testIgnore: "**/live.mvp.spec.ts",
+      testIgnore: "**/live.*.spec.ts",
       use: { ...devices["Pixel 7"] },
     },
     {
