@@ -72,7 +72,8 @@ import {
 import { getTimeoutControlDialog } from "@/lib/scorekeeper-timeout-controls";
 import { getGameReopenReasonError } from "@/lib/game-reopen";
 import { cn } from "@/lib/utils";
-import type { ScoringState } from "@/services/scoring.service";
+import { ScoringCorrectionHistory } from "@/components/organizations/scorekeeper/scoring-correction-history";
+import type { ScoringEvent, ScoringState } from "@/services/scoring.service";
 
 type ScorekeeperGameDetailScreenProps = {
   gameId: string;
@@ -505,8 +506,13 @@ function ConsoleMoreSheet({
   onCommand,
   onFullscreen,
   onReopen,
+  onRetryEvents,
+  onReverse,
   onTakeover,
   mutationsDisabled,
+  events,
+  eventsError,
+  eventsLoading,
   soundEnabled,
   state,
   toggleSound,
@@ -522,8 +528,16 @@ function ConsoleMoreSheet({
   ) => Promise<SendScoringCommandResult>;
   onFullscreen: () => void;
   onReopen: (reason: string) => Promise<SendScoringCommandResult>;
+  onRetryEvents: () => void;
+  onReverse: (
+    eventId: string,
+    reason?: string,
+  ) => Promise<SendScoringCommandResult>;
   onTakeover: () => void;
   mutationsDisabled: boolean;
+  events: ScoringEvent[];
+  eventsError: string | null;
+  eventsLoading: boolean;
   soundEnabled: boolean;
   state: ScoringState;
   toggleSound: () => void;
@@ -1007,6 +1021,22 @@ function ConsoleMoreSheet({
               them.
             </p>
           </section>
+
+          <div className="md:col-span-2">
+            <ScoringCorrectionHistory
+              awayTeamId={state.game.awayTeam.id}
+              awayTeamName={state.game.awayTeam.name}
+              disabled={mutationsDisabled || state.phase === "final"}
+              error={eventsError}
+              events={events}
+              homeTeamId={state.game.homeTeam.id}
+              homeTeamName={state.game.homeTeam.name}
+              isLoading={eventsLoading}
+              latestEventId={state.latestReversibleEvent?.id ?? null}
+              onRetry={onRetryEvents}
+              onReverse={onReverse}
+            />
+          </div>
         </div>
       </SheetContent>
     </Sheet>
@@ -1251,6 +1281,15 @@ export function ScorekeeperGameDetailScreen({
     sendCommand("event.reverse", {
       eventId: displayedState.latestReversibleEvent.id,
     });
+  }
+
+  function reverseEvent(eventId: string, reason?: string) {
+    const payload: Record<string, unknown> = { eventId };
+    if (reason?.trim()) {
+      payload.reason = reason.trim();
+    }
+
+    return sendCommand("event.reverse", payload);
   }
 
   async function enterFullscreen() {
@@ -1561,6 +1600,8 @@ export function ScorekeeperGameDetailScreen({
                   onCommand={sendCommand}
                   onFullscreen={() => void enterFullscreen()}
                   onReopen={reopenOfficialGame}
+                  onRetryEvents={() => void scoring.events.refetch()}
+                  onReverse={reverseEvent}
                   onTakeover={() => {
                     const reason = prompt("Reason for takeover");
                     if (reason) {
@@ -1571,6 +1612,13 @@ export function ScorekeeperGameDetailScreen({
                     }
                   }}
                   mutationsDisabled={mutationsDisabled}
+                  events={scoring.events.data ?? []}
+                  eventsError={
+                    scoring.events.isError
+                      ? "We couldn't load correction history. Try again."
+                      : null
+                  }
+                  eventsLoading={scoring.events.isLoading}
                   soundEnabled={soundEnabled}
                   state={displayedState}
                   toggleSound={() => setSoundEnabled((value) => !value)}

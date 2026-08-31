@@ -15,6 +15,7 @@ import {
   type ScoringCommandPayload,
   type ScoringCommandType,
   type ScoringControlResponse,
+  type ScoringEvent,
   type ScoringState,
 } from "@/services/scoring.service";
 
@@ -199,9 +200,26 @@ export function useScoringStateQuery(organizationId?: string, gameId?: string) {
   });
 }
 
+export function useScoringEventsQuery(
+  organizationId?: string,
+  gameId?: string,
+) {
+  return useQuery<ScoringEvent[]>({
+    enabled: Boolean(organizationId && gameId),
+    queryFn: () => scoringService.listEvents(organizationId!, gameId!),
+    queryKey: SCORING_QUERY_KEYS.events(
+      organizationId ?? "unknown",
+      gameId ?? "unknown",
+    ),
+    refetchInterval: 15000,
+    retry: false,
+  });
+}
+
 export function useLiveScoring(organizationId?: string, gameId?: string) {
   const queryClient = useQueryClient();
   const stateQuery = useScoringStateQuery(organizationId, gameId);
+  const eventsQuery = useScoringEventsQuery(organizationId, gameId);
   const refetchStateRef = React.useRef(stateQuery.refetch);
   const commandInFlightRef = React.useRef(false);
   const controlInFlightRef = React.useRef(false);
@@ -319,6 +337,9 @@ export function useLiveScoring(organizationId?: string, gameId?: string) {
         SCORING_QUERY_KEYS.state(organizationId!, gameId!),
         response.state,
       );
+      await queryClient.invalidateQueries({
+        queryKey: SCORING_QUERY_KEYS.events(organizationId!, gameId!),
+      });
     },
   });
 
@@ -474,6 +495,7 @@ export function useLiveScoring(organizationId?: string, gameId?: string) {
     isSendingCommand: commandMutation.isPending,
     local,
     offlineLockActive: !connectionAllowsMutations,
+    events: eventsQuery,
     query: stateQuery,
     sendCommand,
     takeoverControl: guardedTakeoverControl,
