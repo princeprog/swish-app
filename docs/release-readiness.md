@@ -18,15 +18,14 @@ production game-day use.
   reset final, Player of the Game, public leaders, and the 32-team double
   round-robin performance check.
 - Frontend typecheck, production build, pure component/data tests (83 passing,
-  1 intentionally skipped), and the high-severity production audit gate pass.
+  1 intentionally skipped), zero-warning lint, and the high-severity production
+  audit gate pass.
 - Official result reopening, generated fixture revisions, archived history,
   online-only scoring, statistic invalidation, and player archive permissions
   have focused regression coverage.
 
 ## Open release gates
 
-- Frontend lint exits successfully but still reports 29 warnings; the
-  zero-warning lint gate is not yet met.
 - A real browser Playwright/component harness is not installed in this
   checkout, so authenticated desktop/mobile browser pilots are not verified.
 - A dedicated multi-connection PostgreSQL concurrency/release harness and a
