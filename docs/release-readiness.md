@@ -9,8 +9,9 @@ production game-day use.
 ## Verified
 
 - API unit suite: 89 suites, 502 tests passing.
-- API e2e suite: 3 suites, 4 tests passing, including the authenticated HTTP
-  registration, season setup, and public-portal smoke flow.
+- API e2e suite: 3 suites, 5 tests passing, including the authenticated HTTP
+  registration, season setup, public-portal smoke flow, and a real HTTP
+  scorekeeper/statistician finalization pilot.
 - API TypeScript, lint, production build, and high-severity audit gates pass.
 - All 34 checked-in database migrations are applied in the development
   database.
@@ -43,7 +44,8 @@ production game-day use.
 - The browser pilots currently use release-shaped fixtures intercepted at the
   browser boundary. A full authenticated browser run against a live API and
   the eight-team crossover plus direct double-elimination reset-final data is
-  still not verified end to end.
+  still not verified end to end; the authenticated HTTP pilot covers the
+  online scoring/statistics lifecycle for a staged game.
 - Production operations remain separate work: hosting, email delivery,
   monitoring, backups, restore drills, and game-day support procedures.
 
