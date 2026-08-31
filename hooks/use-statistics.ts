@@ -85,6 +85,11 @@ export function useStatisticsConsole(organizationId?: string, gameId?: string) {
     },
     onSuccess: async () => query.refetch(),
   });
+  const resume = useMutation({
+    mutationFn: (reason: string) =>
+      statisticsService.resume(organizationId!, gameId!, reason),
+    onSuccess: async () => query.refetch(),
+  });
   const overrideReconciliation = useMutation({
     mutationFn: (reason: string) =>
       statisticsService.overrideReconciliation(
@@ -119,6 +124,7 @@ export function useStatisticsConsole(organizationId?: string, gameId?: string) {
     overrideReconciliation,
     query,
     record,
+    resume,
     submit,
     takeover,
   };

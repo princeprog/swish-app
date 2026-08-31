@@ -135,6 +135,12 @@ export const statisticsService = {
       { controlToken },
       { credentials: "include" },
     ),
+  resume: (organizationId: string, gameId: string, reason: string) =>
+    apiService.post(
+      `${endpoint(organizationId, gameId)}/resume`,
+      { reason },
+      { credentials: "include" },
+    ),
   overrideReconciliation: (
     organizationId: string,
     gameId: string,

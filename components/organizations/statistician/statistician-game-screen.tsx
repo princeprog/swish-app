@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { AppSidebar } from "@/components/app-sidebar";
 import { WorkspaceHeader } from "@/components/organizations/shared/workspace-header";
+import { StatSheetResumeDialog } from "@/components/organizations/statistician/stat-sheet-resume-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -317,6 +318,28 @@ export function StatisticianGameScreen({
             </div>
           </section>
 
+          {state.sheet.status === "submitted" && state.game.status !== "final" ? (
+            <Card className="border-amber-500/40">
+              <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-medium">The stat sheet is submitted</p>
+                  <p className="text-sm text-muted-foreground">
+                    Resume entry if a player statistic needs to be corrected
+                    before the official result is finalized.
+                  </p>
+                </div>
+                <StatSheetResumeDialog
+                  disabled={gameConsole.resume.isPending}
+                  isPending={gameConsole.resume.isPending}
+                  onResume={async (reason) => {
+                    await gameConsole.resume.mutateAsync(reason);
+                    toast.success("Stat entry resumed");
+                  }}
+                />
+              </CardContent>
+            </Card>
+          ) : null}
+
           <div className="grid gap-6 xl:grid-cols-2">
             {teams.map((team) => (
               <Card key={team.id}>
@@ -458,7 +481,11 @@ export function StatisticianGameScreen({
                         aria-label="Reverse statistic event"
                         size="icon-sm"
                         variant="ghost"
-                        disabled={!gameConsole.controlToken}
+                        disabled={
+                          !gameConsole.controlToken ||
+                          !["draft", "reopened"].includes(state.sheet.status) ||
+                          state.game.status === "final"
+                        }
                         onClick={() =>
                           gameConsole.record.mutate({
                             reversesEventId: event.id,
