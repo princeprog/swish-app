@@ -8,13 +8,7 @@ import { Button } from "@/components/ui/button"
 
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme()
-  const [mounted, setMounted] = React.useState(false)
-
-  React.useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  const isDark = mounted ? resolvedTheme !== "light" : true
+  const isDark = resolvedTheme !== "light"
 
   return (
     <Button

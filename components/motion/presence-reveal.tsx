@@ -16,6 +16,25 @@ type PresenceRevealProps = React.ComponentProps<"div"> & {
   variant?: PresenceRevealVariant
 }
 
+function subscribeToReducedMotion(onStoreChange: () => void) {
+  if (typeof window === "undefined") return () => undefined
+
+  const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)")
+  mediaQuery.addEventListener("change", onStoreChange)
+  return () => mediaQuery.removeEventListener("change", onStoreChange)
+}
+
+function getReducedMotionSnapshot() {
+  return (
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  )
+}
+
+function getServerReducedMotionSnapshot() {
+  return false
+}
+
 export function PresenceReveal({
   animateOnMount = true,
   asChild = false,
@@ -31,22 +50,14 @@ export function PresenceReveal({
   const [motionState, setMotionState] = React.useState<PresenceRevealState>(
     present && animateOnMount ? "enter" : "visible",
   )
-  const [reducedMotion, setReducedMotion] = React.useState(false)
-
-  React.useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)")
-    const updateReducedMotion = () => setReducedMotion(mediaQuery.matches)
-
-    updateReducedMotion()
-    mediaQuery.addEventListener("change", updateReducedMotion)
-
-    return () => mediaQuery.removeEventListener("change", updateReducedMotion)
-  }, [])
+  const reducedMotion = React.useSyncExternalStore(
+    subscribeToReducedMotion,
+    getReducedMotionSnapshot,
+    getServerReducedMotionSnapshot,
+  )
 
   React.useEffect(() => {
     if (present) {
-      setIsMounted(true)
-
       if (skipInitialAnimation.current) {
         skipInitialAnimation.current = false
         setMotionState("visible")
@@ -58,20 +69,24 @@ export function PresenceReveal({
     }
 
     if (reducedMotion) {
-      setIsMounted(false)
       return
     }
 
     if (isMounted) {
-      setMotionState("exit")
       const exitDuration = variant === "subtle" ? 180 : 260
+      const frameId = window.requestAnimationFrame(() =>
+        setMotionState("exit"),
+      )
       const timeoutId = window.setTimeout(() => setIsMounted(false), exitDuration)
 
-      return () => window.clearTimeout(timeoutId)
+      return () => {
+        window.cancelAnimationFrame(frameId)
+        window.clearTimeout(timeoutId)
+      }
     }
   }, [isMounted, present, reducedMotion, variant])
 
-  if (!isMounted) return null
+  if (!present && (reducedMotion || !isMounted)) return null
 
   const Comp = asChild ? Slot.Root : "div"
 
