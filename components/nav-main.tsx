@@ -31,28 +31,25 @@ export function NavMain({
   }[]
 }) {
   const pathname = usePathname()
-  const [openSections, setOpenSections] = React.useState<Record<string, boolean>>({})
-
-  React.useEffect(() => {
-    const nextOpenSections = items.reduce<Record<string, boolean>>((accumulator, item) => {
-      const hasActiveChild = item.items?.some((subItem) => pathname === subItem.url)
-      accumulator[item.title] = item.isActive || Boolean(hasActiveChild)
-      return accumulator
-    }, {})
-
-    setOpenSections((current) => {
-      if (Object.keys(current).length > 0) {
-        return current
-      }
-
-      return nextOpenSections
-    })
-  }, [items, pathname])
+  const defaultOpenSections = React.useMemo(
+    () =>
+      items.reduce<Record<string, boolean>>((accumulator, item) => {
+        const hasActiveChild = item.items?.some((subItem) => pathname === subItem.url)
+        accumulator[item.title] = item.isActive || Boolean(hasActiveChild)
+        return accumulator
+      }, {}),
+    [items, pathname],
+  )
+  const [sectionOverrides, setSectionOverrides] = React.useState<Record<string, boolean>>({})
+  const openSections = React.useMemo(
+    () => ({ ...defaultOpenSections, ...sectionOverrides }),
+    [defaultOpenSections, sectionOverrides],
+  )
 
   function toggleSection(title: string) {
-    setOpenSections((current) => ({
+    setSectionOverrides((current) => ({
       ...current,
-      [title]: !current[title],
+      [title]: !(title in current ? current[title] : Boolean(defaultOpenSections[title])),
     }))
   }
 
