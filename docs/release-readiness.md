@@ -16,6 +16,9 @@ production game-day use.
   database.
 - The disposable PostgreSQL migration release harness passes a full
   up → rollback-all → up → list cycle across all 34 migrations.
+- The two-connection PostgreSQL concurrency release harness passes row-lock,
+  active-control, and score/stat reversal uniqueness checks on an isolated
+  migrated database.
 - The database pilot covers the two-pool crossover, direct double-elimination
   reset final, Player of the Game, public leaders, and the 32-team double
   round-robin performance check.
@@ -32,9 +35,8 @@ production game-day use.
 
 - A real browser Playwright/component harness is not installed in this
   checkout, so authenticated desktop/mobile browser pilots are not verified.
-- A dedicated multi-connection PostgreSQL concurrency/release harness and a
-  populated-database full up/down/up migration rehearsal still need to run in
-  CI or a disposable release database.
+- A populated-database full up/down/up migration rehearsal still needs to run
+  in CI or a disposable release database.
 - Production operations remain separate work: hosting, email delivery,
   monitoring, backups, restore drills, and game-day support procedures.
 
