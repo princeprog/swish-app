@@ -14,6 +14,8 @@ production game-day use.
 - API TypeScript, lint, production build, and high-severity audit gates pass.
 - All 33 checked-in database migrations are applied in the development
   database.
+- The disposable PostgreSQL migration release harness passes a full
+  up → rollback-all → up → list cycle across all 33 migrations.
 - The database pilot covers the two-pool crossover, direct double-elimination
   reset final, Player of the Game, public leaders, and the 32-team double
   round-robin performance check.
