@@ -157,28 +157,31 @@ export function ManagerComplianceContent({
 
   React.useEffect(() => {
     if (!data) return;
-    setResponses((current) => {
-      const next = { ...current };
-      for (const requirement of data.requirements) {
-        if (
-          Object.prototype.hasOwnProperty.call(
-            next,
-            requirement.requirement_id,
-          )
-        ) {
-          continue;
+    const frameId = window.requestAnimationFrame(() => {
+      setResponses((current) => {
+        const next = { ...current };
+        for (const requirement of data.requirements) {
+          if (
+            Object.prototype.hasOwnProperty.call(
+              next,
+              requirement.requirement_id,
+            )
+          ) {
+            continue;
+          }
+          const saved = responseValue(requirement.response);
+          if (saved !== undefined) {
+            next[requirement.requirement_id] = saved;
+            continue;
+          }
+          if (requirement.files?.length) {
+            next[requirement.requirement_id] = { files: requirement.files };
+          }
         }
-        const saved = responseValue(requirement.response);
-        if (saved !== undefined) {
-          next[requirement.requirement_id] = saved;
-          continue;
-        }
-        if (requirement.files?.length) {
-          next[requirement.requirement_id] = { files: requirement.files };
-        }
-      }
-      return next;
+        return next;
+      });
     });
+    return () => window.cancelAnimationFrame(frameId);
   }, [data]);
 
   if (complianceQuery.isLoading) {

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { Eye, FileCheck2, Loader2, RefreshCw, ShieldAlert } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -129,11 +130,14 @@ export function DivisionComplianceReviewEvidence({
   const previewCache = React.useRef(new Map<string, CachedPreview>());
 
   React.useEffect(() => {
-    setSelectedFileId((current) =>
-      current && verifiedFiles.some((file) => file.id === current)
-        ? current
-        : verifiedFiles[0]?.id ?? null,
-    );
+    const frameId = window.requestAnimationFrame(() => {
+      setSelectedFileId((current) =>
+        current && verifiedFiles.some((file) => file.id === current)
+          ? current
+          : verifiedFiles[0]?.id ?? null,
+      );
+    });
+    return () => window.cancelAnimationFrame(frameId);
   }, [verifiedFileKey, verifiedFiles]);
 
   const selectedFile = verifiedFiles.find(
@@ -144,29 +148,40 @@ export function DivisionComplianceReviewEvidence({
     let cancelled = false;
 
     if (!selectedFile) {
-      setPreviewUrl(null);
-      setPreviewError(null);
-      setPreviewState("unavailable");
+      const frameId = window.requestAnimationFrame(() => {
+        if (cancelled) return;
+        setPreviewUrl(null);
+        setPreviewError(null);
+        setPreviewState("unavailable");
+      });
       return () => {
         cancelled = true;
+        window.cancelAnimationFrame(frameId);
       };
     }
 
     const cachedPreview = previewCache.current.get(selectedFile.id);
     if (cachedPreview && hasFreshExpiry(cachedPreview.expiresAt)) {
-      setPreviewUrl(cachedPreview.url);
-      setPreviewError(null);
-      setPreviewState(
-        previewKind(selectedFile) === "unsupported" ? "unsupported" : "ready",
-      );
+      const frameId = window.requestAnimationFrame(() => {
+        if (cancelled) return;
+        setPreviewUrl(cachedPreview.url);
+        setPreviewError(null);
+        setPreviewState(
+          previewKind(selectedFile) === "unsupported" ? "unsupported" : "ready",
+        );
+      });
       return () => {
         cancelled = true;
+        window.cancelAnimationFrame(frameId);
       };
     }
 
-    setPreviewState("loading");
-    setPreviewUrl(null);
-    setPreviewError(null);
+    const loadingFrameId = window.requestAnimationFrame(() => {
+      if (cancelled) return;
+      setPreviewState("loading");
+      setPreviewUrl(null);
+      setPreviewError(null);
+    });
 
     void complianceService
       .downloadUrl(organizationId, teamId, selectedFile.id)
@@ -186,6 +201,7 @@ export function DivisionComplianceReviewEvidence({
 
     return () => {
       cancelled = true;
+      window.cancelAnimationFrame(loadingFrameId);
     };
   }, [
     organizationId,
@@ -331,10 +347,13 @@ export function DivisionComplianceReviewEvidence({
                     />
                   ) : (
                     <div className="flex h-full min-h-80 items-center justify-center overflow-auto p-4 sm:min-h-[28rem]">
-                      <img
+                      <Image
                         alt={`Preview of ${fileName(selectedFile)}`}
                         className="max-h-full max-w-full object-contain"
                         src={previewUrl}
+                        width={1200}
+                        height={800}
+                        unoptimized
                         onError={() => {
                           setPreviewError(
                             "The preview could not be displayed. Try again.",

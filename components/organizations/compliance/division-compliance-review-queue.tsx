@@ -132,7 +132,8 @@ export function DivisionComplianceReviewQueue({
   const debouncedSearch = useDebouncedValue(search, 350);
 
   React.useEffect(() => {
-    setSearch(urlSearch);
+    const frameId = window.requestAnimationFrame(() => setSearch(urlSearch));
+    return () => window.cancelAnimationFrame(frameId);
   }, [urlSearch]);
 
   React.useEffect(() => {

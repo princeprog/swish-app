@@ -388,8 +388,11 @@ export function DivisionComplianceBuilder({
   );
 
   React.useEffect(() => {
-    setInstructions(settings?.instructions ?? "");
-    setDeadline(localDeadline(settings?.submission_deadline_at));
+    const frameId = window.requestAnimationFrame(() => {
+      setInstructions(settings?.instructions ?? "");
+      setDeadline(localDeadline(settings?.submission_deadline_at));
+    });
+    return () => window.cancelAnimationFrame(frameId);
   }, [settings?.instructions, settings?.submission_deadline_at]);
 
   async function saveSettings(event: React.FormEvent) {
