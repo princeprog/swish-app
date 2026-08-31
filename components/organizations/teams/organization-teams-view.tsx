@@ -834,7 +834,8 @@ export function OrganizationTeamsView({
   const totalTeams = teams.length
   const activeTeams = teams.filter((team) => team.status === "active").length
   const divisionsWithTeams = new Set(teams.map((team) => team.division_id)).size
-  const recentThreshold = Date.now() - 7 * 24 * 60 * 60 * 1000
+  const [now] = React.useState(() => Date.now())
+  const recentThreshold = now - 7 * 24 * 60 * 60 * 1000
   const recentlyUpdatedTeams = teams.filter(
     (team) => new Date(team.updated_at).getTime() >= recentThreshold,
   ).length

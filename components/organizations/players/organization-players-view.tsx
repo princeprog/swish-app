@@ -908,7 +908,8 @@ export function OrganizationPlayersView({
 
   const totalPlayers = players.length
   const activePlayers = players.filter((player) => player.status === "active").length
-  const recentThreshold = Date.now() - 7 * 24 * 60 * 60 * 1000
+  const [now] = React.useState(() => Date.now())
+  const recentThreshold = now - 7 * 24 * 60 * 60 * 1000
   const recentlyUpdatedPlayers = players.filter(
     (player) => new Date(player.updated_at).getTime() >= recentThreshold,
   ).length

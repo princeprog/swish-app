@@ -432,13 +432,13 @@ export function ManagerTeamOverview({
     leagueSeasonId: assignment.season.id,
     sortBy: "date",
   })
+  const [now] = React.useState(() => Date.now())
   const nextGame = React.useMemo(
     () =>
       [...(schedulesQuery.data ?? [])]
         .filter(
           (game) => {
             const startsAt = new Date(game.starts_at).getTime()
-            const now = Date.now()
             const recentLiveGame =
               game.status === "live" && startsAt >= now - 6 * 60 * 60 * 1000
 
@@ -454,7 +454,7 @@ export function ManagerTeamOverview({
           (left, right) =>
             new Date(left.starts_at).getTime() - new Date(right.starts_at).getTime(),
         )[0],
-    [schedulesQuery.data],
+    [now, schedulesQuery.data],
   )
 
   return (

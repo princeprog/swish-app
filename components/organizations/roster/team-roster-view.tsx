@@ -976,7 +976,8 @@ export function TeamRosterView({
 
   const activePlayers = rosterPlayers.filter((player) => player.status === "active").length
   const inactivePlayers = rosterPlayers.length - activePlayers
-  const recentThreshold = Date.now() - 7 * 24 * 60 * 60 * 1000
+  const [now] = React.useState(() => Date.now())
+  const recentThreshold = now - 7 * 24 * 60 * 60 * 1000
   const recentlyUpdatedPlayers = rosterPlayers.filter(
     (player) => new Date(player.updated_at).getTime() >= recentThreshold,
   ).length

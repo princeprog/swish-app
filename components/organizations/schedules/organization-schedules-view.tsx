@@ -353,7 +353,7 @@ function ScheduleDateTimePicker({
 }
 
 function ScheduleSummaryCards({ schedules }: { schedules: Schedule[] }) {
-  const now = Date.now();
+  const [now] = React.useState(() => Date.now());
   const upcomingGames = schedules.filter(
     (game) => new Date(game.starts_at).getTime() >= now,
   ).length;
