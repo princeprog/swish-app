@@ -47,7 +47,10 @@ import {
 
 export function SelectOrganizationScreen() {
   const organizationsQuery = useOrganizationsQuery();
-  const organizations = organizationsQuery.data ?? [];
+  const organizations = React.useMemo(
+    () => organizationsQuery.data ?? [],
+    [organizationsQuery.data],
+  );
   const [query, setQuery] = React.useState("");
   const [role, setRole] = React.useState<OrganizationRoleFilter>("all");
   const [sort, setSort] = React.useState<OrganizationSort>("recent");
