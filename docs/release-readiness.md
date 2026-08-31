@@ -22,6 +22,8 @@ production game-day use.
 - Frontend typecheck, production build, pure component/data tests (83 passing,
   1 intentionally skipped), zero-warning lint, and the high-severity production
   audit gate pass.
+- The built Next.js server smoke check returns 200 for `/docs` and `/login`,
+  and redirects unauthenticated `/` and `/organizations` requests to `/login`.
 - Official result reopening, generated fixture revisions, archived history,
   online-only scoring, statistic invalidation, and player archive permissions
   have focused regression coverage.
