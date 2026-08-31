@@ -6,11 +6,14 @@ const livePilot = {
   scorekeeperEmail: process.env.PLAYWRIGHT_LIVE_SCOREKEEPER_EMAIL,
   scorekeeperPassword: process.env.PLAYWRIGHT_LIVE_SCOREKEEPER_PASSWORD,
   seasonSlug: process.env.PLAYWRIGHT_LIVE_SEASON_SLUG,
+  statisticianEmail: process.env.PLAYWRIGHT_LIVE_STATISTICIAN_EMAIL,
+  statisticianPassword: process.env.PLAYWRIGHT_LIVE_STATISTICIAN_PASSWORD,
 };
 
 const hasLivePilot = Object.values(livePilot).every(Boolean);
 
-test("live pilot loads the public league and assigned scorekeeper game", async ({
+test("live pilot loads public data and both assigned staff workspaces", async ({
+  browser,
   page,
 }) => {
   test.skip(
@@ -32,9 +35,41 @@ test("live pilot loads the public league and assigned scorekeeper game", async (
   await expect(page.getByRole("tab", { name: "Bracket" })).toBeVisible();
   await expect(page.getByRole("tab", { name: "Leaders" })).toBeVisible();
 
+  await expect(page.getByText("A1 Live Team")).toBeVisible();
+  await page.getByRole("tab", { name: "Bracket" }).click();
+  await expect(page.getByText("Championship")).toBeVisible();
+  await page.getByRole("tab", { name: "Teams & Rosters" }).click();
+  await expect(page.getByText("1 players").first()).toBeVisible();
+
   await page.goto(
     `/organizations/${livePilot.organizationSlug}/scorekeeper/games/${livePilot.gameId}`,
   );
   await expect(page.getByText("Pregame review")).toBeVisible();
   await expect(page.getByText("Start Game")).toBeVisible();
+
+  const statisticianContext = await browser.newContext();
+  try {
+    const statisticianPage = await statisticianContext.newPage();
+    await statisticianPage.goto("/login");
+    await statisticianPage
+      .getByLabel("Your Email")
+      .fill(livePilot.statisticianEmail!);
+    await statisticianPage
+      .getByLabel("Password")
+      .fill(livePilot.statisticianPassword!);
+    await statisticianPage.getByRole("button", { name: "Login" }).click();
+    await expect(statisticianPage).toHaveURL(/\/organizations(?:\?.*)?$/);
+    await statisticianPage.goto(
+      `/organizations/${livePilot.organizationSlug}/statistician/games/${livePilot.gameId}`,
+    );
+    await expect(statisticianPage.getByText("Stat sheet")).toBeVisible();
+    await expect(
+      statisticianPage.getByRole("button", { name: "Claim control" }),
+    ).toBeVisible();
+    await expect(
+      statisticianPage.getByRole("button", { name: "Submit stat sheet" }),
+    ).toBeVisible();
+  } finally {
+    await statisticianContext.close();
+  }
 });

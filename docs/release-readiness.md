@@ -35,11 +35,19 @@ production game-day use.
   fixtures.
 - A separate `test:browser:live` project is available for an authenticated
   browser run against a running API. It takes the seeded organization, season,
-  game, and scorekeeper credentials through
+  game, scorekeeper credentials, and statistician credentials through
   `PLAYWRIGHT_LIVE_ORGANIZATION_SLUG`, `PLAYWRIGHT_LIVE_SEASON_SLUG`,
-  `PLAYWRIGHT_LIVE_GAME_ID`, `PLAYWRIGHT_LIVE_SCOREKEEPER_EMAIL`, and
-  `PLAYWRIGHT_LIVE_SCOREKEEPER_PASSWORD`; it does not alter the deterministic
+  `PLAYWRIGHT_LIVE_GAME_ID`, `PLAYWRIGHT_LIVE_SCOREKEEPER_EMAIL`,
+  `PLAYWRIGHT_LIVE_SCOREKEEPER_PASSWORD`,
+  `PLAYWRIGHT_LIVE_STATISTICIAN_EMAIL`, and
+  `PLAYWRIGHT_LIVE_STATISTICIAN_PASSWORD`; it does not alter the deterministic
   default smoke command.
+- On 2026-09-01, that live project passed against a disposable migrated
+  PostgreSQL database seeded with eight teams in two pools, generated
+  crossover playoff matchups, published rosters, and one scheduled game. The
+  browser verified public schedule/standings/bracket/leaders/team-roster data
+  plus both the assigned scorekeeper pregame and statistician stat-sheet
+  workspaces.
 - The built Next.js server smoke check returns 200 for `/docs` and `/login`,
   and redirects unauthenticated `/` and `/organizations` requests to `/login`.
 - Official result reopening, generated fixture revisions, archived history,
@@ -48,11 +56,11 @@ production game-day use.
 
 ## Open release gates
 
-- The browser pilots currently use release-shaped fixtures intercepted at the
-  browser boundary. A full authenticated browser run against a live API and
-  the eight-team crossover plus direct double-elimination reset-final data is
-  still not verified end to end; the authenticated HTTP pilot covers the
-  online scoring/statistics lifecycle for a staged game.
+- The full tournament scoring and advancement loop is not yet browser-driven:
+  the authenticated HTTP pilot covers online scoring/statistics finalization,
+  and the database pilot covers the eight-team crossover and direct
+  double-elimination reset-final simulations. The live browser check currently
+  verifies the seeded public and assigned-staff surfaces before game start.
 - Production operations remain separate work: hosting, email delivery,
   monitoring, backups, restore drills, and game-day support procedures.
 
