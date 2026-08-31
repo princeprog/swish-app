@@ -156,10 +156,13 @@ function TieDecision({ divisionId, organizationId, standings, teams }: { divisio
   const standingsRevision = standings.reduce((revision, row) => Math.max(revision, row.version), 0)
   const mutation = useRecordTieDecisionMutation(organizationId, divisionId)
   const [reason, setReason] = React.useState("")
-  const [ordered, setOrdered] = React.useState(unresolved.map((row) => row.team_id))
+  const unresolvedIds = unresolved.map((row) => row.team_id)
+  const unresolvedIdentity = `${firstTieKey ?? "legacy"}:${unresolvedIds.join("|")}`
+  const [orderedState, setOrderedState] = React.useState({ identity: unresolvedIdentity, ids: unresolvedIds })
+  const ordered = orderedState.identity === unresolvedIdentity ? orderedState.ids : unresolvedIds
   if (unresolved.length < 2) return null
   const poolId = unresolved[0].pool_id
-  function move(index: number, direction: -1 | 1) { const target = index + direction; if (target < 0 || target >= ordered.length) return; const next = [...ordered]; [next[index], next[target]] = [next[target], next[index]]; setOrdered(next) }
+  function move(index: number, direction: -1 | 1) { const target = index + direction; if (target < 0 || target >= ordered.length) return; const next = [...ordered]; [next[index], next[target]] = [next[target], next[index]]; setOrderedState({ identity: unresolvedIdentity, ids: next }) }
   return <Card className="border-amber-500/40"><CardHeader><CardTitle>Unresolved standings tie</CardTitle></CardHeader><CardContent className="space-y-4"><p className="text-sm text-muted-foreground">Confirm this tie group’s published order and explain the league decision. Qualification remains paused until it is resolved.</p><ol className="divide-y rounded-md border">{ordered.map((teamId, index) => <li key={teamId} className="flex items-center gap-2 px-3 py-2"><span className="flex-1 text-sm font-medium">{teams.find((team) => team.id === teamId)?.name ?? "Team"}</span><Button size="icon-sm" variant="ghost" disabled={index === 0} onClick={() => move(index, -1)}><ArrowUp /></Button><Button size="icon-sm" variant="ghost" disabled={index === ordered.length - 1} onClick={() => move(index, 1)}><ArrowDown /></Button></li>)}</ol><Textarea aria-label="Tie decision reason" placeholder="Explain how the league confirmed this order." value={reason} onChange={(event) => setReason(event.target.value)} /><Button disabled={reason.trim().length < 10 || mutation.isPending} onClick={async () => { try { await mutation.mutateAsync({ expectedStandingsRevision: standingsRevision, orderedTeamIds: ordered, poolId, reason, teamIds: unresolved.map((row) => row.team_id) }); toast.success("Tie decision published") } catch (error) { toast.error(getApiErrorMessage(error)) } }}>Publish decision</Button></CardContent></Card>
 }
 
