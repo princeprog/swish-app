@@ -73,6 +73,8 @@ export type CompetitionStanding = {
     value: number | string
   }>
   team_id: string
+  unresolved_tie_key: string | null
+  version: number
   win_percentage: string | number
   wins: number
 }
@@ -82,6 +84,7 @@ export type CompetitionWorkspace = {
   matchups: CompetitionMatchup[]
   pools: CompetitionPool[]
   standings: CompetitionStanding[]
+  standingsRevision: number
   tieDecisions: Array<{
     id: string
     ordered_team_ids: string[]
@@ -121,7 +124,7 @@ export const competitionService = {
   recordTieDecision: (
     organizationId: string,
     divisionId: string,
-    data: { orderedTeamIds: string[]; poolId: string; reason: string; teamIds: string[] },
+    data: { expectedStandingsRevision: number; orderedTeamIds: string[]; poolId: string; reason: string; teamIds: string[] },
   ) =>
     apiService.post(
       `${endpoint(organizationId, divisionId)}/tie-decisions`,

@@ -109,6 +109,7 @@ export function useRecordTieDecisionMutation(
   divisionId: string,
 ) {
   return useCompetitionMutation<{
+    expectedStandingsRevision: number
     orderedTeamIds: string[]
     poolId: string
     reason: string
