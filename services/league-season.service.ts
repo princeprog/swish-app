@@ -14,6 +14,7 @@ export type LeagueSeason = {
   status: string
   updated_at: string
   schedule_slot_duration_minutes: number
+  archived_at?: string | null
 }
 
 export type QualifyingFormat =
@@ -109,12 +110,19 @@ export const leagueSeasonService = {
         query: params,
       },
     ),
+  archive: (organizationId: string, leagueSeasonId: string) =>
+    apiService.post<LeagueSeason, Record<string, never>>(
+      API_ENDPOINTS.leagueSeasons.archive(organizationId, leagueSeasonId),
+      {},
+      { credentials: "include" },
+    ),
   remove: (organizationId: string, leagueSeasonId: string) =>
-    apiService.delete<void>(
-      `${API_ENDPOINTS.leagueSeasons.list(organizationId)}/${leagueSeasonId}`,
-      {
-        credentials: "include",
-      },
+    leagueSeasonService.archive(organizationId, leagueSeasonId),
+  restore: (organizationId: string, leagueSeasonId: string) =>
+    apiService.post<LeagueSeason, Record<string, never>>(
+      API_ENDPOINTS.leagueSeasons.restore(organizationId, leagueSeasonId),
+      {},
+      { credentials: "include" },
     ),
   update: (
     organizationId: string,

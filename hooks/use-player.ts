@@ -70,11 +70,11 @@ export function useUpdatePlayerMutation(organizationId: string) {
   })
 }
 
-export function useDeletePlayerMutation(organizationId: string) {
+export function useArchivePlayerMutation(organizationId: string) {
   const queryClient = useQueryClient()
 
-  return useMutation<void, unknown, string>({
-    mutationFn: (playerId) => playerService.remove(organizationId, playerId),
+  return useMutation<Player, unknown, string>({
+    mutationFn: (playerId) => playerService.archive(organizationId, playerId),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({

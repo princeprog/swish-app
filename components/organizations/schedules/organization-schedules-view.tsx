@@ -20,7 +20,7 @@ import {
   RotateCcw,
   Search,
   Shield,
-  Trash2,
+  Archive,
   UserRoundCheck,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -87,7 +87,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { getApiErrorMessage } from "@/hooks/use-auth";
 import {
   useCreateScheduleMutation,
-  useDeleteScheduleMutation,
+  useArchiveScheduleMutation,
   useFinalizeScheduleGameMutation,
   useSchedulesQuery,
   useScorekeepersQuery,
@@ -674,8 +674,8 @@ function ScheduleActionsPopover({
                         onDelete();
                       }}
                     >
-                      <Trash2 className="size-4" />
-                      Delete game
+                      <Archive className="size-4" />
+                      Archive game
                     </Button>
                   </>
                 )}
@@ -1677,7 +1677,7 @@ function EditScheduleModal({
   );
 }
 
-function DeleteScheduleModal({
+function ArchiveScheduleModal({
   game,
   onClose,
   organizationId,
@@ -1686,12 +1686,14 @@ function DeleteScheduleModal({
   onClose: () => void;
   organizationId: string;
 }) {
-  const deleteScheduleMutation = useDeleteScheduleMutation(organizationId);
+  const archiveScheduleMutation = useArchiveScheduleMutation(organizationId);
 
-  async function handleDelete() {
+  async function handleArchive() {
     try {
-      await deleteScheduleMutation.mutateAsync(game.id);
-      toast.success(`Deleted ${game.home_team_name} vs ${game.away_team_name}`);
+      await archiveScheduleMutation.mutateAsync(game.id);
+      toast.success(
+        `Archived ${game.home_team_name} vs ${game.away_team_name}. The game remains in history.`,
+      );
       onClose();
     } catch (error) {
       toast.error(getApiErrorMessage(error));
@@ -1702,19 +1704,20 @@ function DeleteScheduleModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4 py-8 backdrop-blur-sm">
       <Card className="w-full max-w-lg border border-border/70 bg-card shadow-2xl">
         <CardHeader>
-          <CardTitle>Delete game</CardTitle>
+          <CardTitle>Archive game</CardTitle>
           <CardDescription>
-            You are about to delete{" "}
+            Archive{" "}
             <span className="font-medium">
               {game.home_team_name} vs {game.away_team_name}
             </span>
-            . This action cannot be undone.
+            . The game remains in history and can be restored when it has not
+            started.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
-          {deleteScheduleMutation.isError ? (
+          {archiveScheduleMutation.isError ? (
             <FieldError>
-              {getApiErrorMessage(deleteScheduleMutation.error)}
+              {getApiErrorMessage(archiveScheduleMutation.error)}
             </FieldError>
           ) : null}
 
@@ -1725,18 +1728,18 @@ function DeleteScheduleModal({
             <Button
               type="button"
               variant="destructive"
-              disabled={deleteScheduleMutation.isPending}
-              onClick={handleDelete}
+              disabled={archiveScheduleMutation.isPending}
+              onClick={handleArchive}
             >
-              {deleteScheduleMutation.isPending ? (
+              {archiveScheduleMutation.isPending ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />
-                  Deleting
+                  Archiving
                 </>
               ) : (
                 <>
-                  <Trash2 className="size-4" />
-                  Delete game
+                  <Archive className="size-4" />
+                  Archive game
                 </>
               )}
             </Button>
@@ -2645,7 +2648,7 @@ export function OrganizationSchedulesView({
       ) : null}
 
       {gameToDelete ? (
-        <DeleteScheduleModal
+        <ArchiveScheduleModal
           game={gameToDelete}
           organizationId={organization.id}
           onClose={() => setGameToDelete(null)}

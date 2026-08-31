@@ -14,7 +14,7 @@ import {
   Plus,
   Search,
   Shield,
-  Trash2,
+  Archive,
   Users2,
 } from "lucide-react"
 import { toast } from "sonner"
@@ -82,7 +82,7 @@ import {
 } from "@/lib/team-action-permissions"
 import {
   useCreateTeamMutation,
-  useDeleteTeamMutation,
+  useArchiveTeamMutation,
   useUpdateTeamMutation,
 } from "@/hooks/use-team"
 import type { Division } from "@/services/division.service"
@@ -249,8 +249,8 @@ function TeamActionsPopover({
                       onDelete()
                     }}
                   >
-                    <Trash2 className="size-4" />
-                    Delete team
+                    <Archive className="size-4" />
+                    Archive team
                   </Button>
                 ) : null}
               </div>
@@ -485,7 +485,7 @@ function TeamFormModal({
   )
 }
 
-function DeleteTeamModal({
+function ArchiveTeamModal({
   errorMessage,
   onClose,
   onDelete,
@@ -502,10 +502,10 @@ function DeleteTeamModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4 py-8 backdrop-blur-sm">
       <Card className="w-full max-w-lg border border-border/70 bg-card shadow-2xl">
         <CardHeader>
-          <CardTitle>Delete team</CardTitle>
+          <CardTitle>Archive team</CardTitle>
           <CardDescription>
-            You are about to delete <span className="font-medium">{team.name}</span>.
-            This action cannot be undone.
+            Archive <span className="font-medium">{team.name}</span>. This keeps
+            the team and its game history available and can be restored later.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
@@ -525,12 +525,12 @@ function DeleteTeamModal({
               {pending ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />
-                  Deleting
+                  Archiving
                 </>
               ) : (
                 <>
-                  <Trash2 className="size-4" />
-                  Delete team
+                  <Archive className="size-4" />
+                  Archive team
                 </>
               )}
             </Button>
@@ -806,7 +806,7 @@ export function OrganizationTeamsView({
 }) {
   const createTeamMutation = useCreateTeamMutation(organization.id)
   const updateTeamMutation = useUpdateTeamMutation(organization.id)
-  const deleteTeamMutation = useDeleteTeamMutation(organization.id)
+  const archiveTeamMutation = useArchiveTeamMutation(organization.id)
   const [createModalOpen, setCreateModalOpen] = React.useState(false)
   const [teamToDelete, setTeamToDelete] = React.useState<Team | null>(null)
   const [teamToEdit, setTeamToEdit] = React.useState<Team | null>(null)
@@ -890,8 +890,8 @@ export function OrganizationTeamsView({
     if (!teamToDelete) return
 
     try {
-      await deleteTeamMutation.mutateAsync(teamToDelete.id)
-      toast.success(`Deleted ${teamToDelete.name}`)
+      await archiveTeamMutation.mutateAsync(teamToDelete.id)
+      toast.success(`Archived ${teamToDelete.name}. It remains available in history.`)
       setTeamToDelete(null)
     } catch (error) {
       toast.error(getApiErrorMessage(error))
@@ -1071,11 +1071,11 @@ export function OrganizationTeamsView({
       ) : null}
 
       {teamToDelete && canDeleteTeams ? (
-        <DeleteTeamModal
+        <ArchiveTeamModal
           errorMessage={
-            deleteTeamMutation.isError ? getApiErrorMessage(deleteTeamMutation.error) : null
+            archiveTeamMutation.isError ? getApiErrorMessage(archiveTeamMutation.error) : null
           }
-          pending={deleteTeamMutation.isPending}
+          pending={archiveTeamMutation.isPending}
           team={teamToDelete}
           onClose={() => setTeamToDelete(null)}
           onDelete={handleDeleteTeam}

@@ -60,11 +60,11 @@ export function useUpdateTeamMutation(organizationId: string) {
   })
 }
 
-export function useDeleteTeamMutation(organizationId: string) {
+export function useArchiveTeamMutation(organizationId: string) {
   const queryClient = useQueryClient()
 
-  return useMutation<void, unknown, string>({
-    mutationFn: (teamId) => teamService.remove(organizationId, teamId),
+  return useMutation<Team, unknown, string>({
+    mutationFn: (teamId) => teamService.archive(organizationId, teamId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: TEAM_QUERY_KEYS.list(organizationId),

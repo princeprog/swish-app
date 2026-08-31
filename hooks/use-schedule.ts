@@ -103,12 +103,12 @@ export function useUpdateScheduleMutation(organizationId: string) {
   });
 }
 
-export function useDeleteScheduleMutation(organizationId: string) {
+export function useArchiveScheduleMutation(organizationId: string) {
   const queryClient = useQueryClient();
 
-  return useMutation<void, unknown, string>({
+  return useMutation<Schedule, unknown, string>({
     mutationFn: (scheduleId) =>
-      scheduleService.remove(organizationId, scheduleId),
+      scheduleService.archive(organizationId, scheduleId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: SCHEDULE_QUERY_KEYS.all(organizationId),

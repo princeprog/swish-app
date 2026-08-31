@@ -15,7 +15,7 @@ import {
   Plus,
   Shield,
   Send,
-  Trash2,
+  Archive,
   Users2,
   X,
 } from "lucide-react"
@@ -77,7 +77,7 @@ import { cn } from "@/lib/utils"
 import { getApiErrorMessage } from "@/hooks/use-auth"
 import {
   useCreatePlayerMutation,
-  useDeletePlayerMutation,
+  useArchivePlayerMutation,
   useUpdatePlayerMutation,
 } from "@/hooks/use-player"
 import {
@@ -241,8 +241,8 @@ function RosterPlayerActionsPopover({
                     onDelete()
                   }}
                 >
-                  <Trash2 className="size-4" />
-                  Remove player
+                  <Archive className="size-4" />
+                  Archive player
                 </Button>
               </div>
             </div>,
@@ -663,7 +663,7 @@ function formatRosterStatus(status: string) {
   return "Draft"
 }
 
-function DeleteRosterPlayerModal({
+function ArchiveRosterPlayerModal({
   errorMessage,
   onClose,
   onDelete,
@@ -682,10 +682,11 @@ function DeleteRosterPlayerModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4 py-8 backdrop-blur-sm">
       <Card className="w-full max-w-lg border border-border/70 bg-card shadow-2xl">
         <CardHeader>
-          <CardTitle>Remove player from roster</CardTitle>
+          <CardTitle>Archive player</CardTitle>
           <CardDescription>
-            You are about to delete <span className="font-medium">{player.name}</span> from {teamName}.
-            This action cannot be undone.
+            Archive <span className="font-medium">{player.name}</span> from
+            {" "}{teamName}. The player leaves active lists while game history
+            is preserved and can be restored later.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
@@ -703,12 +704,12 @@ function DeleteRosterPlayerModal({
               {pending ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />
-                  Removing
+                  Archiving
                 </>
               ) : (
                 <>
-                  <Trash2 className="size-4" />
-                  Remove player
+                  <Archive className="size-4" />
+                  Archive player
                 </>
               )}
             </Button>
@@ -951,7 +952,7 @@ export function TeamRosterView({
 }) {
   const createPlayerMutation = useCreatePlayerMutation(organization.id)
   const updatePlayerMutation = useUpdatePlayerMutation(organization.id)
-  const deletePlayerMutation = useDeletePlayerMutation(organization.id)
+  const archivePlayerMutation = useArchivePlayerMutation(organization.id)
   const submitRosterMutation = useSubmitRosterMutation(organization.id, team.id)
   const approveRosterMutation = useApproveRosterMutation(organization.id, team.id)
   const returnRosterMutation = useReturnRosterMutation(organization.id, team.id)
@@ -1086,8 +1087,8 @@ export function TeamRosterView({
     if (!playerToDelete) return
 
     try {
-      await deletePlayerMutation.mutateAsync(playerToDelete.id)
-      toast.success(`Removed ${playerToDelete.name}`)
+      await archivePlayerMutation.mutateAsync(playerToDelete.id)
+      toast.success(`Archived ${playerToDelete.name}. Game history is preserved.`)
       setPlayerToDelete(null)
     } catch (error) {
       toast.error(getApiErrorMessage(error))
@@ -1336,13 +1337,13 @@ export function TeamRosterView({
       ) : null}
 
       {playerToDelete && canEditPlayers ? (
-        <DeleteRosterPlayerModal
+        <ArchiveRosterPlayerModal
           errorMessage={
-            deletePlayerMutation.isError
-              ? getApiErrorMessage(deletePlayerMutation.error)
+            archivePlayerMutation.isError
+              ? getApiErrorMessage(archivePlayerMutation.error)
               : null
           }
-          pending={deletePlayerMutation.isPending}
+          pending={archivePlayerMutation.isPending}
           player={playerToDelete}
           teamName={team.name}
           onClose={() => setPlayerToDelete(null)}

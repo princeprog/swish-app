@@ -10,6 +10,7 @@ export type Division = {
   slug: string
   status: string
   updated_at: string
+  archived_at?: string | null
 }
 
 export type CreateDivisionPayload = {
@@ -35,12 +36,19 @@ export const divisionService = {
       credentials: "include",
       query: params,
     }),
+  archive: (organizationId: string, divisionId: string) =>
+    apiService.post<Division, Record<string, never>>(
+      API_ENDPOINTS.divisions.archive(organizationId, divisionId),
+      {},
+      { credentials: "include" },
+    ),
   remove: (organizationId: string, divisionId: string) =>
-    apiService.delete<void>(
-      `${API_ENDPOINTS.divisions.list(organizationId)}/${divisionId}`,
-      {
-        credentials: "include",
-      },
+    divisionService.archive(organizationId, divisionId),
+  restore: (organizationId: string, divisionId: string) =>
+    apiService.post<Division, Record<string, never>>(
+      API_ENDPOINTS.divisions.restore(organizationId, divisionId),
+      {},
+      { credentials: "include" },
     ),
   update: (
     organizationId: string,

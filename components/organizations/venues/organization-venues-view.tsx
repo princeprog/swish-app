@@ -8,7 +8,7 @@ import {
   MoreHorizontal,
   PencilLine,
   Plus,
-  Trash2,
+  Archive,
   X,
 } from "lucide-react"
 import { toast } from "sonner"
@@ -59,7 +59,7 @@ import {
 import { getApiErrorMessage } from "@/hooks/use-auth"
 import {
   useCreateVenueMutation,
-  useDeleteVenueMutation,
+  useArchiveVenueMutation,
   useUpdateVenueMutation,
 } from "@/hooks/use-venue"
 import type { LeagueSeason } from "@/services/league-season.service"
@@ -181,8 +181,8 @@ function VenueActionsPopover({
                     onDelete()
                   }}
                 >
-                  <Trash2 className="size-4" />
-                  Delete venue
+                  <Archive className="size-4" />
+                  Archive venue
                 </Button>
               </div>
             </div>,
@@ -398,7 +398,7 @@ function VenueFormModal({
   )
 }
 
-function DeleteVenueModal({
+function ArchiveVenueModal({
   errorMessage,
   onClose,
   onDelete,
@@ -415,10 +415,11 @@ function DeleteVenueModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4 py-8 backdrop-blur-sm">
       <Card className="w-full max-w-lg border border-border/70 bg-card shadow-2xl">
         <CardHeader>
-          <CardTitle>Delete venue</CardTitle>
+          <CardTitle>Archive venue</CardTitle>
           <CardDescription>
-            You are about to delete <span className="font-medium">{venue.name}</span>.
-            This action cannot be undone.
+            Archive <span className="font-medium">{venue.name}</span>. This
+            keeps scheduled and completed game history available and can be
+            restored later.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
@@ -436,12 +437,12 @@ function DeleteVenueModal({
               {pending ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />
-                  Deleting
+                  Archiving
                 </>
               ) : (
                 <>
-                  <Trash2 className="size-4" />
-                  Delete venue
+                  <Archive className="size-4" />
+                  Archive venue
                 </>
               )}
             </Button>
@@ -572,7 +573,7 @@ export function OrganizationVenuesView({
 }) {
   const createVenueMutation = useCreateVenueMutation(organization.id)
   const updateVenueMutation = useUpdateVenueMutation(organization.id)
-  const deleteVenueMutation = useDeleteVenueMutation(organization.id)
+  const archiveVenueMutation = useArchiveVenueMutation(organization.id)
   const [createModalOpen, setCreateModalOpen] = React.useState(false)
   const [venueToDelete, setVenueToDelete] = React.useState<Venue | null>(null)
   const [venueToEdit, setVenueToEdit] = React.useState<Venue | null>(null)
@@ -622,8 +623,8 @@ export function OrganizationVenuesView({
   async function handleDeleteVenue() {
     if (!venueToDelete) return
     try {
-      await deleteVenueMutation.mutateAsync(venueToDelete.id)
-      toast.success(`Deleted ${venueToDelete.name}`)
+      await archiveVenueMutation.mutateAsync(venueToDelete.id)
+      toast.success(`Archived ${venueToDelete.name}. It remains available in history.`)
       setVenueToDelete(null)
     } catch (error) {
       toast.error(getApiErrorMessage(error))
@@ -727,11 +728,11 @@ export function OrganizationVenuesView({
       ) : null}
 
       {venueToDelete ? (
-        <DeleteVenueModal
+        <ArchiveVenueModal
           errorMessage={
-            deleteVenueMutation.isError ? getApiErrorMessage(deleteVenueMutation.error) : null
+            archiveVenueMutation.isError ? getApiErrorMessage(archiveVenueMutation.error) : null
           }
-          pending={deleteVenueMutation.isPending}
+          pending={archiveVenueMutation.isPending}
           venue={venueToDelete}
           onClose={() => setVenueToDelete(null)}
           onDelete={handleDeleteVenue}

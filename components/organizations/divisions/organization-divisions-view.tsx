@@ -9,7 +9,7 @@ import {
   MoreHorizontal,
   PencilLine,
   Plus,
-  Trash2,
+  Archive,
   X,
   ShieldCheck,
 } from "lucide-react";
@@ -64,7 +64,7 @@ import {
 import { getApiErrorMessage } from "@/hooks/use-auth";
 import {
   useCreateDivisionMutation,
-  useDeleteDivisionMutation,
+  useArchiveDivisionMutation,
   useUpdateDivisionMutation,
 } from "@/hooks/use-division";
 import type { Division } from "@/services/division.service";
@@ -217,8 +217,8 @@ function DivisionActionsPopover({
                     onDelete();
                   }}
                 >
-                  <Trash2 className="size-4" />
-                  Delete division
+                  <Archive className="size-4" />
+                  Archive division
                 </Button>
               </div>
             </div>,
@@ -423,7 +423,7 @@ function EditDivisionModal({
   );
 }
 
-function DeleteDivisionModal({
+function ArchiveDivisionModal({
   division,
   onClose,
   organizationId,
@@ -432,12 +432,12 @@ function DeleteDivisionModal({
   onClose: () => void;
   organizationId: string;
 }) {
-  const deleteDivisionMutation = useDeleteDivisionMutation(organizationId);
+  const archiveDivisionMutation = useArchiveDivisionMutation(organizationId);
 
-  async function handleDelete() {
+  async function handleArchive() {
     try {
-      await deleteDivisionMutation.mutateAsync(division.id);
-      toast.success(`Deleted ${division.name}`);
+      await archiveDivisionMutation.mutateAsync(division.id);
+      toast.success(`Archived ${division.name}. It remains available in history.`);
       onClose();
     } catch (error) {
       toast.error(getApiErrorMessage(error));
@@ -448,17 +448,17 @@ function DeleteDivisionModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4 py-8 backdrop-blur-sm">
       <Card className="w-full max-w-lg border border-border/70 bg-card shadow-2xl">
         <CardHeader>
-          <CardTitle>Delete division</CardTitle>
+          <CardTitle>Archive division</CardTitle>
           <CardDescription>
-            You are about to delete{" "}
+            Archive{" "}
             <span className="font-medium">{division.name}</span>. This action
-            cannot be undone.
+            keeps its schedule and results in history and can be restored later.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
-          {deleteDivisionMutation.isError ? (
+          {archiveDivisionMutation.isError ? (
             <FieldError>
-              {getApiErrorMessage(deleteDivisionMutation.error)}
+              {getApiErrorMessage(archiveDivisionMutation.error)}
             </FieldError>
           ) : null}
 
@@ -469,18 +469,18 @@ function DeleteDivisionModal({
             <Button
               type="button"
               variant="destructive"
-              disabled={deleteDivisionMutation.isPending}
-              onClick={handleDelete}
+              disabled={archiveDivisionMutation.isPending}
+              onClick={handleArchive}
             >
-              {deleteDivisionMutation.isPending ? (
+              {archiveDivisionMutation.isPending ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />
-                  Deleting
+                  Archiving
                 </>
               ) : (
                 <>
-                  <Trash2 className="size-4" />
-                  Delete division
+                  <Archive className="size-4" />
+                  Archive division
                 </>
               )}
             </Button>
@@ -919,7 +919,7 @@ export function OrganizationDivisionsView({
       ) : null}
 
       {divisionToDelete ? (
-        <DeleteDivisionModal
+        <ArchiveDivisionModal
           division={divisionToDelete}
           organizationId={organization.id}
           onClose={() => setDivisionToDelete(null)}

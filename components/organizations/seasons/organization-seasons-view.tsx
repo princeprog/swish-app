@@ -7,7 +7,7 @@ import {
   Loader2,
   MoreHorizontal,
   PencilLine,
-  Trash2,
+  Archive,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -48,7 +48,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getApiErrorMessage } from "@/hooks/use-auth";
-import { useDeleteLeagueSeasonMutation } from "@/hooks/use-league-season";
+import { useArchiveLeagueSeasonMutation } from "@/hooks/use-league-season";
 import type { Organization } from "@/services/organization.service";
 import type { LeagueSeason } from "@/services/league-season.service";
 import type { PageSizeOption, PaginationMeta } from "@/services/pagination";
@@ -69,7 +69,7 @@ function statusTone(status: string) {
 
   return "border-amber-500/20 bg-amber-500/10 text-amber-300";
 }
-function SeasonDeleteModal({
+function SeasonArchiveModal({
   onClose,
   organizationId,
   season,
@@ -78,13 +78,13 @@ function SeasonDeleteModal({
   organizationId: string;
   season: LeagueSeason;
 }) {
-  const deleteLeagueSeasonMutation =
-    useDeleteLeagueSeasonMutation(organizationId);
+  const archiveLeagueSeasonMutation =
+    useArchiveLeagueSeasonMutation(organizationId);
 
-  async function handleDelete() {
+  async function handleArchive() {
     try {
-      await deleteLeagueSeasonMutation.mutateAsync(season.id);
-      toast.success(`Deleted ${season.name}`);
+      await archiveLeagueSeasonMutation.mutateAsync(season.id);
+      toast.success(`Archived ${season.name}. It remains available in history.`);
       onClose();
     } catch (error) {
       toast.error(getApiErrorMessage(error));
@@ -95,17 +95,17 @@ function SeasonDeleteModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4 py-8 backdrop-blur-sm">
       <Card className="w-full max-w-lg border border-border/70 bg-card shadow-2xl">
         <CardHeader>
-          <CardTitle>Delete season</CardTitle>
+          <CardTitle>Archive season</CardTitle>
           <CardDescription>
-            You are about to delete{" "}
+            Archive{" "}
             <span className="font-medium">{season.name}</span>. This action
-            cannot be undone.
+            keeps its schedule and results in history and can be restored later.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
-          {deleteLeagueSeasonMutation.isError ? (
+          {archiveLeagueSeasonMutation.isError ? (
             <FieldError>
-              {getApiErrorMessage(deleteLeagueSeasonMutation.error)}
+              {getApiErrorMessage(archiveLeagueSeasonMutation.error)}
             </FieldError>
           ) : null}
 
@@ -116,18 +116,18 @@ function SeasonDeleteModal({
             <Button
               type="button"
               variant="destructive"
-              disabled={deleteLeagueSeasonMutation.isPending}
-              onClick={handleDelete}
+              disabled={archiveLeagueSeasonMutation.isPending}
+              onClick={handleArchive}
             >
-              {deleteLeagueSeasonMutation.isPending ? (
+              {archiveLeagueSeasonMutation.isPending ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />
-                  Deleting
+                  Archiving
                 </>
               ) : (
                 <>
-                  <Trash2 className="size-4" />
-                  Delete season
+                  <Archive className="size-4" />
+                  Archive season
                 </>
               )}
             </Button>
@@ -251,8 +251,8 @@ function SeasonActionsPopover({
                     onDelete();
                   }}
                 >
-                  <Trash2 className="size-4" />
-                  Delete season
+                  <Archive className="size-4" />
+                  Archive season
                 </Button>
               </div>
             </div>,
@@ -476,7 +476,7 @@ export function OrganizationSeasonsView({
       ) : null}
 
       {seasonToDelete ? (
-        <SeasonDeleteModal
+        <SeasonArchiveModal
           organizationId={organization.id}
           season={seasonToDelete}
           onClose={() => setSeasonToDelete(null)}

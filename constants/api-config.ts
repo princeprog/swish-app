@@ -67,32 +67,48 @@ export const API_ENDPOINTS = {
       `/organizations/${organizationId}/members/${memberId}`,
   },
   leagueSeasons: {
+    archive: (organizationId: string, leagueSeasonId: string) =>
+      `/organizations/${organizationId}/league-seasons/${leagueSeasonId}/archive`,
     create: (organizationId: string) =>
       `/organizations/${organizationId}/league-seasons`,
     list: (organizationId: string) =>
       `/organizations/${organizationId}/league-seasons`,
+    restore: (organizationId: string, leagueSeasonId: string) =>
+      `/organizations/${organizationId}/league-seasons/${leagueSeasonId}/restore`,
   },
   divisions: {
+    archive: (organizationId: string, divisionId: string) =>
+      `/organizations/${organizationId}/divisions/${divisionId}/archive`,
     create: (organizationId: string) =>
       `/organizations/${organizationId}/divisions`,
     list: (organizationId: string) =>
       `/organizations/${organizationId}/divisions`,
+    restore: (organizationId: string, divisionId: string) =>
+      `/organizations/${organizationId}/divisions/${divisionId}/restore`,
   },
   teams: {
+    archive: (organizationId: string, teamId: string) =>
+      `/organizations/${organizationId}/teams/${teamId}/archive`,
     create: (organizationId: string) =>
       `/organizations/${organizationId}/teams`,
     list: (organizationId: string) =>
       `/organizations/${organizationId}/teams`,
+    restore: (organizationId: string, teamId: string) =>
+      `/organizations/${organizationId}/teams/${teamId}/restore`,
   },
   teamManagerWorkspace: {
     get: (organizationId: string) =>
       `/organizations/${organizationId}/team-manager-workspace`,
   },
   players: {
+    archive: (organizationId: string, playerId: string) =>
+      `/organizations/${organizationId}/players/${playerId}/archive`,
     create: (organizationId: string) =>
       `/organizations/${organizationId}/players`,
     list: (organizationId: string) =>
       `/organizations/${organizationId}/players`,
+    restore: (organizationId: string, playerId: string) =>
+      `/organizations/${organizationId}/players/${playerId}/restore`,
   },
   rosters: {
     approveTeam: (organizationId: string, teamId: string) =>
@@ -115,12 +131,18 @@ export const API_ENDPOINTS = {
       `/organizations/${organizationId}/teams/${teamId}/roster`,
   },
   venues: {
+    archive: (organizationId: string, venueId: string) =>
+      `/organizations/${organizationId}/venues/${venueId}/archive`,
     create: (organizationId: string) =>
       `/organizations/${organizationId}/venues`,
     list: (organizationId: string) =>
       `/organizations/${organizationId}/venues`,
+    restore: (organizationId: string, venueId: string) =>
+      `/organizations/${organizationId}/venues/${venueId}/restore`,
   },
   schedules: {
+    archive: (organizationId: string, gameId: string) =>
+      `/organizations/${organizationId}/games/${gameId}/archive`,
     create: (organizationId: string) =>
       `/organizations/${organizationId}/games`,
     finalize: (organizationId: string, gameId: string) =>
@@ -131,6 +153,8 @@ export const API_ENDPOINTS = {
       `/organizations/${organizationId}/games/${gameId}/scorekeeper`,
     scorekeepers: (organizationId: string) =>
       `/organizations/${organizationId}/games/scorekeepers`,
+    restore: (organizationId: string, gameId: string) =>
+      `/organizations/${organizationId}/games/${gameId}/restore`,
   },
   standings: {
     list: (organizationId: string) =>

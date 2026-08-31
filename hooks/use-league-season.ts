@@ -63,12 +63,12 @@ export function useUpdateLeagueSeasonMutation(organizationId: string) {
   })
 }
 
-export function useDeleteLeagueSeasonMutation(organizationId: string) {
+export function useArchiveLeagueSeasonMutation(organizationId: string) {
   const queryClient = useQueryClient()
 
-  return useMutation<void, unknown, string>({
+  return useMutation<LeagueSeason, unknown, string>({
     mutationFn: (leagueSeasonId) =>
-      leagueSeasonService.remove(organizationId, leagueSeasonId),
+      leagueSeasonService.archive(organizationId, leagueSeasonId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: LEAGUE_SEASON_QUERY_KEYS.list(organizationId),

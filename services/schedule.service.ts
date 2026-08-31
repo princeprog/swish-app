@@ -33,6 +33,7 @@ export type Schedule = {
   venue_id: string;
   venue_name: string;
   venue_slug: string;
+  archived_at?: string | null;
 };
 
 export type CreateSchedulePayload = {
@@ -126,12 +127,19 @@ export const scheduleService = {
         credentials: "include",
       },
     ),
+  archive: (organizationId: string, scheduleId: string) =>
+    apiService.post<Schedule, Record<string, never>>(
+      API_ENDPOINTS.schedules.archive(organizationId, scheduleId),
+      {},
+      { credentials: "include" },
+    ),
   remove: (organizationId: string, scheduleId: string) =>
-    apiService.delete<void>(
-      `${API_ENDPOINTS.schedules.list(organizationId)}/${scheduleId}`,
-      {
-        credentials: "include",
-      },
+    scheduleService.archive(organizationId, scheduleId),
+  restore: (organizationId: string, scheduleId: string) =>
+    apiService.post<Schedule, Record<string, never>>(
+      API_ENDPOINTS.schedules.restore(organizationId, scheduleId),
+      {},
+      { credentials: "include" },
     ),
   update: (
     organizationId: string,

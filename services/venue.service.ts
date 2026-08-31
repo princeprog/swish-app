@@ -10,6 +10,7 @@ export type Venue = {
   slug: string
   status: string
   updated_at: string
+  archived_at?: string | null
 }
 
 export type CreateVenuePayload = {
@@ -33,10 +34,20 @@ export const venueService = {
       credentials: "include",
       query: params,
     }),
+  archive: (organizationId: string, venueId: string) =>
+    apiService.post<Venue, Record<string, never>>(
+      API_ENDPOINTS.venues.archive(organizationId, venueId),
+      {},
+      { credentials: "include" },
+    ),
   remove: (organizationId: string, venueId: string) =>
-    apiService.delete<void>(`${API_ENDPOINTS.venues.list(organizationId)}/${venueId}`, {
-      credentials: "include",
-    }),
+    venueService.archive(organizationId, venueId),
+  restore: (organizationId: string, venueId: string) =>
+    apiService.post<Venue, Record<string, never>>(
+      API_ENDPOINTS.venues.restore(organizationId, venueId),
+      {},
+      { credentials: "include" },
+    ),
   update: (organizationId: string, venueId: string, data: UpdateVenuePayload) =>
     apiService.patch<Venue, UpdateVenuePayload>(
       `${API_ENDPOINTS.venues.list(organizationId)}/${venueId}`,

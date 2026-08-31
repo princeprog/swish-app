@@ -59,12 +59,12 @@ export function useUpdateDivisionMutation(organizationId: string) {
   })
 }
 
-export function useDeleteDivisionMutation(organizationId: string) {
+export function useArchiveDivisionMutation(organizationId: string) {
   const queryClient = useQueryClient()
 
-  return useMutation<void, unknown, string>({
+  return useMutation<Division, unknown, string>({
     mutationFn: (divisionId) =>
-      divisionService.remove(organizationId, divisionId),
+      divisionService.archive(organizationId, divisionId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: DIVISION_QUERY_KEYS.list(organizationId),

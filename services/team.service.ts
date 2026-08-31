@@ -14,6 +14,7 @@ export type Team = {
   slug: string
   status: string
   updated_at: string
+  archived_at?: string | null
 }
 
 export type CreateTeamPayload = {
@@ -65,10 +66,20 @@ export const teamService = {
 
     return [firstPage, ...remainingPages].flatMap((page) => page.data)
   },
+  archive: (organizationId: string, teamId: string) =>
+    apiService.post<Team, Record<string, never>>(
+      API_ENDPOINTS.teams.archive(organizationId, teamId),
+      {},
+      { credentials: "include" },
+    ),
   remove: (organizationId: string, teamId: string) =>
-    apiService.delete<void>(`${API_ENDPOINTS.teams.list(organizationId)}/${teamId}`, {
-      credentials: "include",
-    }),
+    teamService.archive(organizationId, teamId),
+  restore: (organizationId: string, teamId: string) =>
+    apiService.post<Team, Record<string, never>>(
+      API_ENDPOINTS.teams.restore(organizationId, teamId),
+      {},
+      { credentials: "include" },
+    ),
   update: (organizationId: string, teamId: string, data: UpdateTeamPayload) =>
     apiService.patch<Team, UpdateTeamPayload>(
       `${API_ENDPOINTS.teams.list(organizationId)}/${teamId}`,

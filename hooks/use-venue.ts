@@ -59,11 +59,11 @@ export function useUpdateVenueMutation(organizationId: string) {
   })
 }
 
-export function useDeleteVenueMutation(organizationId: string) {
+export function useArchiveVenueMutation(organizationId: string) {
   const queryClient = useQueryClient()
 
-  return useMutation<void, unknown, string>({
-    mutationFn: (venueId) => venueService.remove(organizationId, venueId),
+  return useMutation<Venue, unknown, string>({
+    mutationFn: (venueId) => venueService.archive(organizationId, venueId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: VENUE_QUERY_KEYS.list(organizationId),

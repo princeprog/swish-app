@@ -15,7 +15,7 @@ import {
   Plus,
   Search,
   Shield,
-  Trash2,
+  Archive,
   Users2,
   X,
 } from "lucide-react"
@@ -76,7 +76,7 @@ import { cn } from "@/lib/utils"
 import { getApiErrorMessage } from "@/hooks/use-auth"
 import {
   useCreatePlayerMutation,
-  useDeletePlayerMutation,
+  useArchivePlayerMutation,
   useUpdatePlayerMutation,
 } from "@/hooks/use-player"
 import type { Division } from "@/services/division.service"
@@ -225,8 +225,8 @@ function PlayerActionsPopover({
                     onDelete()
                   }}
                 >
-                  <Trash2 className="size-4" />
-                  Delete player
+                  <Archive className="size-4" />
+                  Archive player
                 </Button>
               </div>
             </div>,
@@ -466,7 +466,7 @@ function PlayerFormModal({
   )
 }
 
-function DeletePlayerModal({
+function ArchivePlayerModal({
   errorMessage,
   onClose,
   onDelete,
@@ -483,10 +483,11 @@ function DeletePlayerModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4 py-8 backdrop-blur-sm">
       <Card className="w-full max-w-lg border border-border/70 bg-card shadow-2xl">
         <CardHeader>
-          <CardTitle>Delete player</CardTitle>
+          <CardTitle>Archive player</CardTitle>
           <CardDescription>
-            You are about to delete <span className="font-medium">{player.name}</span>.
-            This action cannot be undone.
+            Archive <span className="font-medium">{player.name}</span>. This
+            removes the player from active lists while keeping game history and
+            allowing a later restore.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
@@ -504,12 +505,12 @@ function DeletePlayerModal({
               {pending ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />
-                  Deleting
+                  Archiving
                 </>
               ) : (
                 <>
-                  <Trash2 className="size-4" />
-                  Delete player
+                  <Archive className="size-4" />
+                  Archive player
                 </>
               )}
             </Button>
@@ -891,7 +892,7 @@ export function OrganizationPlayersView({
 }) {
   const createPlayerMutation = useCreatePlayerMutation(organization.id)
   const updatePlayerMutation = useUpdatePlayerMutation(organization.id)
-  const deletePlayerMutation = useDeletePlayerMutation(organization.id)
+  const archivePlayerMutation = useArchivePlayerMutation(organization.id)
   const [createModalOpen, setCreateModalOpen] = React.useState(false)
   const [playerToDelete, setPlayerToDelete] = React.useState<Player | null>(null)
   const [playerToEdit, setPlayerToEdit] = React.useState<Player | null>(null)
@@ -967,8 +968,8 @@ export function OrganizationPlayersView({
   async function handleDeletePlayer() {
     if (!playerToDelete) return
     try {
-      await deletePlayerMutation.mutateAsync(playerToDelete.id)
-      toast.success(`Deleted ${playerToDelete.name}`)
+      await archivePlayerMutation.mutateAsync(playerToDelete.id)
+      toast.success(`Archived ${playerToDelete.name}. It remains available in history.`)
       setPlayerToDelete(null)
     } catch (error) {
       toast.error(getApiErrorMessage(error))
@@ -1166,11 +1167,11 @@ export function OrganizationPlayersView({
       ) : null}
 
       {playerToDelete ? (
-        <DeletePlayerModal
+        <ArchivePlayerModal
           errorMessage={
-            deletePlayerMutation.isError ? getApiErrorMessage(deletePlayerMutation.error) : null
+            archivePlayerMutation.isError ? getApiErrorMessage(archivePlayerMutation.error) : null
           }
-          pending={deletePlayerMutation.isPending}
+          pending={archivePlayerMutation.isPending}
           player={playerToDelete}
           onClose={() => setPlayerToDelete(null)}
           onDelete={handleDeletePlayer}
