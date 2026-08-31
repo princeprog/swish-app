@@ -8,7 +8,7 @@ production game-day use.
 
 ## Verified
 
-- API unit suite: 88 suites, 500 tests passing.
+- API unit suite: 89 suites, 502 tests passing.
 - API e2e suite: 3 suites, 4 tests passing, including the authenticated HTTP
   registration, season setup, and public-portal smoke flow.
 - API TypeScript, lint, production build, and high-severity audit gates pass.
