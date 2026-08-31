@@ -29,7 +29,7 @@ export function PresenceReveal({
   const skipInitialAnimation = React.useRef(!animateOnMount && present)
   const [isMounted, setIsMounted] = React.useState(present)
   const [motionState, setMotionState] = React.useState<PresenceRevealState>(
-    present && !skipInitialAnimation.current ? "enter" : "visible",
+    present && animateOnMount ? "enter" : "visible",
   )
   const [reducedMotion, setReducedMotion] = React.useState(false)
 
