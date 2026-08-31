@@ -17,7 +17,6 @@ import type {
   OrganizationInvitation,
   UpdateInvitationAccessInput,
 } from "@/services/access.service"
-import type { OrganizationRole } from "@/services/organization.service"
 import type { Team } from "@/services/team.service"
 import { PresenceReveal } from "@/components/motion/presence-reveal"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"

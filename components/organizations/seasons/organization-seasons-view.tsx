@@ -31,7 +31,6 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Empty,
-  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
@@ -268,7 +267,6 @@ function SeasonsTable({
   onPageSizeChange,
   onDeleteSeason,
   onEditSeason,
-  organizationSlug,
   pagination,
   seasons,
 }: {
@@ -276,7 +274,6 @@ function SeasonsTable({
   onPageSizeChange: (pageSize: PageSizeOption) => void;
   onDeleteSeason: (season: LeagueSeason) => void;
   onEditSeason: (season: LeagueSeason) => void;
-  organizationSlug: string;
   pagination: PaginationMeta;
   seasons: LeagueSeason[];
 }) {
@@ -449,7 +446,6 @@ export function OrganizationSeasonsView({
                     onPageSizeChange={onPageSizeChange}
                     onDeleteSeason={setSeasonToDelete}
                     onEditSeason={setSeasonToEdit}
-                    organizationSlug={organization.slug}
                     pagination={pagination}
                     seasons={seasons}
                   />

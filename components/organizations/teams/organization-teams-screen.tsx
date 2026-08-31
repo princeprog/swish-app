@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Shield, Users2 } from "lucide-react"
+import { Users2 } from "lucide-react"
 
 import { OrganizationTeamsView } from "@/components/organizations/teams/organization-teams-view"
 import { ComponentReveal, PageEntrance } from "@/components/motion/page-motion"

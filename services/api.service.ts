@@ -103,6 +103,9 @@ async function rawApiRequest<TResponse = unknown, TData = unknown>(
     credentials = "include",
     ...requestOptions
   } = options;
+  // The retry flag is handled by apiRequest; raw requests only strip it from
+  // the FetchInit object so it never reaches the browser transport.
+  void _authRetry;
 
   const requestHeaders = new Headers(headers);
   let body: BodyInit | undefined;
