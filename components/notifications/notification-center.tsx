@@ -61,20 +61,24 @@ export function NotificationCenter() {
   const setReadMutation = useSetNotificationReadMutation()
   const markAllMutation = useMarkAllNotificationsReadMutation()
 
-  React.useEffect(() => {
+  function updateFilters(next: Partial<NotificationCenterFilters>) {
     setCursor(null)
     setItems([])
-  }, [filters.category, filters.organizationId, filters.status])
+    setFilters((current) => ({ ...current, ...next }))
+  }
 
   React.useEffect(() => {
     const incoming = query.data?.items ?? []
-    setItems((current) => {
-      if (!cursor) {
-        return incoming
-      }
-      const seen = new Set(current.map((item) => item.id))
-      return [...current, ...incoming.filter((item) => !seen.has(item.id))]
+    const frameId = window.requestAnimationFrame(() => {
+      setItems((current) => {
+        if (!cursor) {
+          return incoming
+        }
+        const seen = new Set(current.map((item) => item.id))
+        return [...current, ...incoming.filter((item) => !seen.has(item.id))]
+      })
     })
+    return () => window.cancelAnimationFrame(frameId)
   }, [cursor, query.data?.items])
 
   const onSelect = (item: NotificationItem) => {
@@ -129,7 +133,7 @@ export function NotificationCenter() {
         <section className="grid gap-3 rounded-lg border bg-card p-4 md:grid-cols-[1fr_12rem_16rem]" aria-label="Notification filters">
           <Select
             value={filters.category}
-            onValueChange={(value) => setFilters((current) => ({ ...current, category: value as NotificationCenterFilters["category"] }))}
+            onValueChange={(value) => updateFilters({ category: value as NotificationCenterFilters["category"] })}
           >
             <SelectTrigger aria-label="Filter notifications by category">
               <SelectValue />
@@ -142,7 +146,7 @@ export function NotificationCenter() {
           </Select>
           <Select
             value={filters.status}
-            onValueChange={(value) => setFilters((current) => ({ ...current, status: value as NotificationCenterFilters["status"] }))}
+            onValueChange={(value) => updateFilters({ status: value as NotificationCenterFilters["status"] })}
           >
             <SelectTrigger aria-label="Filter notifications by read status">
               <SelectValue />
@@ -154,7 +158,7 @@ export function NotificationCenter() {
           </Select>
           <Select
             value={filters.organizationId ?? "all"}
-            onValueChange={(value) => setFilters((current) => ({ ...current, organizationId: value === "all" ? undefined : value }))}
+            onValueChange={(value) => updateFilters({ organizationId: value === "all" ? undefined : value })}
           >
             <SelectTrigger aria-label="Filter notifications by organization">
               <SelectValue placeholder="All organizations" />
