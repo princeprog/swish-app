@@ -23,11 +23,18 @@ export default defineConfig({
   projects: [
     {
       name: "desktop",
+      testIgnore: "**/live.mvp.spec.ts",
       use: { ...devices["Desktop Chrome"] },
     },
     {
       name: "mobile",
+      testIgnore: "**/live.mvp.spec.ts",
       use: { ...devices["Pixel 7"] },
+    },
+    {
+      name: "live",
+      testMatch: "**/live.mvp.spec.ts",
+      use: { ...devices["Desktop Chrome"] },
     },
   ],
 });

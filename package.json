@@ -10,7 +10,8 @@
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "lint": "eslint",
     "start": "next start",
-    "test:browser": "playwright test",
+    "test:browser": "playwright test --project=desktop --project=mobile",
+    "test:browser:live": "playwright test --project=live",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
