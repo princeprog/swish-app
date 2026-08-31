@@ -6,7 +6,18 @@ const podiumRankStyles: Record<number, string> = {
   3: "border-orange-300/45 bg-orange-500/15 text-orange-200 shadow-[0_0_0_3px_rgba(249,115,22,0.08)]",
 }
 
-export function StandingRankBadge({ rank }: { rank: number }) {
+export function StandingRankBadge({ rank }: { rank: number | null }) {
+  if (rank === null) {
+    return (
+      <span
+        aria-label="Rank pending a league decision"
+        className="inline-flex size-8 items-center justify-center rounded-md border border-amber-500/30 bg-amber-500/10 text-sm font-semibold text-amber-200"
+      >
+        —
+      </span>
+    )
+  }
+
   const sizeClass =
     rank === 1
       ? "size-11 rounded-full text-lg"

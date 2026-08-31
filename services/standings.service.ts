@@ -14,13 +14,22 @@ export type StandingsRow = {
   pointDifferential: number
   pointsAgainst: number
   pointsFor: number
-  rank: number
+  rank: number | null
   recentResults: Array<"W" | "L">
   teamColor: string | null
   teamId: string
   teamName: string
   winPercentage: number
   wins: number
+  qualificationStatus?: string
+  rankingExplanation?: Array<{
+    label: string
+    rule: string
+    value: number | string
+  }>
+  unresolvedTieKey?: string | null
+  poolCode?: string
+  poolName?: string
 }
 
 export type StandingsResponse = {

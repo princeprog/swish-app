@@ -167,7 +167,11 @@ export function StandingsTable({ rows }: { rows: StandingsRow[] }) {
                       >
                         {row.teamName}
                       </span>
-                      {row.rank <= 3 ? (
+                      {row.unresolvedTieKey ? (
+                        <span className="text-xs text-amber-300">
+                          Awaiting a league decision to break this tie
+                        </span>
+                      ) : row.rank !== null && row.rank <= 3 ? (
                         <span className="text-xs text-muted-foreground">
                           {podiumLabels[row.rank]}
                         </span>
