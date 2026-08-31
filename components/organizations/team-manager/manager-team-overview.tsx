@@ -98,11 +98,6 @@ function TeamProfileDialog({
   const [name, setName] = React.useState(assignment.team.name)
   const [color, setColor] = React.useState(assignment.team.color ?? "#111827")
 
-  React.useEffect(() => {
-    setName(assignment.team.name)
-    setColor(assignment.team.color ?? "#111827")
-  }, [assignment])
-
   const hasChanges =
     name.trim() !== assignment.team.name ||
     color !== (assignment.team.color ?? "#111827")
@@ -210,7 +205,11 @@ function TeamIdentityCard({
               {rosterStatusLabel(assignment)}
             </Badge>
           </div>
-          <TeamProfileDialog assignment={assignment} organization={organization} />
+          <TeamProfileDialog
+            key={`${assignment.team.id}-${assignment.team.name}-${assignment.team.color ?? ""}`}
+            assignment={assignment}
+            organization={organization}
+          />
         </div>
       </CardContent>
     </Card>
