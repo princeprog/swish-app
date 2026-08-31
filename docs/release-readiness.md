@@ -33,6 +33,13 @@ production game-day use.
   tests): guest auth redirects, public schedule/results/bracket/leaders tabs,
   and the assigned scorekeeper pregame console using release-shaped API
   fixtures.
+- A separate `test:browser:live` project is available for an authenticated
+  browser run against a running API. It takes the seeded organization, season,
+  game, and scorekeeper credentials through
+  `PLAYWRIGHT_LIVE_ORGANIZATION_SLUG`, `PLAYWRIGHT_LIVE_SEASON_SLUG`,
+  `PLAYWRIGHT_LIVE_GAME_ID`, `PLAYWRIGHT_LIVE_SCOREKEEPER_EMAIL`, and
+  `PLAYWRIGHT_LIVE_SCOREKEEPER_PASSWORD`; it does not alter the deterministic
+  default smoke command.
 - The built Next.js server smoke check returns 200 for `/docs` and `/login`,
   and redirects unauthenticated `/` and `/organizations` requests to `/login`.
 - Official result reopening, generated fixture revisions, archived history,
