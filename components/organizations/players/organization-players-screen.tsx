@@ -234,9 +234,12 @@ export function OrganizationPlayersScreen({ slug }: OrganizationPlayersScreenPro
   const playersQuery = usePlayersQuery(adminOrganizationId, playerParams)
 
   React.useEffect(() => {
-    setFilters((currentFilters) =>
-      arePlayerFiltersEqual(currentFilters, urlFilters) ? currentFilters : urlFilters,
-    )
+    const frameId = window.requestAnimationFrame(() => {
+      setFilters((currentFilters) =>
+        arePlayerFiltersEqual(currentFilters, urlFilters) ? currentFilters : urlFilters,
+      )
+    })
+    return () => window.cancelAnimationFrame(frameId)
   }, [urlFilters])
 
   React.useEffect(() => {
