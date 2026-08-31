@@ -109,7 +109,6 @@ function DivisionActionsPopover({
 
   React.useEffect(() => {
     if (!open) {
-      setMenuPosition(null);
       return;
     }
 
@@ -167,7 +166,10 @@ function DivisionActionsPopover({
         ref={buttonRef}
         size="icon-sm"
         variant="ghost"
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => {
+          setMenuPosition(null);
+          setOpen((current) => !current);
+        }}
       >
         <MoreHorizontal className="size-4" />
       </Button>

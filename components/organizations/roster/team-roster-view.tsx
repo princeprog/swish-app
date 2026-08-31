@@ -147,7 +147,6 @@ function RosterPlayerActionsPopover({
 
   React.useEffect(() => {
     if (!open) {
-      setMenuPosition(null)
       return
     }
 
@@ -195,7 +194,10 @@ function RosterPlayerActionsPopover({
         ref={buttonRef}
         size="icon-sm"
         variant="ghost"
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => {
+          setMenuPosition(null)
+          setOpen((current) => !current)
+        }}
       >
         <MoreHorizontal className="size-4" />
       </Button>
@@ -960,7 +962,6 @@ export function TeamRosterView({
   const [createModalOpen, setCreateModalOpen] = React.useState(false)
   const [playerToDelete, setPlayerToDelete] = React.useState<Player | null>(null)
   const [playerToEdit, setPlayerToEdit] = React.useState<Player | null>(null)
-  const [playerToView, setPlayerToView] = React.useState<Player | null>(null)
   const [playerDetailsOpen, setPlayerDetailsOpen] = React.useState(false)
   const [mountedPlayerDetails, setMountedPlayerDetails] = React.useState<Player | null>(null)
   const [returnReason, setReturnReason] = React.useState("")
@@ -983,12 +984,6 @@ export function TeamRosterView({
   ).length
 
   React.useEffect(() => {
-    if (playerToView) {
-      setMountedPlayerDetails(playerToView)
-      setPlayerDetailsOpen(true)
-      return
-    }
-
     if (!playerDetailsOpen) {
       const timeoutId = window.setTimeout(() => {
         setMountedPlayerDetails(null)
@@ -996,7 +991,7 @@ export function TeamRosterView({
 
       return () => window.clearTimeout(timeoutId)
     }
-  }, [playerDetailsOpen, playerToView])
+  }, [playerDetailsOpen])
 
   async function handleCreatePlayer(payload: {
     jerseyNumber: string
@@ -1291,7 +1286,6 @@ export function TeamRosterView({
                       onDeletePlayer={setPlayerToDelete}
                       onEditPlayer={setPlayerToEdit}
                       onViewPlayer={(player) => {
-                        setPlayerToView(player)
                         setMountedPlayerDetails(player)
                         setPlayerDetailsOpen(true)
                       }}
@@ -1359,9 +1353,6 @@ export function TeamRosterView({
         team={team}
         onOpenChange={(open) => {
           setPlayerDetailsOpen(open)
-          if (!open) {
-            setPlayerToView(null)
-          }
         }}
       />
     </SidebarProvider>
