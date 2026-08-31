@@ -459,7 +459,6 @@ function ScheduleActionsPopover({
 
   React.useEffect(() => {
     if (!open) {
-      setMenuPosition(null);
       return;
     }
 
@@ -529,7 +528,10 @@ function ScheduleActionsPopover({
         ref={buttonRef}
         size="icon-sm"
         variant="ghost"
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => {
+          setMenuPosition(null);
+          setOpen((current) => !current);
+        }}
       >
         <Ellipsis className="size-4" />
       </Button>
@@ -1282,7 +1284,9 @@ function EditScheduleModal({
       availableDivisions.find((division) => division.id === divisionId)?.id ??
       availableDivisions[0]?.id ??
       "";
-    setDivisionId(nextDivisionId);
+    if (nextDivisionId === divisionId) return;
+    const frameId = window.requestAnimationFrame(() => setDivisionId(nextDivisionId));
+    return () => window.cancelAnimationFrame(frameId);
   }, [availableDivisions, divisionId]);
 
   React.useEffect(() => {
@@ -1290,7 +1294,9 @@ function EditScheduleModal({
       availableVenues.find((venue) => venue.id === venueId)?.id ??
       availableVenues[0]?.id ??
       "";
-    setVenueId(nextVenueId);
+    if (nextVenueId === venueId) return;
+    const frameId = window.requestAnimationFrame(() => setVenueId(nextVenueId));
+    return () => window.cancelAnimationFrame(frameId);
   }, [availableVenues, venueId]);
 
   React.useEffect(() => {
@@ -1305,8 +1311,12 @@ function EditScheduleModal({
       availableTeams.find((team) => team.id !== nextHomeTeamId)?.id ??
       "";
 
-    setHomeTeamId(nextHomeTeamId);
-    setAwayTeamId(nextAwayTeamId);
+    if (nextHomeTeamId === homeTeamId && nextAwayTeamId === awayTeamId) return;
+    const frameId = window.requestAnimationFrame(() => {
+      setHomeTeamId(nextHomeTeamId);
+      setAwayTeamId(nextAwayTeamId);
+    });
+    return () => window.cancelAnimationFrame(frameId);
   }, [availableTeams, awayTeamId, homeTeamId]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -2052,7 +2062,9 @@ function CreateScheduleModal({
       availableDivisions.find((division) => division.id === divisionId)?.id ??
       availableDivisions[0]?.id ??
       "";
-    setDivisionId(nextDivisionId);
+    if (nextDivisionId === divisionId) return;
+    const frameId = window.requestAnimationFrame(() => setDivisionId(nextDivisionId));
+    return () => window.cancelAnimationFrame(frameId);
   }, [availableDivisions, divisionId]);
 
   React.useEffect(() => {
@@ -2060,7 +2072,9 @@ function CreateScheduleModal({
       availableVenues.find((venue) => venue.id === venueId)?.id ??
       availableVenues[0]?.id ??
       "";
-    setVenueId(nextVenueId);
+    if (nextVenueId === venueId) return;
+    const frameId = window.requestAnimationFrame(() => setVenueId(nextVenueId));
+    return () => window.cancelAnimationFrame(frameId);
   }, [availableVenues, venueId]);
 
   React.useEffect(() => {
@@ -2075,8 +2089,12 @@ function CreateScheduleModal({
       availableTeams.find((team) => team.id !== nextHomeTeamId)?.id ??
       "";
 
-    setHomeTeamId(nextHomeTeamId);
-    setAwayTeamId(nextAwayTeamId);
+    if (nextHomeTeamId === homeTeamId && nextAwayTeamId === awayTeamId) return;
+    const frameId = window.requestAnimationFrame(() => {
+      setHomeTeamId(nextHomeTeamId);
+      setAwayTeamId(nextAwayTeamId);
+    });
+    return () => window.cancelAnimationFrame(frameId);
   }, [availableTeams, awayTeamId, homeTeamId]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
