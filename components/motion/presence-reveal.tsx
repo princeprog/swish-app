@@ -58,6 +58,8 @@ export function PresenceReveal({
 
   React.useEffect(() => {
     if (present) {
+      const frameId = window.requestAnimationFrame(() => setIsMounted(true))
+
       if (skipInitialAnimation.current) {
         skipInitialAnimation.current = false
         setMotionState("visible")
@@ -65,7 +67,7 @@ export function PresenceReveal({
         setMotionState("enter")
       }
 
-      return
+      return () => window.cancelAnimationFrame(frameId)
     }
 
     if (reducedMotion) {
