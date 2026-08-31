@@ -43,6 +43,17 @@ production game-day use.
   `PLAYWRIGHT_LIVE_STATISTICIAN_EMAIL`, and
   `PLAYWRIGHT_LIVE_STATISTICIAN_PASSWORD`; it does not alter the deterministic
   default smoke command.
+- The complete tournament project additionally requires
+  `PLAYWRIGHT_LIVE_OWNER_EMAIL`, `PLAYWRIGHT_LIVE_OWNER_PASSWORD`,
+  `PLAYWRIGHT_LIVE_CROSSOVER_DIVISION_ID`, and
+  `PLAYWRIGHT_LIVE_DIRECT_DIVISION_ID` so it can generate and schedule both
+  competition graphs.
+- The API repository includes `node scripts/seed-browser-tournament.mjs
+  --keep`, which creates a disposable migrated database with separate owner,
+  scorekeeper, and statistician accounts, published one-player rosters, an
+  eight-team two-pool crossover division, and an eight-team direct
+  double-elimination division. The fixture prints the IDs and credentials
+  needed by both live browser projects and is safe to drop after the run.
 - On 2026-09-01, that live project passed against a disposable migrated
   PostgreSQL database seeded with eight teams in two pools, generated
   crossover playoff matchups, published rosters, and one scheduled game. The
@@ -52,6 +63,11 @@ production game-day use.
   with player points and box-score events, finalized the reconciled result,
   confirmed Player of the Game, and re-read the public result, standings, and
   leaders.
+- On 2026-09-01, the full live tournament project passed against the persistent
+  browser fixture. It generated and completed 15 crossover games and 15 direct
+  double-elimination games, including a forced Grand Final Reset, confirmed
+  every award, and verified the public 30-result portal, standings, leaders,
+  bracket champion, and reset-final state.
 - The built Next.js server smoke check returns 200 for `/docs` and `/login`,
   and redirects unauthenticated `/` and `/organizations` requests to `/login`.
 - Official result reopening, generated fixture revisions, archived history,
@@ -60,13 +76,6 @@ production game-day use.
 
 ## Open release gates
 
-- The full tournament scoring and advancement loop is not yet browser-driven:
-  the live browser pilot drives one assigned game through scoring,
-  reconciliation, finalization, and public publication; the authenticated HTTP
-  pilot covers the same API contract, and the database pilot covers the
-  eight-team crossover and direct double-elimination reset-final simulations.
-  A browser run that plays every crossover and direct double-elimination game
-  through the reset final is still required for the strict release gate.
 - Production operations remain separate work: hosting, email delivery,
   monitoring, backups, restore drills, and game-day support procedures.
 
@@ -74,5 +83,4 @@ production game-day use.
 
 The code is suitable for a controlled, supervised pilot using the verified
 database workflows and live browser coverage. Do not treat it as
-production-ready until the full tournament browser pilot and production
-operations are in place.
+production-ready until production operations are in place.
