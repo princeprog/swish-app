@@ -33,7 +33,7 @@ export default defineConfig({
     },
     {
       name: "live",
-      testMatch: "**/live.mvp.spec.ts",
+      testMatch: "**/live.*.spec.ts",
       use: { ...devices["Desktop Chrome"] },
     },
   ],
